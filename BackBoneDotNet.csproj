@@ -36,7 +36,34 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\Enums.cs" />
+    <Compile Include="Attributes\ModelBlockActions.cs" />
+    <Compile Include="Attributes\ModelEditAddType.cs" />
+    <Compile Include="Attributes\ModelIgnoreProperty.cs" />
+    <Compile Include="Attributes\ModelJSFilePath.cs" />
+    <Compile Include="Attributes\ModelLoadAllMethod.cs" />
+    <Compile Include="Attributes\ModelLoadMethod.cs" />
+    <Compile Include="Attributes\ModelRoute.cs" />
+    <Compile Include="Attributes\ModelViewClass.cs" />
+    <Compile Include="Attributes\ModelViewTag.cs" />
+    <Compile Include="Attributes\ReadOnlyModelProperty.cs" />
+    <Compile Include="CachedItemContainer.cs" />
+    <Compile Include="DefinitionValidator.cs" />
+    <Compile Include="Exceptions.cs" />
+    <Compile Include="Interfaces\IHttpRequest.cs" />
+    <Compile Include="Interfaces\IModel.cs" />
+    <Compile Include="JSON.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RequestHandler.cs" />
+    <Compile Include="Utility.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\backbone.min.js" />
+    <EmbeddedResource Include="resources\jquery.min.js" />
+    <EmbeddedResource Include="resources\json2.min.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\underscore-min.js" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
