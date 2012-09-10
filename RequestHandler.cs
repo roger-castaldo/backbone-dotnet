@@ -7,6 +7,7 @@ using Org.Reddragonit.BackBoneDotNet.Attributes;
 using System.Reflection;
 using System.Threading;
 using System.Collections;
+using Org.Reddragonit.BackBoneDotNet.JSGenerators;
 
 namespace Org.Reddragonit.BackBoneDotNet
 {
@@ -24,6 +25,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static bool _running;
         private static Dictionary<string, MethodInfo> _LoadAlls;
         private static Dictionary<string, MethodInfo> _Loads;
+        private static Dictionary<string, MethodInfo> _SelectLists;
         private static Dictionary<string, CachedItemContainer> _CachedJScript;
         private static Dictionary<string, Type> _TypeMaps;
         private static string _jqueryURL;
@@ -61,6 +63,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 _invalidModels = new List<Type>();
             _LoadAlls = new Dictionary<string, MethodInfo>();
             _Loads = new Dictionary<string, MethodInfo>();
+            _SelectLists = new Dictionary<string, MethodInfo>();
             _CachedJScript = new Dictionary<string, CachedItemContainer>();
             _TypeMaps = new Dictionary<string, Type>();
             _cacheTimer = new Timer(new TimerCallback(_CleanJSCache), null, 0, _CACHE_TIMER_PERIOD);
@@ -107,6 +110,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 bool hasDelete = true;
                 MethodInfo LoadAll = null;
                 MethodInfo Load = null;
+                MethodInfo SelectList = null;
                 if (t.GetCustomAttributes(typeof(ModelBlockActions),false).Length > 0)
                 {
                     ModelBlockActions mba = (ModelBlockActions)t.GetCustomAttributes(typeof(ModelBlockActions),false)[0];
@@ -117,27 +121,29 @@ namespace Org.Reddragonit.BackBoneDotNet
                 foreach (MethodInfo mi in t.GetMethods(BindingFlags.Static | BindingFlags.Public))
                 {
                     if (mi.GetCustomAttributes(typeof(ModelLoadAllMethod), false).Length > 0)
-                    {
                         LoadAll = mi;
-                        break;
-                    }
-                }
-                foreach (MethodInfo mi in t.GetMethods(BindingFlags.Static | BindingFlags.Public))
-                {
-                    if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
-                    {
+                    else if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
                         Load = mi;
-                        break;
-                    }
+                    else if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
+                        SelectList = mi;
                 }
                 _Loads.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), Load);
+                string methods = "((";
                 if (LoadAll != null)
                 {
-                    reg += (reg.EndsWith(")") ? "|" : "") + "(" + (hasAdd ? "(GET|POST)" : "GET") + "\t" + (mr.Host == "*" ? ".+" : mr.Host) + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/') + ")";
+                    methods += "GET";
                     _LoadAlls.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), LoadAll);
                 }
-                else if (hasAdd)
-                    reg += (reg.EndsWith(")") ? "|" : "") + "(POST\t" + (mr.Host == "*" ? ".+" : mr.Host) + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/') + ")";
+                if (hasAdd)
+                    methods += (methods.EndsWith("(") ? "" : "|") + "POST";
+                if (SelectList != null)
+                {
+                    methods += (methods.EndsWith("(") ? "" : "|") + "SELECT";
+                    _SelectLists.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), SelectList);
+                }
+                methods += ")";
+                if (methods!="(()")
+                    reg += (reg.EndsWith(")") ? "|" : "") + methods + "\t" + (mr.Host == "*" ? ".+" : mr.Host) + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/') + ")";
                 string adds = "(GET";
                 if (hasUpdate)
                     adds += "|PUT";
@@ -241,6 +247,12 @@ namespace Org.Reddragonit.BackBoneDotNet
                             ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
                         else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                        break;
+                    case "SELECT":
+                        if (_SelectLists.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
+                            ret = _SelectLists[request.URL.Host + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                        else if (_SelectLists.ContainsKey("*" + request.URL.AbsolutePath))
+                            ret = _SelectLists["*" + request.URL.AbsolutePath].Invoke(null, new object[0]);
                         break;
                     case "PUT":
                         if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
@@ -399,102 +411,31 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
         }
 
+        private static readonly IJSGenerator[] _generators = new IJSGenerator[]{
+            new NamespaceGenerator(),
+            new ModelDefinitionGenerator(),
+            new CollectionGenerator(),
+            new ViewGenerator(),
+            new SelectListCallGenerator(),
+            new EditAddFormGenerator()
+        };
+
         private static string _GenerateModelJSFile(Type t,string host)
         {
-            string ret="";
-            string tmp = "";
-            foreach (string str in t.FullName.Split('.'))
-            {
-                ret += (tmp.Length == 0 ? "var "+str : tmp + "."+str) + " = " + (tmp.Length == 0 ? "" : tmp + ".") + str + " || {};\n";
-                tmp += (tmp.Length == 0 ? "" : ".") + str;
-            }
-            ret += t.FullName + ".Model = Backbone.Model.extend({\n";
-            ret += "\tdefaults: {\n";
-            object obj = null;
-            if (t.GetConstructor(Type.EmptyTypes)!=null)
-                obj = t.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
-            List<string> readOnlyProperties = new List<string>();
+            string ret = "";
             List<string> properties = new List<string>();
+            List<string> readOnlyProperties = new List<string>();
             foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
                 {
-                    if (pi.Name != "id")
-                    {
-                        if (obj != null)
-                        {
-                            object pobj = pi.GetValue(obj, new object[0]);
-                            ret += "\t\t\"" + pi.Name + "\": " + (pobj == null ? "null" : JSON.JsonEncode(pobj)) + ",\n";
-                        }
-                        if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length > 0)
-                            readOnlyProperties.Add(pi.Name);
-                    }
+                    if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length > 0)
+                        readOnlyProperties.Add(pi.Name);
                     properties.Add(pi.Name);
                 }
             }
-            if (ret.EndsWith(",\n"))
-                ret = ret.Substring(0, ret.Length - 2);
-            ret += "\t},\n";
-            bool hasAdd = true;
-            bool hasUpdate = true;
-            bool hasDelete = true;
-            if (t.GetCustomAttributes(typeof(ModelBlockActions), false).Length > 0)
-            {
-                ModelBlockActions mba = (ModelBlockActions)t.GetCustomAttributes(typeof(ModelBlockActions), false)[0];
-                hasAdd = ((int)mba.Type & (int)ModelActionTypes.Add) == 0;
-                hasUpdate = ((int)mba.Type & (int)ModelActionTypes.Edit) == 0;
-                hasDelete = ((int)mba.Type & (int)ModelActionTypes.Delete) == 0;
-            }
-            if (!hasDelete)
-                ret += "\tdestroy : functions(options){return false;},\n";
-            if (!hasAdd && !hasDelete)
-                ret += "\tsave : function(attributes,options){return false;},\n";
-            else if (!hasAdd)
-                ret += "\tsave : function(attributes,options){if (!this.isNew()){Backbone.Model.save(attributes,options);}else{return false;}},\n";
-            else if (!hasUpdate)
-                ret += "\tsave : function(attributes,options){if (this.isNew()){Backbone.Model.save(attributes,options);}else{return false;}},\n";
-            ret += "\tinitialize : function() {\n";
-            ret += "\t\tif (this._revertReadonlyFields != undefined){\n";
-            ret += "\t\t\tthis.on(\"change\",this._revertReadonlyFields);\n";
-            ret += "\t\t}\n";
-            ret += "\t},\n";
-            if (readOnlyProperties.Count > 0)
-            {
-                ret += "\t_revertReadonlyFields : function(){\n";
-                foreach (string str in readOnlyProperties)
-                {
-                    ret += "\t\tif (this.changedAttributes." + str + " != this.previousAttributes." + str + "){\n";
-                    ret += "\t\t\tthis.set({" + str + ":this.previousAttributes." + str + "});\n";
-                    ret += "\t\t}\n";
-                }
-                ret += "\t},\n";
-            }
-            string urlRoot = "";
-            foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))
-            {
-                if (mr.Host == host)
-                {
-                    urlRoot = mr.Path;
-                    break;
-                }
-            }
-            if (urlRoot == "")
-            {
-                foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))
-                {
-                    if (mr.Host == "*")
-                    {
-                        urlRoot = mr.Path;
-                        break;
-                    }
-                }
-            }
-            ret += "\turlRoot : \"" + (urlRoot.StartsWith("/") ? "" : "/") + urlRoot + "\"\n";
-            ret += "});\n";
-            ret += t.FullName + ".Collection = Backbone.Collection.extend({\n";
-            ret += "\tmodel : " + t.FullName + ".Model,\n";
-            ret += "\turl : \"" + (urlRoot.StartsWith("/") ? "" : "/") + urlRoot + "\"\n";
-            ret+= "});\n";
+            foreach (IJSGenerator gen in _generators)
+                ret += gen.GenerateJS(t, host, readOnlyProperties, properties);
             return ret;
         }
     }
