@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Reflection;
 
 namespace Org.Reddragonit.BackBoneDotNet
 {
@@ -55,5 +56,25 @@ namespace Org.Reddragonit.BackBoneDotNet
             :base("The IModel type "+t.FullName+" is not valid because it does not block adding and has no empty constructor.")
         {
         }
+    }
+
+    public class InvalidModelSelectOptionValueReturnException : Exception
+    {
+        public InvalidModelSelectOptionValueReturnException(Type t, MethodInfo mi)
+            : base("The IModel type "+t.FullName+" is not valid because the ModelSelectList function "+mi.Name+" does not return a valid type (List<sModelSelectOptionValue> or sModelSelectOptionValue[]).")
+        { }
+    }
+
+    public class NoModelSelectMethodException : Exception
+    {
+        public NoModelSelectMethodException(Type t, PropertyInfo pi)
+            : base("The IModel type " + t.FullName + " is not valid because the property " + pi.Name + " is linked to an IModel " + pi.PropertyType.FullName + " does not have a load select method.")
+        { }
+    }
+
+    public class MultipleSelectOptionValueMethodsException : Exception{
+        public MultipleSelectOptionValueMethodsException(Type t,MethodInfo mi)
+            : base("The IModel type "+t.FullName+" is not valid becaose there is more than one ModelSelectList load function, the additional function declared is "+mi.Name+".")
+        {}
     }
 }

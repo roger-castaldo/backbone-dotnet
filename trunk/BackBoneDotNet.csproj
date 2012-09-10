@@ -44,6 +44,7 @@
     <Compile Include="Attributes\ModelLoadAllMethod.cs" />
     <Compile Include="Attributes\ModelLoadMethod.cs" />
     <Compile Include="Attributes\ModelRoute.cs" />
+    <Compile Include="Attributes\ModelSelectListMethod.cs" />
     <Compile Include="Attributes\ModelViewClass.cs" />
     <Compile Include="Attributes\ModelViewTag.cs" />
     <Compile Include="Attributes\ReadOnlyModelProperty.cs" />
@@ -51,10 +52,18 @@
     <Compile Include="DefinitionValidator.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Interfaces\IHttpRequest.cs" />
+    <Compile Include="Interfaces\IJSGenerator.cs" />
     <Compile Include="Interfaces\IModel.cs" />
+    <Compile Include="JSGenerators\CollectionGenerator.cs" />
+    <Compile Include="JSGenerators\EditAddFormGenerator.cs" />
+    <Compile Include="JSGenerators\ModelDefinitionGenerator.cs" />
+    <Compile Include="JSGenerators\NamespaceGenerator.cs" />
+    <Compile Include="JSGenerators\SelectListCallGenerator.cs" />
+    <Compile Include="JSGenerators\ViewGenerator.cs" />
     <Compile Include="JSON.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RequestHandler.cs" />
+    <Compile Include="Structures.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>

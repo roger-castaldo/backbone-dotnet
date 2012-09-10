@@ -75,6 +75,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                     paths.Add(new sPathTypePair(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path), t));
                 }
                 bool found = false;
+                bool foundLoadSelMethod = false;
                 foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Static))
                 {
                     if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
@@ -94,6 +95,47 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     found = true;
                                 }
                             }
+                        }
+                    }
+                    else if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
+                    {
+                        if (mi.ReturnType.FullName != typeof(sModelSelectOptionValue[]).FullName
+                            && mi.ReturnType.FullName != typeof(List<sModelSelectOptionValue>).FullName)
+                        {
+                            if (!invalidModels.Contains(t))
+                                invalidModels.Add(t);
+                            errors.Add(new InvalidModelSelectOptionValueReturnException(t, mi));
+                        }
+                        else
+                        {
+                            if (foundLoadSelMethod)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new MultipleSelectOptionValueMethodsException(t, mi));
+                            }
+                            foundLoadSelMethod = true;
+                        }
+                    }
+                }
+                foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (new List<Type>(pi.PropertyType.GetInterfaces()).Contains(typeof(IModel)))
+                    {
+                        bool foundSelMethod = false;
+                        foreach (MethodInfo mi in pi.PropertyType.GetMethods(BindingFlags.Public | BindingFlags.Static))
+                        {
+                            if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
+                            {
+                                foundSelMethod = true;
+                                break;
+                            }
+                        }
+                        if (!foundSelMethod)
+                        {
+                            if (!invalidModels.Contains(t))
+                                invalidModels.Add(t);
+                            errors.Add(new NoModelSelectMethodException(t, pi));
                         }
                     }
                 }

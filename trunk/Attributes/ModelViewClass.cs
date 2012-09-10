@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
-    [AttributeUsage(AttributeTargets.Class,AllowMultiple=false)]
+    [AttributeUsage(AttributeTargets.Class,AllowMultiple=true)]
     public class ModelViewClass : Attribute
     {
         private string _className;

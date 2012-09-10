@@ -6,7 +6,8 @@ namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
     public enum ModelViewTagTypes
     {
-        li,
+        ul,
+        ol,
         tr,
         div
     }
