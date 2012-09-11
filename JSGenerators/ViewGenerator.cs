@@ -39,10 +39,42 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.Append("\t\t$(this.el).html(");
             foreach (string prop in properties)
                 sb.Append(string.Format(fstring, prop,(properties.IndexOf(prop) == properties.Count-1 ? "" : "+")));
+            if (hasUpdate || hasDelete)
+            {
+                switch (tag.ToLower())
+                {
+                    case "tr":
+                        sb.Append("+'<td class=\"'+this.className+' buttons\">'");
+                        break;
+                    case "ul":
+                    case "ol":
+                        sb.Append("+'<li class=\"'+this.className+' buttons\">'");
+                        break;
+                    default:
+                        sb.Append("+'<"+tag+" class=\"'+this.className+' buttons\">'");
+                        break;
+                }
+            }
             if (hasUpdate)
                 sb.Append("+'<span class=\"'+this.className+' button edit\">Edit</span>'");
             if (hasDelete)
                 sb.Append("+'<span class=\"'+this.className+' button delete\">Delete</span>'");
+            if (hasUpdate || hasDelete)
+            {
+                switch (tag.ToLower())
+                {
+                    case "tr":
+                        sb.Append("+'</td>'");
+                        break;
+                    case "ul":
+                    case "ol":
+                        sb.Append("+'</li>'");
+                        break;
+                    default:
+                        sb.Append("+'</" + tag + ">'");
+                        break;
+                }
+            }
             sb.AppendLine(");");
             sb.AppendLine("\t\treturn this;");
             sb.AppendLine("\t}"+(hasUpdate || hasDelete ? "," : ""));
