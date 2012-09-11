@@ -6,6 +6,10 @@ using Org.Reddragonit.BackBoneDotNet.Attributes;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator generates the javascript code for a model collection.
+     * The collection object will exist as the path namespace.type.Collection
+     */
     internal class CollectionGenerator : IJSGenerator
     {
         #region IJSGenerator Members

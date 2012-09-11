@@ -4,6 +4,10 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to specify which tag to use for the model view, either one from the 
+     * enumerated list, or just a string containing the html tag
+     */
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class ModelViewTag :Attribute
     {

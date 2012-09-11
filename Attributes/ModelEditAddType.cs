@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to specify the type of form to use when adding/editing a model (inline or creating a dialog)
+     */
     [AttributeUsage(AttributeTargets.Class,AllowMultiple=false)]
     public class ModelEditAddType : Attribute
     {

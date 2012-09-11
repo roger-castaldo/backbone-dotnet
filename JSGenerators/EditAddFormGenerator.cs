@@ -7,6 +7,10 @@ using System.Reflection;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator is used to generate the edit/add form code 
+     * to be used by the view/model
+     */
     internal class EditAddFormGenerator : IJSGenerator
     {
 

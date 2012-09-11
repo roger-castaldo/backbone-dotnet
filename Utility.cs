@@ -7,13 +7,22 @@ using System.IO;
 
 namespace Org.Reddragonit.BackBoneDotNet
 {
+    /*
+     * This class houses some basic utility functions used by other classes to access embedded resources, search
+     * for types, etc.
+     */
     internal static class Utility
     {
+        //max time to hold an item in cache (minutes)
         private const int _CACHE_TIMEOUT_MINUTES = 60;
+        //internval between checks to clean out cache (ms)
         private const int _CACHE_TIMER_INTERVAL = 300;
 
+        //houses a cache of Types found through locate type, this is used to increase performance
         private static Dictionary<string, CachedItemContainer> _TYPE_CACHE;
+        //houses a cache of Type instances through locate type instances, this is used to increate preformance
         private static Dictionary<string, CachedItemContainer> _INSTANCES_CACHE;
+        //timer used to cleanup expired cache items
         private static Timer _CLEANUP_TIMER;
 
         static Utility()

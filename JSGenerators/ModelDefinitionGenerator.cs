@@ -8,6 +8,10 @@ using Org.Reddragonit.BackBoneDotNet;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator is used to generate the model definition code.
+     * it will be at the path namespace.type.Model
+     */
     internal class ModelDefinitionGenerator :IJSGenerator
     {
         private void _AppendDefaults(Type modelType,List<string> properties,StringBuilder sb)
