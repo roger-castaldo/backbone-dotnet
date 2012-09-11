@@ -13,32 +13,49 @@ namespace Org.Reddragonit.BackBoneDotNet
 {
     public static class RequestHandler
     {
+        //period interval between checks for cleaning up the cache (ms)
         private const int _CACHE_TIMER_PERIOD = 60000;
+        //maximum time to cache a javascript file without being accessed (minutes)
         private const int _CACHE_TIMEOUT_MINUTES = 60;
 
+        //how to startup the system as per their names, either disable invalid models or throw 
+        //and exception about them
         public enum StartTypes{
             DisableInvalidModels,
             ThrowInvalidExceptions
         }
 
+        //houses the regex used to check and see if a request can be handled by this system
         private static Regex _REG_URL;
+        //flag used to indicate if the handler is running
         private static bool _running;
+        //houses all load all calls available, key is the url
         private static Dictionary<string, MethodInfo> _LoadAlls;
+        //houses all load calls available, key is the url
         private static Dictionary<string, MethodInfo> _Loads;
+        //houses all the select list calls, key is the url
         private static Dictionary<string, MethodInfo> _SelectLists;
+        //houses all the cached javascript, key is the url
         private static Dictionary<string, CachedItemContainer> _CachedJScript;
+        //houses a mapping from urls to model type definitions
         private static Dictionary<string, Type> _TypeMaps;
+        //houses the url for jquery js file
         private static string _jqueryURL;
+        //houses the url for json js file
         private static string _jsonURL;
+        //houses the url for the backbone js file
         private static string _backboneURL;
+        //houses the timer used to clean up cache
         private static Timer _cacheTimer;
 
+        //houses a list of invalid models if StartTypes.DisableInvalidModels is passed for a startup parameter
         private static List<Type> _invalidModels;
         public static List<Type> InvalidModels
         {
             get { return _invalidModels; }
         }
 
+        //called by the cache timer to clean up cached javascript
         private static void _CleanJSCache(object obj)
         {
             lock (_CachedJScript)
@@ -54,6 +71,13 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
         }
 
+        /*
+         * This function will start the request handler, it does this by first validating 
+         * all located models, and will react according to the starttype specified.
+         * It will also assign jquery,json and backbone urls as specified.
+         * It will then create the url check regex, locat all load,loadalls, and select list methods
+         * as well as specify types to urls, once complete it flags running to allow for handling requests.
+         */
         public static void Start(StartTypes startType,string jqueryURL,string jsonURL,string backboneURL)
         {
             List<Exception> errors = DefinitionValidator.Validate(out _invalidModels);
@@ -96,6 +120,11 @@ namespace Org.Reddragonit.BackBoneDotNet
             _running = true;
         }
 
+        /*
+         * Method called to append the regular expression code chunk to the existing regulare expression
+         * to handle the supplied model type.  it does this through checking the different specified 
+         * attributes to specify hosts, available commands, etc.
+         */
         private static void AppendURLRegex(ref string reg, Type t)
         {
             if (reg.EndsWith(")"))
@@ -160,13 +189,24 @@ namespace Org.Reddragonit.BackBoneDotNet
             reg += ")";
         }
 
+        // called to stop the handler and clear up resources
         public static void Stop()
         {
             _running = false;
             _REG_URL = null;
             _invalidModels = null;
+            _cacheTimer.Dispose();
+            _jsonURL = null;
+            _jqueryURL = null;
+            _backboneURL = null;
+            _invalidModels = null;
+            _LoadAlls = null;
+            _Loads = null;
+            _SelectLists = null;
+            _TypeMaps = null;
         }
 
+        //uses the compiled regular expression to determin if this handler handles the given url and request method
         public static bool HandlesURL(Uri url,string method)
         {
             if (_running)
@@ -174,6 +214,15 @@ namespace Org.Reddragonit.BackBoneDotNet
             return false;
         }
 
+
+        /*
+         * Called to handle a given web request.  The system uses IHttpRequest to allow for different web server 
+         * systems.  It checks to see if the url is for jquery,json or backbone, if none of those, it generates the required model 
+         * javascript for the given url, as specified by an attribute or attributes in Models, that define the 
+         * url that the model/view/collection javascript is available on.
+         * If the call is not for javascript it processes the given action using the http method (GET = load,
+         * DELETE = delete, POST = create, PUT = update, SELECT = SelectList)
+         */
         public static void HandleRequest(IHttpRequest request)
         {
             if (request.URL.AbsolutePath.EndsWith(".js") && request.Method.ToUpper() == "GET")
@@ -313,6 +362,9 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
         }
 
+        /*
+         * Called to convert a given json object to the expected type.
+         */
         private static object _ConvertObjectToType(object obj, Type expectedType)
         {
             if (expectedType.Equals(typeof(bool)) && (obj == null))
@@ -411,6 +463,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
         }
 
+        //houses the list of Javascript generators, broken apart into generators
+        //for cleaner code
         private static readonly IJSGenerator[] _generators = new IJSGenerator[]{
             new NamespaceGenerator(),
             new ModelDefinitionGenerator(),
@@ -420,6 +474,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             new EditAddFormGenerator()
         };
 
+        //called to generate Javascript for the given model.  It uses all the specified IJSGenerators above
+        //they were broken into components for easier code reading.
         private static string _GenerateModelJSFile(Type t,string host)
         {
             string ret = "";

@@ -4,6 +4,10 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet
 {
+    /*
+     * Used to provide a Select Option for editing and adding models when the 
+     * model property is another model, return through Select methods.
+     */
     public struct sModelSelectOptionValue
     {
         private string _id;

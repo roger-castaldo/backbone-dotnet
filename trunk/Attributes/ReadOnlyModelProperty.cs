@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to specify an uneditable readonly property for a given model
+     */
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class ReadOnlyModelProperty : Attribute
     {

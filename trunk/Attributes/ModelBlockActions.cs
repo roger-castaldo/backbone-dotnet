@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to block given actions for a model, those being Add,Edit,Delete
+     */
     [AttributeUsage(AttributeTargets.Class,AllowMultiple=false)]
     public class ModelBlockActions : Attribute
     {

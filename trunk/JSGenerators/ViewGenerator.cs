@@ -7,6 +7,10 @@ using System.Reflection;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator is used to generate the javascript for the view.
+     * The view is accessible at namespace.type.View
+     */
     internal class ViewGenerator : IJSGenerator
     {
         private void _AppendClassName(Type modelType, StringBuilder sb)

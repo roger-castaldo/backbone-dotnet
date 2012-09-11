@@ -5,6 +5,9 @@ using Org.Reddragonit.BackBoneDotNet.Interfaces;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator generates the namespaced object for the given model type
+     */
     internal class NamespaceGenerator : IJSGenerator
     {
         #region IJSGenerator Members

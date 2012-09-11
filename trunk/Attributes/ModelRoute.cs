@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to specify the route(path) to use for accessing the model
+     */
     [AttributeUsage(AttributeTargets.Class,AllowMultiple=true)]
     public class ModelRoute : Attribute
     {

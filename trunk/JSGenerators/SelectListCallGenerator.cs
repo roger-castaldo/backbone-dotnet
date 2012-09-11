@@ -7,6 +7,10 @@ using Org.Reddragonit.BackBoneDotNet.Attributes;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator generates code to access a select list.
+     * the select list function is available at namespace.type.SelectListCallGenerator
+     */
     internal class SelectListCallGenerator : IJSGenerator
     {
         #region IJSGenerator Members

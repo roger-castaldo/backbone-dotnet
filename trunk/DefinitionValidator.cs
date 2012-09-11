@@ -31,6 +31,20 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
         }
 
+        /*
+         * Called to validate all model definitions through the following checks:
+         * 1.  Check to make sure that there is at least 1 route specified for the model.
+         * 2.  Check for an empty constructor, and if no empty constructor is specified, ensure that the create method is blocked
+         * 3.  Check the applied model routes for the current model as well as the saved 
+         *  routes to ensure that the specified model route is unique.
+         * 4.  Check to make sure only 1 load method exists for a model
+         * 5.  Check to make sure only 1 model select load method exists
+         * 6.  Check to make sure that the select model method has the right return type
+         * 7.  Check to make sure that all properties specified that return an IModel type have a 
+         *  Select List method.
+         * 8.  Check to make sure a Load method exists
+         * 9.  Check to make sure that the id property is not blocked.
+         */
         internal static List<Exception> Validate(out List<Type> invalidModels)
         {
             List<Exception> errors = new List<Exception>();
