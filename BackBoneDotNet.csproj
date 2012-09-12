@@ -55,6 +55,7 @@
     <Compile Include="Interfaces\IJSGenerator.cs" />
     <Compile Include="Interfaces\IModel.cs" />
     <Compile Include="JSGenerators\CollectionGenerator.cs" />
+    <Compile Include="JSGenerators\CollectionViewGenerator.cs" />
     <Compile Include="JSGenerators\EditAddFormGenerator.cs" />
     <Compile Include="JSGenerators\ModelDefinitionGenerator.cs" />
     <Compile Include="JSGenerators\NamespaceGenerator.cs" />

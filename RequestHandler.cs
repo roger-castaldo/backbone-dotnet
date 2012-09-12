@@ -480,6 +480,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             new ModelDefinitionGenerator(),
             new CollectionGenerator(),
             new ViewGenerator(),
+            new CollectionViewGenerator(),
             new SelectListCallGenerator(),
             new EditAddFormGenerator()
         };
