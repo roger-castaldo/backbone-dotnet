@@ -311,9 +311,19 @@ namespace Org.Reddragonit.BackBoneDotNet
                         if (ret != null)
                         {
                             Hashtable ht = (Hashtable)JSON.JsonDecode(request.ParameterContent);
+                            Hashtable IModelTypes = new Hashtable();
                             foreach (string str in ht.Keys)
-                                ret.GetType().GetProperty(str).SetValue(ret, _ConvertObjectToType(ht[str], ret.GetType().GetProperty(str).PropertyType), new object[0]);
+                            {
+                                var obj = _ConvertObjectToType(ht[str], ret.GetType().GetProperty(str).PropertyType);
+                                if (new List<Type>(ret.GetType().GetProperty(str).PropertyType.GetInterfaces()).Contains(typeof(IModel)))
+                                    IModelTypes.Add(str, obj);
+                                ret.GetType().GetProperty(str).SetValue(ret, obj, new object[0]);
+                            }
                             ret = ((IModel)ret).Update();
+                            if ((bool)ret && IModelTypes.Count > 0)
+                                ret = IModelTypes;
+                            else if (!(bool)ret)
+                                ret = null;
                         }
                         break;
                     case "DELETE":
