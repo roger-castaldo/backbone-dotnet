@@ -80,8 +80,14 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         Type propType = modelType.GetProperty(propName).PropertyType;
                         if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                         {
-                            sb.AppendLine("\t\t$(dlog.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "').id);");
-                            sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + ": new " + modelType.FullName.Replace(".", "_") + ".Model({id:$(dlog.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()})});");
+                            sb.AppendLine("\t\tvar sel" + propName + " = $(dlog.find('select[name=\"" + propName + "\"]')[0]);");
+                            sb.AppendLine("\t\tvar opts = " + propType.FullName + ".SelectList();");
+                            sb.AppendLine("\t\tfor(var x=0;x<opts.length;x++){");
+                            sb.AppendLine("\t\t\tvar opt = opts[x];");
+                            sb.AppendLine("\t\t\tsel" + propName + ".append($('<option value=\"'+opt.ID+'\">'+opt.Text+'</option>'));");
+                            sb.AppendLine("\t\t}");
+                            sb.AppendLine("\t\tsel.val(view.model.get('" + propName + "').id);");
+                            sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + ": new " + propType.FullName + ".Model({id:$(dlog.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()})});");
                         }
                         else if (propType.IsEnum)
                         {
@@ -131,6 +137,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sbAcceptFunction.AppendLine("\t\t\tvar view = event.data.view;");
             sbAcceptFunction.AppendLine("\t\t\tvar el = view.$el;");
             sbAcceptFunction.AppendLine("\t\t\tvar model = view.model;");
+            sbAcceptFunction.AppendLine("\t\t\tvar changes = {};");
             
             foreach (string propName in properties)
             {
@@ -143,11 +150,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         {
                             sb.AppendLine("\t\t$(el.find('" + tstring + "." + propName + "')[0]).html($('<select name=\"" + propName + "\"></select>'));");
                             sb.AppendLine("\t\tvar sel" + propName + " = $(el.find('select[name=\"" + propName + "\"]')[0]);");
-                            sb.AppendLine("\t\tfor(opt in " + modelType.FullName + ".SelectList()){");
-                            sb.AppendLine("\t\t\tsel"+propName+".append($('<option value=\"'+opt.id+'\">'+sel.Text+'</option>'));");
-                            sb.AppendLine("}");
+                            sb.AppendLine("\t\tvar opts = " + propType.FullName + ".SelectList();");
+                            sb.AppendLine("\t\tfor(var x=0;x<opts.length;x++){");
+                            sb.AppendLine("\t\t\tvar opt = opts[x];");
+                            sb.AppendLine("\t\t\tsel"+propName+".append($('<option value=\"'+opt.ID+'\">'+opt.Text+'</option>'));");
+                            sb.AppendLine("\t\t}");
                             sb.AppendLine("\t\t$(el.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "').id);");
-                            sbAcceptFunction.AppendLine("\t\t\t\tmodel.set({" + propName + ": new " + modelType.FullName.Replace(".", "_") + ".Model({id:$(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()})});");
+                            sbAcceptFunction.AppendLine("\t\t\t\tif (model.get('" + propName + "').get('id') != $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()){");
+                            sbAcceptFunction.AppendLine("\t\t\t\t\tchanges."+propName+" = new " + propType.FullName + ".Model({id:$(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()});");
+                            sbAcceptFunction.AppendLine("\t\t\t\t}");
                         }
                         else if (propType.IsEnum)
                         {
@@ -156,13 +167,17 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             foreach (string str in Enum.GetNames(propType))
                                 sb.AppendLine("\t\tsel.append('<option value=\"" + str + "\">" + str + "</option>');");
                             sb.AppendLine("\t\t$(el.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
-                            sbAcceptFunction.AppendLine("\t\t\t\tmodel.set({" + propName + ": $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()});");
+                            sbAcceptFunction.AppendLine("\t\t\t\tif (model.get('" + propName + "') != $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()){");
+                            sbAcceptFunction.AppendLine("\t\t\t\t\tchanges." + propName + " = $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val();");
+                            sbAcceptFunction.AppendLine("\t\t\t\t}");
                         }
                         else
                         {
                             sb.AppendLine("\t\t$(el.find('" + tstring + "." + propName + "')[0]).html($('<input type=\"text\" name=\"" + propName + "\"/>'));");
                             sb.AppendLine("\t\t$(el.find('input[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
-                            sbAcceptFunction.AppendLine("\t\t\t\tmodel.set({" + propName + ": $(el.find('input[name=\"" + propName + "\"]')[0]).val()});");
+                            sbAcceptFunction.AppendLine("\t\t\t\tif (model.get('" + propName + "') != $(el.find('input[name=\"" + propName + "\"]')[0]).val()){");
+                            sbAcceptFunction.AppendLine("\t\t\t\t\tchanges." + propName + " = $(el.find('input[name=\"" + propName + "\"]')[0]).val();");
+                            sbAcceptFunction.AppendLine("\t\t\t\t}");
                         }
                     }
                 }
@@ -177,7 +192,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\t\tvar butOkay = $(el.find('"+tstring+".buttons>span.accept')[0]);");
             sb.AppendLine("\t\t\tbutOkay.bind('click',{view:view},function(event){");
             sb.AppendLine(sbAcceptFunction.ToString());
-            sb.AppendLine("\t\t\t\tif (model.hasChanged()){");
+            sb.AppendLine("\t\t\t\tif (!_.isEmpty(changes)){");
+            sb.AppendLine("\t\t\t\t\tmodel.set(changes);");
             sb.AppendLine("\t\t\t\t\tmodel.save();");
             sb.AppendLine("\t\t\t\t}else{");
             sb.AppendLine("\t\t\t\t\tview.render();");

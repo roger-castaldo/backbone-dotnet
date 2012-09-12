@@ -30,19 +30,27 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             switch (tag.ToLower())
             {
                 case "tr":
-                    fstring = "'<td class=\"'+this.className+' {0}\">'+this.model.get('{0}')+'</td>'{1}";
+                    fstring = "'<td class=\"'+this.className+' {0}\">'+{1}+'</td>'{2}";
                     break;
                 case "ul":
                 case "ol":
-                    fstring = "'<li class=\"'+this.className+' {0}\">'+this.model.get('{0}')+'</li>'{1}";
+                    fstring = "'<li class=\"'+this.className+' {0}\">'+{1}+'</li>'{2}";
                     break;
                 default:
-                    fstring = "'<" + tag + " class=\"'+this.className+' {0}\">'+this.model.get('{0}')+'</" + tag + ">'{1}";
+                    fstring = "'<" + tag + " class=\"'+this.className+' {0}\">'+{1}+'</" + tag + ">'{2}";
                     break;
             }
             sb.Append("\t\t$(this.el).html(");
             foreach (string prop in properties)
-                sb.Append(string.Format(fstring, prop,(properties.IndexOf(prop) == properties.Count-1 ? "" : "+")));
+            {
+                Type PropType = modelType.GetProperty(prop).PropertyType;
+                if (new List<Type>(PropType.GetInterfaces()).Contains(typeof(IModel)))
+                {
+                    string code = _RecurAddRenderModelPropertyCode(prop,PropType,"this.model.get('"+prop+"').get('{0}')");
+                    sb.Append(string.Format(fstring, prop,code, (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                }else
+                    sb.Append(string.Format(fstring, prop,string.Format("this.model.get('{0}')",prop), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+            }
             if (hasUpdate || hasDelete)
             {
                 switch (tag.ToLower())
@@ -104,6 +112,29 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }
         }
+
+		private string _RecurAddRenderModelPropertyCode(string prop,Type PropType,string modelstring)
+		{
+            string className = PropType.FullName.Replace(".", " ");
+            foreach (ModelViewClass mvc in PropType.GetCustomAttributes(typeof(ModelViewClass), false))
+                className += mvc.ClassName + " ";
+            string code = "";
+			foreach (PropertyInfo pi in PropType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+		    {
+			    if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
+			    {
+				    if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length == 0){
+                        Type ptype = pi.PropertyType;
+                        if (new List<Type>(ptype.GetInterfaces()).Contains(typeof(IModel))){
+                            code += (code.EndsWith(">'") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+" + _RecurAddRenderModelPropertyCode(pi.Name,ptype,string.Format(modelstring, pi.Name)+".get('{0}')") + "+'</span>'";
+                        }else{
+                            code += (code.EndsWith(">'") ? "+" : "")+"'<span class=\"" + className + " " + pi.Name + "\">'+" + string.Format(modelstring, pi.Name) + "+'</span>'";
+                        }
+                    }
+			    }
+		    }
+            return code;
+		}
 
         #region IJSGenerator Members
 
