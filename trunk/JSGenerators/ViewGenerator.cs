@@ -20,7 +20,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.Append(str + " ");
             foreach (ModelViewClass mvc in modelType.GetCustomAttributes(typeof(ModelViewClass), false))
                 sb.Append(mvc.ClassName + " ");
-            sb.AppendLine("\",");
+            sb.AppendLine(" View\",");
         }
 
         private void _AppendRenderFunction(Type modelType,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb)
