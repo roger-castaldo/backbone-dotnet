@@ -16,6 +16,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties)
         {
+            if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
+            {
+                if (((int)((ModelBlockJavascriptGeneration)modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false)[0]).BlockType & (int)ModelBlockJavascriptGenerations.Collection) == (int)ModelBlockJavascriptGenerations.Collection)
+                    return "";
+            }
             string urlRoot = "";
             foreach (ModelRoute mr in modelType.GetCustomAttributes(typeof(ModelRoute), false))
             {

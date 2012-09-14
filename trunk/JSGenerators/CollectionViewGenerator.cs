@@ -22,6 +22,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties)
         {
+            if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
+            {
+                if (((int)((ModelBlockJavascriptGeneration)modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false)[0]).BlockType & (int)ModelBlockJavascriptGenerations.CollectionView) == (int)ModelBlockJavascriptGenerations.CollectionView)
+                    return "";
+            }
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionViewGenerator");
             sb.AppendLine(modelType.FullName + ".CollectionView = Backbone.View.extend({");
