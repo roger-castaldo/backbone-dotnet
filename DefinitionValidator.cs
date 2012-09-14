@@ -148,6 +148,13 @@ namespace Org.Reddragonit.BackBoneDotNet
                     if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
                     {
                         Type rtype = mi.ReturnType;
+                        if (rtype.FullName.StartsWith("System.Nullable"))
+                        {
+                            if (rtype.IsGenericType)
+                                rtype = rtype.GetGenericArguments()[0];
+                            else
+                                rtype = rtype.GetElementType();
+                        }
                         if (rtype.IsArray)
                             rtype = rtype.GetElementType();
                         else if (rtype.IsGenericType)
@@ -185,6 +192,13 @@ namespace Org.Reddragonit.BackBoneDotNet
                 foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {
                     Type rtype = pi.PropertyType;
+                    if (rtype.FullName.StartsWith("System.Nullable"))
+                    {
+                        if (rtype.IsGenericType)
+                            rtype = rtype.GetGenericArguments()[0];
+                        else
+                            rtype = rtype.GetElementType();
+                    }
                     if (rtype.IsArray)
                         rtype = rtype.GetElementType();
                     else if (rtype.IsGenericType)
