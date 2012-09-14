@@ -41,6 +41,7 @@
     <Compile Include="Attributes\ModelEditAddType.cs" />
     <Compile Include="Attributes\ModelIgnoreProperty.cs" />
     <Compile Include="Attributes\ModelJSFilePath.cs" />
+    <Compile Include="Attributes\ModelListMethod.cs" />
     <Compile Include="Attributes\ModelLoadAllMethod.cs" />
     <Compile Include="Attributes\ModelLoadMethod.cs" />
     <Compile Include="Attributes\ModelRoute.cs" />
@@ -58,6 +59,7 @@
     <Compile Include="JSGenerators\CollectionViewGenerator.cs" />
     <Compile Include="JSGenerators\EditAddFormGenerator.cs" />
     <Compile Include="JSGenerators\ModelDefinitionGenerator.cs" />
+    <Compile Include="JSGenerators\ModelListCallGenerators.cs" />
     <Compile Include="JSGenerators\NamespaceGenerator.cs" />
     <Compile Include="JSGenerators\SelectListCallGenerator.cs" />
     <Compile Include="JSGenerators\ViewGenerator.cs" />
@@ -66,6 +68,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RequestHandler.cs" />
     <Compile Include="Structures.cs" />
+    <Compile Include="URLUtility.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>

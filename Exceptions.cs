@@ -84,7 +84,30 @@ namespace Org.Reddragonit.BackBoneDotNet
     //thrown when more than one model select list function is specified
     public class MultipleSelectOptionValueMethodsException : Exception{
         public MultipleSelectOptionValueMethodsException(Type t,MethodInfo mi)
-            : base("The IModel type "+t.FullName+" is not valid becaose there is more than one ModelSelectList load function, the additional function declared is "+mi.Name+".")
+            : base("The IModel type "+t.FullName+" is not valid because there is more than one ModelSelectList load function, the additional function declared is "+mi.Name+".")
         {}
+    }
+
+    //thrown when the return type for the ModelListMethod function is not valid
+    public class InvalidModelListMethodReturnException : Exception{
+        public InvalidModelListMethodReturnException(Type t, MethodInfo mi)
+            : base("The IModel type " + t.FullName + " is not valid because the return type for the model list method " + mi.Name + " is not either List<" + t.FullName + "> or " + t.FullName + "[].")
+        { }
+    }
+
+    //thrown when the path specified does not contain the proper number of method parameters
+    public class InvalidModelListParameterCountException : Exception
+    {
+        public InvalidModelListParameterCountException(Type t, MethodInfo mi, string path)
+            : base("The IModel type " + t.FullName + " is not valid because the number of parameters for the method " + mi.Name + " does not match the number of variables in the path " + path)
+        { }
+    }
+
+    //thrown when the parameter of a ModelListMethod is not a usable parameter
+    public class InvalidModelListParameterTypeException : Exception
+    {
+        public InvalidModelListParameterTypeException(Type t, MethodInfo mi, ParameterInfo pi)
+            : base("The IModel type " + t.FullName + " is not valid because the parameter " + pi.Name + " in the method " + mi.Name + " is not a usable parameter for a ModelListMethod.")
+        { }
     }
 }
