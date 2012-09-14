@@ -24,4 +24,11 @@ namespace Org.Reddragonit.BackBoneDotNet.Attributes
         inline,
         dialog
     }
+
+    public enum ModelBlockJavascriptGenerations
+    {
+        Collection = 1,
+        View = 2,
+        CollectionView = 4
+    }
 }

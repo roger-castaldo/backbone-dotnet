@@ -38,6 +38,7 @@
   <ItemGroup>
     <Compile Include="Attributes\Enums.cs" />
     <Compile Include="Attributes\ModelBlockActions.cs" />
+    <Compile Include="Attributes\ModelBlockJavascriptGeneration.cs" />
     <Compile Include="Attributes\ModelEditAddType.cs" />
     <Compile Include="Attributes\ModelIgnoreProperty.cs" />
     <Compile Include="Attributes\ModelJSFilePath.cs" />
