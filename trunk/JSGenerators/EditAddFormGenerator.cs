@@ -31,25 +31,50 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (!readOnlyProperties.Contains(propName))
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
-                        sb.Append("\t\t\ttbl.append('<tr><td class=\"fieldName\">" + propName + "</td><td class=\"fieldInput " + propType.Name + "\" proptype=\"" + propType.Name + "\">");
-                        if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
+                        bool array = false;
+                        if (propType.IsArray)
                         {
-                            List<string> dispFields = new List<string>();
-                            sb.Append("<select name=\"" + propName + "\" collection=\"" + propType.FullName + "\"></select>");
+                            array = true;
+                            propType = propType.GetElementType();
                         }
+                        else if (propType.IsGenericType)
+                        {
+                            if (propType.GetGenericTypeDefinition() == typeof(List<>))
+                            {
+                                array = true;
+                                propType = propType.GetGenericArguments()[0];
+                            }
+                        }
+                        sb.Append("\t\t\ttbl.append($('<tr><td class=\"fieldName\">" + propName + "</td><td class=\"fieldInput " + propType.Name + "\" proptype=\"" + propType.Name + "\">");
+                        if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
+                            sb.Append("<select name=\"" + propName + "\" "+(array ? "multiple=\"multiple\"" : "")+"></select>");
                         else if (propType.IsEnum)
                         {
-                            sb.Append("<select name=\"" + propName + "\" enumtype=\"" + propType.FullName + "\">");
+                            sb.Append("<select name=\"" + propName + "\" " + (array ? "multiple=\"multiple\"" : "") + ">");
                             foreach (string str in Enum.GetNames(propType))
                                 sb.Append("<option value=\"" + str + "\">" + str + "</option>");
                             sb.Append("</select>");
                         }
                         else
-                            sb.Append("<input type=\"text\" name=\"" + propName + "\"/>");
-                        sb.AppendLine("</td></tr>');");
+                        {
+                            if (array)
+                                sb.Append("<input type=\"text\" name=\"" + propName + "\" proptype=\"" + propType.FullName + "\"/><span class=\"button add\">+</span>");
+                            else
+                                sb.Append("<input type=\"text\" name=\"" + propName + "\" proptype=\""+propType.FullName+"\"/>");
+                        }
+                        sb.AppendLine("</td></tr>'));");
                     }
                 }
             }
+            sb.AppendLine("\t\t\tvar butAdds = tbl.find('span.button.add');");
+            sb.AppendLine("\t\t\tfor(var x=0;x<butAdds.length;x++){");
+            sb.AppendLine("\t\t\t\t$(butAdds[x]).bind('click',{button:$(butAdds[x])},function(event){");
+            sb.AppendLine("\t\t\t\t\tvar inp = $(event.data.button.prev()).clone();");
+            sb.AppendLine("\t\t\t\t\tinp.val('');");
+            sb.AppendLine("\t\t\t\t\tevent.data.button.before('<br/>');");
+            sb.AppendLine("\t\t\t\t\tevent.data.button.before(inp);");
+            sb.AppendLine("\t\t\t\t});");
+            sb.AppendLine("\t\t\t}");
             sb.AppendLine("\t\t\ttbl.append($('<tr><td colspan=\"2\" style=\"text-align:center\"><span class=\"button accept\">Okay</span><span class=\"button cancel\">Cancel</span></td></tr>'));");
             sb.AppendLine("\t\t\tvar butCancel = $(dlog.find('tr>td>span.cancel')[0]);");
             sb.AppendLine("\t\t\tbutCancel.bind('click',function(){");
@@ -78,6 +103,20 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (!readOnlyProperties.Contains(propName))
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
+                        bool array = false;
+                        if (propType.IsArray)
+                        {
+                            array = true;
+                            propType = propType.GetElementType();
+                        }
+                        else if (propType.IsGenericType)
+                        {
+                            if (propType.GetGenericTypeDefinition() == typeof(List<>))
+                            {
+                                array = true;
+                                propType = propType.GetGenericArguments()[0];
+                            }
+                        }
                         if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                         {
                             sb.AppendLine("\t\tvar sel" + propName + " = $(dlog.find('select[name=\"" + propName + "\"]')[0]);");
@@ -86,18 +125,75 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("\t\t\tvar opt = opts[x];");
                             sb.AppendLine("\t\t\tsel" + propName + ".append($('<option value=\"'+opt.ID+'\">'+opt.Text+'</option>'));");
                             sb.AppendLine("\t\t}");
-                            sb.AppendLine("\t\tsel.val(view.model.get('" + propName + "').id);");
-                            sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + ": new " + propType.FullName + ".Model({id:$(dlog.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()})});");
+                            if (array)
+                            {
+                                sb.AppendLine("\t\tfor(var x=0;x<view.model.get('" + propName + "').length;x++){");
+                                sb.AppendLine("\t\t\t$(sel.find('option[value=\"'+view.model.get('" + propName + "')[x].get('id')+'\"]')[0]).attr('selected', 'selected');");
+                                sb.AppendLine("\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\tvar ar" + propName + " = [];");
+                                sbAcceptFunction.AppendLine("\t\t\tvar opts" + propName + " = dlog.find('select[name=\"" + propName + "\"]'>option:selected');");
+                                sbAcceptFunction.AppendLine("\t\t\tfor(var x=0;x<opts"+propName+".length;x++){");
+                                sbAcceptFunction.AppendLine("\t\t\t\tar" + propName + ".push(new " + propType.FullName + ".Model({id:$(opts" + propName + "[x]).val()}));");
+                                sbAcceptFunction.AppendLine("\t\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + " : ar" + propName + ");");
+                            }
+                            else
+                            {
+                                sb.AppendLine("\t\tsel.val(view.model.get('" + propName + "').id);");
+                                sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + ": new " + propType.FullName + ".Model({id:$(dlog.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()})});");
+                            }
                         }
                         else if (propType.IsEnum)
                         {
-                            sb.AppendLine("\t\t$(dlog.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
-                            sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + ": $(dlog.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()});");
+                            if (array)
+                            {
+                                sb.AppendLine("\t\tvar sel" + propName + " = $(dlog.find('select[name=\"" + propName + "\"]')[0]);");
+                                sb.AppendLine("\t\tfor(var x=0;x<view.model.get('" + propName + "').length;x++){");
+                                sb.AppendLine("\t\t\t$(sel.find('option[value=\"'+view.model.get('" + propName + "')[x]+'\"]')[0]).attr('selected', 'selected');");
+                                sb.AppendLine("\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\tvar ar" + propName + " = [];");
+                                sbAcceptFunction.AppendLine("\t\t\tvar opts" + propName + " = dlog.find('select[name=\"" + propName + "\"]'>option:selected');");
+                                sbAcceptFunction.AppendLine("\t\t\tfor(var x=0;x<opts" + propName + ".length;x++){");
+                                sbAcceptFunction.AppendLine("\t\t\t\tar" + propName + ".push($(opts" + propName + "[x]).val());");
+                                sbAcceptFunction.AppendLine("\t\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + " : ar" + propName + ");");
+                            }
+                            else
+                            {
+                                sb.AppendLine("\t\t$(dlog.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
+                                sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + ": $(dlog.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()});");
+                            }
                         }
                         else
                         {
-                            sb.AppendLine("\t\t$(dlog.find('input[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
-                            sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + ": $(dlog.find('input[name=\"" + propName + "\"]')[0]).val()});");
+                            if (array)
+                            {
+                                sb.AppendLine("\t\tvar ins = dlog.find('input[name=\""+propName+"\"]');");
+                                sb.AppendLine("\t\tfor(var x=1;x<ins.length;x++){");
+                                sb.AppendLine("\t\t\t$(ins[x]).remove();");
+                                sb.AppendLine("\t\t}");
+                                sb.AppendLine("\t\tvar inp = $(ins[0]);");
+                                sb.AppendLine("\t\tfor(var x=0;x<view.model.get('" + propName + "').length;x++){");
+                                sb.AppendLine("\t\t\tinp.val(view.model.get('" + propName + "'));");
+                                sb.AppendLine("\t\t\tif (x<model.get('"+propName+"').length-1){");
+                                sb.AppendLine("\t\t\t\tvar newInp = inp.clone();");
+                                sb.AppendLine("\t\t\t\tinp.after(newInp);");
+                                sb.AppendLine("\t\t\t\tinp.after('<br/>');");
+                                sb.AppendLine("\t\t\t\tinp = newInp;");
+                                sb.AppendLine("\t\t\t}");
+                                sb.AppendLine("\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\tvar ar" + propName + " = [];");
+                                sbAcceptFunction.AppendLine("\t\t\tvar opts" + propName + " = dlog.find('input[name=\"" + propName + "\"] > option:selected');");
+                                sbAcceptFunction.AppendLine("\t\t\tfor(var x=0;x<opts"+propName+".length;x++){");
+                                sbAcceptFunction.AppendLine("\t\t\t\tar" + propName + ".push($(opts" + propName + "[x]).val());");
+                                sbAcceptFunction.AppendLine("\t\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + ": ar"+propName+"});");
+                            }
+                            else
+                            {
+                                sb.AppendLine("\t\t$(dlog.find('input[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
+                                sbAcceptFunction.AppendLine("\t\t\tmodel.set({" + propName + ": $(dlog.find('input[name=\"" + propName + "\"]')[0]).val()});");
+                            }
                         }
                     }
                 }
@@ -146,38 +242,119 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (!readOnlyProperties.Contains(propName))
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
+                        bool array = false;
+                        if (propType.IsArray)
+                        {
+                            array = true;
+                            propType = propType.GetElementType();
+                        }
+                        else if (propType.IsGenericType)
+                        {
+                            if (propType.GetGenericTypeDefinition() == typeof(List<>))
+                            {
+                                array = true;
+                                propType = propType.GetGenericArguments()[0];
+                            }
+                        }
                         if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                         {
-                            sb.AppendLine("\t\t$(el.find('" + tstring + "." + propName + "')[0]).html($('<select name=\"" + propName + "\"></select>'));");
+                            sb.AppendLine("\t\t$(el.find('" + tstring + "." + propName + "')[0]).html($('<select name=\"" + propName + "\" "+(array ? "multiple=\"multiple\"" : "")+"></select>'));");
                             sb.AppendLine("\t\tvar sel" + propName + " = $(el.find('select[name=\"" + propName + "\"]')[0]);");
                             sb.AppendLine("\t\tvar opts = " + propType.FullName + ".SelectList();");
                             sb.AppendLine("\t\tfor(var x=0;x<opts.length;x++){");
                             sb.AppendLine("\t\t\tvar opt = opts[x];");
                             sb.AppendLine("\t\t\tsel"+propName+".append($('<option value=\"'+opt.ID+'\">'+opt.Text+'</option>'));");
                             sb.AppendLine("\t\t}");
-                            sb.AppendLine("\t\t$(el.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "').id);");
-                            sbAcceptFunction.AppendLine("\t\t\t\tif (model.get('" + propName + "').get('id') != $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()){");
-                            sbAcceptFunction.AppendLine("\t\t\t\t\tchanges."+propName+" = new " + propType.FullName + ".Model({id:$(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()});");
-                            sbAcceptFunction.AppendLine("\t\t\t\t}");
+                            if (array)
+                            {
+                                sb.AppendLine("\t\tfor(var x=0;x<view.model.get('"+propName+"').length;x++){");
+                                sb.AppendLine("\t\t\t$(sel" + propName + ".find('option[value=\"'+view.model.get('" + propName + "')[x].get('id')+'\"]')[0]).attr('selected','selected');");
+                                sb.AppendLine("\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\t\tvar opts" + propName + " = el.find('select[name=\"" + propName + "\"]>option:selected');");
+                                sbAcceptFunction.AppendLine("\t\t\t\tif (opts"+propName+".length>0){");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\tchanges." + propName + " = [];");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\tfor(var x=0;x<opts" + propName + ".length;x++){");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\t\tchanges." + propName + ".push(new " + propType.FullName + ".Model({id:$(opts" + propName + "[x]).val()}));");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\t\t}");
+                            }
+                            else
+                            {
+                                sb.AppendLine("\t\t$(el.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "').id);");
+                                sbAcceptFunction.AppendLine("\t\t\t\tif (model.get('" + propName + "').get('id') != $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()){");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\tchanges." + propName + " = new " + propType.FullName + ".Model({id:$(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()});");
+                                sbAcceptFunction.AppendLine("\t\t\t\t}");
+                            }
                         }
                         else if (propType.IsEnum)
                         {
-                            sb.AppendLine("\t\t$(el.find('" + tstring + "." + propName + "')[0]).html($('<select name=\"" + propName + "\"></select>'));");
+                            sb.AppendLine("\t\t$(el.find('" + tstring + "." + propName + "')[0]).html($('<select name=\"" + propName + "\" "+(array ? "multiple=\"multiple\"" : "")+"></select>'));");
                             sb.AppendLine("\t\tvar sel" + propName + " = $(el.find('select[name=\"" + propName + "\"]')[0]);");
                             foreach (string str in Enum.GetNames(propType))
                                 sb.AppendLine("\t\tsel.append('<option value=\"" + str + "\">" + str + "</option>');");
-                            sb.AppendLine("\t\t$(el.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
-                            sbAcceptFunction.AppendLine("\t\t\t\tif (model.get('" + propName + "') != $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()){");
-                            sbAcceptFunction.AppendLine("\t\t\t\t\tchanges." + propName + " = $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val();");
-                            sbAcceptFunction.AppendLine("\t\t\t\t}");
+                            if (array)
+                            {
+                                sb.AppendLine("\t\tfor(var x=0;x<view.model.get('" + propName + "').length;x++){");
+                                sb.AppendLine("\t\t\t$(sel.find('option[value=\"'+view.model.get('" + propName + "')[x]+'\"]')[0]).attr('selected','selected');");
+                                sb.AppendLine("\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\t\tvar opts" + propName + " = el.find('select[name=\"" + propName + "\"]>option:selected');");
+                                sbAcceptFunction.AppendLine("\t\t\t\tif (opts" + propName + ".length>0){");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\tchanges." + propName + " = [];");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\tfor(var x=0;x<opts.length;x++){");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\t\tchanges.push($(opts[x]).val());");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\t\t}");
+                            }
+                            else
+                            {
+                                sb.AppendLine("\t\t$(el.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
+                                sbAcceptFunction.AppendLine("\t\t\t\tif (model.get('" + propName + "') != $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val()){");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\tchanges." + propName + " = $(el.find('select[name=\"" + propName + "\"]>option:selected')[0]).val();");
+                                sbAcceptFunction.AppendLine("\t\t\t\t}");
+                            }
                         }
                         else
                         {
-                            sb.AppendLine("\t\t$(el.find('" + tstring + "." + propName + "')[0]).html($('<input type=\"text\" name=\"" + propName + "\"/>'));");
-                            sb.AppendLine("\t\t$(el.find('input[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
-                            sbAcceptFunction.AppendLine("\t\t\t\tif (model.get('" + propName + "') != $(el.find('input[name=\"" + propName + "\"]')[0]).val()){");
-                            sbAcceptFunction.AppendLine("\t\t\t\t\tchanges." + propName + " = $(el.find('input[name=\"" + propName + "\"]')[0]).val();");
-                            sbAcceptFunction.AppendLine("\t\t\t\t}");
+                            sb.AppendLine("\t\t$(el.find('" + tstring + "." + propName + "')[0]).html($('<input type=\"text\" name=\"" + propName + "\" proptype=\"" + propType.FullName + "\"/>"+(array ? "<span class=\"button add\">+</span>" : "")+"'));");
+                            if (array)
+                            {
+                                sb.AppendLine("\t\tvar inp = $(el.find('input[name=\"" + propName + "\"]')[0]);");
+                                sb.AppendLine("\t\tfor(var x=0;x<view.model.get('" + propName + "').length;x++){");
+                                sb.AppendLine("\t\t\tinp.val(view.model.get('" + propName + "'));");
+                                sb.AppendLine("\t\t\tif (x<model.get('" + propName + "').length-1){");
+                                sb.AppendLine("\t\t\t\tvar newInp = inp.clone();");
+                                sb.AppendLine("\t\t\t\tinp.after(newInp);");
+                                sb.AppendLine("\t\t\t\tinp.after('<br/>');");
+                                sb.AppendLine("\t\t\t\tinp = newInp;");
+                                sb.AppendLine("\t\t\t}");
+                                sb.AppendLine("\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\tvar ar" + propName + " = [];");
+                                sbAcceptFunction.AppendLine("\t\t\tvar opts" + propName + " = dlog.find('input[name=\"" + propName + "\"]');");
+                                sbAcceptFunction.AppendLine("\t\t\tfor(var x=0;x<opts" + propName + ".length;x++){");
+                                sbAcceptFunction.AppendLine("\t\t\t\tar" + propName + ".push($(opts" + propName + "[x]).val());");
+                                sbAcceptFunction.AppendLine("\t\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\tvar changed" + propName + "=false;");
+                                sbAcceptFunction.AppendLine("\t\t\tif(ar"+propName+".length!=model.get('"+propName+"').length){");
+                                sbAcceptFunction.AppendLine("\t\t\t\tchanged=true;");
+                                sbAcceptFunction.AppendLine("\t\t\t}else{");
+                                sbAcceptFunction.AppendLine("\t\t\t\tfor(var x=0;x<ar" + propName + ".length;x++){");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\tif(ar" + propName + " != model.get('" + propName + "')[x]){");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\t\tchanged=true;");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\t\tx=ar" + propName + ".length;");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\t}");
+                                sbAcceptFunction.AppendLine("\t\t\tif(changed){");
+                                sbAcceptFunction.AppendLine("\t\t\t\tchanges." + propName + " = ar" + propName + ";");
+                                sbAcceptFunction.AppendLine("\t\t\t}");
+                            }
+                            else
+                            {
+                                sb.AppendLine("\t\t$(el.find('input[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
+                                sbAcceptFunction.AppendLine("\t\t\t\tif (model.get('" + propName + "') != $(el.find('input[name=\"" + propName + "\"]')[0]).val()){");
+                                sbAcceptFunction.AppendLine("\t\t\t\t\tchanges." + propName + " = $(el.find('input[name=\"" + propName + "\"]')[0]).val();");
+                                sbAcceptFunction.AppendLine("\t\t\t\t}");
+                            }
                         }
                     }
                 }

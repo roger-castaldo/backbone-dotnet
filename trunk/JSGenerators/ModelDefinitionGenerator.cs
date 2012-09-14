@@ -71,7 +71,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             bool add = false;
             foreach (string str in properties)
             {
-                if (new List<Type>(modelType.GetProperty(str).PropertyType.GetInterfaces()).Contains(typeof(IModel)))
+                Type propType = modelType.GetProperty(str).PropertyType;
+                if (propType.IsArray)
+                    propType = propType.GetElementType();
+                else if (propType.IsGenericType)
+                {
+                    if (propType.GetGenericTypeDefinition() == typeof(List<>))
+                        propType = propType.GetGenericArguments()[0];
+                }
+                if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                 {
                     add = true;
                     break;
@@ -85,22 +93,61 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
                 sb.AppendLine("\tparse: function(response) {");
                 sb.AppendLine("\t\tvar attrs = {};");
+
+                StringBuilder sbArrays = new StringBuilder();
+                string addSets = "";
                 foreach (string str in properties)
                 {
-                    if (new List<Type>(modelType.GetProperty(str).PropertyType.GetInterfaces()).Contains(typeof(IModel)))
+                    Type propType = modelType.GetProperty(str).PropertyType;
+                    bool array = false;
+                    if (propType.IsArray)
+                    {
+                        array = true;
+                        propType = propType.GetElementType();
+                    }
+                    else if (propType.IsGenericType)
+                    {
+                        if (propType.GetGenericTypeDefinition() == typeof(List<>))
+                        {
+                            array = true;
+                            propType = propType.GetGenericArguments()[0];
+                        }
+                    }
+                    if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                     {
                         sb.AppendLine("\t\tif (response." + str + " != undefined){");
-                        sb.AppendLine("\t\t\tattrs." + str + " = " + _AppendModelParseConstructor("response." + str + ".{0}", modelType.GetProperty(str).PropertyType) + ";");
+                        if (array)
+                        {
+                            sb.AppendLine("\t\t\tattrs." + str + " = [];");
+                            sb.AppendLine("\t\t\tfor (x in response." + str + "){");
+                            sb.AppendLine("\t\t\t\tattrs." + str + ".push(" + _AppendModelParseConstructor("response." + str + "[x].{0}", propType,"attrs."+str,out addSets) + ");");
+                            if (addSets!="")
+                                sbArrays.AppendLine(addSets);
+                            sb.AppendLine("\t\t\t}");
+                            if (!readOnlyProperties.Contains(str))
+                            {
+                                jsonb.AppendLine("\t\t\tattrs." + str + " = [];");
+                                jsonb.AppendLine("\t\t\tfor(x in this.get('" + str + "')){");
+                                jsonb.AppendLine("\t\t\t\tattrs." + str + ".push({id:this.get('" + str + "')[x].get('id')});");
+                                jsonb.AppendLine("\t\t\t}");
+                            }
+                        }
+                        else
+                        {
+                            sb.AppendLine("\t\t\tattrs." + str + " = " + _AppendModelParseConstructor("response." + str + ".{0}", propType,"attrs."+str,out addSets) + ";");
+                            if (addSets != "")
+                                sbArrays.AppendLine(addSets);
+                            if (!readOnlyProperties.Contains(str))
+                                jsonb.AppendLine("\t\tattrs." + str + " = {id : this.get('" + str + "').get('id')};");
+                        }
                         sb.AppendLine("\t\t}");
-                        if (!readOnlyProperties.Contains(str))
-                            jsonb.AppendLine("\t\tattrs." + str + " = {id : this.get('" + str + "').get('id')};");
                     }
                     else
                     {
                         sb.AppendLine("\t\tif (response." + str + " != undefined){");
                         sb.AppendLine("\t\tattrs." + str + " = response." + str + ";");
                         sb.AppendLine("\t\t}");
-                        if (str!="id" && !readOnlyProperties.Contains(str))
+                        if (str != "id" && !readOnlyProperties.Contains(str))
                             jsonb.AppendLine("\t\tattrs." + str + " = this.get('" + str + "');");
                     }
                 }
@@ -112,9 +159,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-        private string _AppendModelParseConstructor(string p, Type type)
+        private string _AppendModelParseConstructor(string p, Type type,string propertyPath,out string arraySetCodes)
         {
             string ret = "new "+type.FullName+".Model({";
+            arraySetCodes = "";
             foreach (PropertyInfo pi in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
@@ -122,8 +170,40 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length == 0)
                     {
                         Type ptype = pi.PropertyType;
+                        bool array = false;
+                        if (ptype.IsArray)
+                        {
+                            array = true;
+                            ptype = ptype.GetElementType();
+                        }
+                        else if (ptype.IsGenericType)
+                        {
+                            if (ptype.GetGenericTypeDefinition() == typeof(List<>))
+                            {
+                                array = true;
+                                ptype = ptype.GetGenericArguments()[0];
+                            }
+                        }
                         if (new List<Type>(ptype.GetInterfaces()).Contains(typeof(IModel)))
-                            ret += pi.Name + " : " + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype) + ",";
+                        {
+                            if (array)
+                            {
+                                string tsets = "";
+                                arraySetCodes += propertyPath + "." + pi.Name + " = [];\n";
+                                arraySetCodes += "for(x in " + string.Format(p, pi.Name) + "){\n";
+                                arraySetCodes += "\t" + propertyPath + "." + pi.Name + ".push(" + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype, propertyPath + "." + pi.Name, out tsets) + ");\n";
+                                arraySetCodes += "}\n";
+                                if (tsets != "")
+                                    arraySetCodes += tsets;
+                            }
+                            else
+                            {
+                                string tsets = "";
+                                ret += pi.Name + " : " + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype, propertyPath + "." + pi.Name, out tsets) + ",";
+                                if (tsets != "")
+                                    arraySetCodes += tsets;
+                            }
+                        }
                         else
                             ret += pi.Name + " : " + string.Format(p, pi.Name) + ",";
                     }

@@ -40,17 +40,66 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     fstring = "'<" + tag + " class=\"'+this.className+' {0}\">'+{1}+'</" + tag + ">'{2}";
                     break;
             }
-            sb.Append("\t\t$(this.el).html(");
+            int arIndex = 0;
+            StringBuilder sbHtml = new StringBuilder();
+            sbHtml.Append("\t\t$(this.el).html(");
             foreach (string prop in properties)
             {
                 Type PropType = modelType.GetProperty(prop).PropertyType;
+                bool array = false;
+                if (PropType.IsArray)
+                {
+                    array = true;
+                    PropType = PropType.GetElementType();
+                }
+                else if (PropType.IsGenericType)
+                {
+                    if (PropType.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        array = true;
+                        PropType = PropType.GetGenericArguments()[0];
+                    }
+                }
                 if (new List<Type>(PropType.GetInterfaces()).Contains(typeof(IModel)))
                 {
-                    string code = _RecurAddRenderModelPropertyCode(prop,PropType,"this.model.get('"+prop+"').get('{0}')");
-                    sb.Append(string.Format(fstring, prop,code, (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
-                }else
-                    sb.Append(string.Format(fstring, prop,string.Format("this.model.get('{0}')",prop), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                    if (array)
+                    {
+                        string tsets = "";
+                        string tcode = _RecurAddRenderModelPropertyCode(prop, PropType, "this.model.get('" + prop + "')[x].get('{0}')", out tsets,true);
+                        if (tsets != "")
+                            sb.Append(tsets);
+                        sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
+                        sb.AppendLine("\t\tfor(x in this.model.get('" + prop + "')){");
+                        sb.AppendLine("\t\t\tars" + arIndex.ToString() + "+="+string.Format(tcode,prop)+";");
+                        sb.AppendLine("\t\t}");
+                        sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                        arIndex++;
+                    }
+                    else
+                    {
+                        string tsets = "";
+                        string code = _RecurAddRenderModelPropertyCode(prop, PropType, "this.model.get('" + prop + "').get('{0}')",out tsets,false);
+                        if (tsets != "")
+                            sb.Append(tsets);
+                        sbHtml.Append(string.Format(fstring, prop, code, (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                    }
+                }
+                else
+                {
+                    if (array)
+                    {
+                        sb.AppendLine("\t\tvar ars"+arIndex.ToString()+" = '';");
+                        sb.AppendLine("\t\tfor(x in this.model.get('" + prop + "')){");
+                        sb.AppendLine("\t\t\tars"+arIndex.ToString()+"+='<span class=\"'+this.className+' " + prop + " els\">+this.model.get('" + prop + "')[x]+'</span>';");
+                        sb.AppendLine("\t\t}");
+                        sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                        arIndex++;
+                    }
+                    else
+                        sbHtml.Append(string.Format(fstring, prop, string.Format("this.model.get('{0}')", prop), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                }
             }
+            sb.Append(sbHtml.ToString());
             if (hasUpdate || hasDelete)
             {
                 switch (tag.ToLower())
@@ -113,26 +162,71 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-		private string _RecurAddRenderModelPropertyCode(string prop,Type PropType,string modelstring)
+		private string _RecurAddRenderModelPropertyCode(string prop,Type PropType,string modelstring,out string arstring,bool addEls)
 		{
-            string className = PropType.FullName.Replace(".", " ");
+            string className = PropType.FullName.Replace(".", " ")+(addEls ? " els ": "");
             foreach (ModelViewClass mvc in PropType.GetCustomAttributes(typeof(ModelViewClass), false))
                 className += mvc.ClassName + " ";
             string code = "";
+            int arIndex = 0;
+            StringBuilder sb = new StringBuilder();
 			foreach (PropertyInfo pi in PropType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		    {
 			    if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
 			    {
 				    if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length == 0){
                         Type ptype = pi.PropertyType;
+                        bool array = false;
+                        if (ptype.IsArray)
+                        {
+                            array = true;
+                            ptype = ptype.GetElementType();
+                        }
+                        else if (ptype.IsGenericType)
+                        {
+                            if (ptype.GetGenericTypeDefinition() == typeof(List<>))
+                            {
+                                array = true;
+                                ptype = ptype.GetGenericArguments()[0];
+                            }
+                        }
                         if (new List<Type>(ptype.GetInterfaces()).Contains(typeof(IModel))){
-                            code += (code.EndsWith(">'") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+" + _RecurAddRenderModelPropertyCode(pi.Name,ptype,string.Format(modelstring, pi.Name)+".get('{0}')") + "+'</span>'";
+                            if (array)
+                            {
+                                string tsets = "";
+                                string tcode = _RecurAddRenderModelPropertyCode(pi.Name, ptype, string.Format(modelstring, pi.Name) + "[x].get('{0}')", out tsets,true);
+                                if (tsets != "")
+                                    sb.Append(tsets);
+                                sb.AppendLine("\t\tvar ars" + prop + arIndex.ToString() + " = '';");
+                                sb.AppendLine("\t\tfor(x in " + string.Format(modelstring, pi.Name) + "){");
+                                sb.AppendLine("\t\t\tars" + prop + arIndex.ToString() + " += '<span class=\"" + className + " " + pi.Name + " els\">'+" + tcode + "+'</span>'");
+                                sb.AppendLine("\t\t}");
+                                code += (code.EndsWith(">'") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+ars" + prop + arIndex.ToString() + "+'</span>'";
+                                arIndex++;
+                            }
+                            else
+                            {
+                                string tsets = "";
+                                code += (code.EndsWith(">'") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+" + _RecurAddRenderModelPropertyCode(pi.Name, ptype, string.Format(modelstring, pi.Name) + ".get('{0}')",out tsets,false) + "+'</span>'";
+                                if (tsets != "")
+                                    sb.Append(tsets);
+                            }
                         }else{
-                            code += (code.EndsWith(">'") ? "+" : "")+"'<span class=\"" + className + " " + pi.Name + "\">'+" + string.Format(modelstring, pi.Name) + "+'</span>'";
+                            if (array)
+                            {
+                                sb.AppendLine("\t\tvar ars" + prop + arIndex.ToString() + " = '';");
+                                sb.AppendLine("\t\tfor(x in " + string.Format(modelstring, pi.Name) + "){");
+                                sb.AppendLine("\t\t\tars" + prop + arIndex.ToString() + " += '<span class=\"" + className + " " + pi.Name + " els\">'+" + string.Format(modelstring,pi.Name) + "[x]+'</span>'");
+                                sb.AppendLine("\t\t}");
+                                code += (code.EndsWith(">'") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+ars" + prop + arIndex.ToString() + "+'</span>'";
+                                arIndex++;
+                            }else
+                                code += (code.EndsWith(">'") ? "+" : "")+"'<span class=\"" + className + " " + pi.Name + "\">'+" + string.Format(modelstring, pi.Name) + "+'</span>'";
                         }
                     }
 			    }
 		    }
+            arstring = sb.ToString();
             return code;
 		}
 
