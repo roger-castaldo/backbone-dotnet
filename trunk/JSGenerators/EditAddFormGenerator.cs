@@ -32,6 +32,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
                         bool array = false;
+                        if (propType.FullName.StartsWith("System.Nullable"))
+                        {
+                            if (propType.IsGenericType)
+                                propType = propType.GetGenericArguments()[0];
+                            else
+                                propType = propType.GetElementType();
+                        }
                         if (propType.IsArray)
                         {
                             array = true;
@@ -104,6 +111,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
                         bool array = false;
+                        if (propType.FullName.StartsWith("System.Nullable"))
+                        {
+                            if (propType.IsGenericType)
+                                propType = propType.GetGenericArguments()[0];
+                            else
+                                propType = propType.GetElementType();
+                        }
                         if (propType.IsArray)
                         {
                             array = true;
@@ -243,6 +257,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
                         bool array = false;
+                        if (propType.FullName.StartsWith("System.Nullable"))
+                        {
+                            if (propType.IsGenericType)
+                                propType = propType.GetGenericArguments()[0];
+                            else
+                                propType = propType.GetElementType();
+                        }
                         if (propType.IsArray)
                         {
                             array = true;

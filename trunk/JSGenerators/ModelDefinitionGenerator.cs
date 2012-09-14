@@ -72,6 +72,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             foreach (string str in properties)
             {
                 Type propType = modelType.GetProperty(str).PropertyType;
+                if (propType.FullName.StartsWith("System.Nullable"))
+                {
+                    if (propType.IsGenericType)
+                        propType = propType.GetGenericArguments()[0];
+                    else
+                        propType = propType.GetElementType();
+                }
                 if (propType.IsArray)
                     propType = propType.GetElementType();
                 else if (propType.IsGenericType)
@@ -100,6 +107,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 {
                     Type propType = modelType.GetProperty(str).PropertyType;
                     bool array = false;
+                    if (propType.FullName.StartsWith("System.Nullable"))
+                    {
+                        if (propType.IsGenericType)
+                            propType = propType.GetGenericArguments()[0];
+                        else
+                            propType = propType.GetElementType();
+                    }
                     if (propType.IsArray)
                     {
                         array = true;
@@ -171,6 +185,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         Type ptype = pi.PropertyType;
                         bool array = false;
+                        if (ptype.FullName.StartsWith("System.Nullable"))
+                        {
+                            if (ptype.IsGenericType)
+                                ptype = ptype.GetGenericArguments()[0];
+                            else
+                                ptype = ptype.GetElementType();
+                        }
                         if (ptype.IsArray)
                         {
                             array = true;
