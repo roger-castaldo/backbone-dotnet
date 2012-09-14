@@ -31,6 +31,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
         }
 
+        private static Regex _regListPars = new Regex("\\{(\\d+)\\}", RegexOptions.Compiled | RegexOptions.ECMAScript);
+
         /*
          * Called to validate all model definitions through the following checks:
          * 1.  Check to make sure that there is at least 1 route specified for the model.
@@ -94,6 +96,12 @@ namespace Org.Reddragonit.BackBoneDotNet
                 {
                     if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
                     {
+                        if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
+                        {
+                            if (!invalidModels.Contains(t))
+                                invalidModels.Add(t);
+                            errors.Add(new InvalidModelListMethodReturnException(t, mi));
+                        }
                         if (mi.ReturnType.FullName == t.FullName)
                         {
                             if (mi.GetParameters().Length == 1)
@@ -111,8 +119,14 @@ namespace Org.Reddragonit.BackBoneDotNet
                             }
                         }
                     }
-                    else if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
+                    if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
                     {
+                        if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
+                        {
+                            if (!invalidModels.Contains(t))
+                                invalidModels.Add(t);
+                            errors.Add(new InvalidModelListMethodReturnException(t, mi));
+                        }
                         if (mi.ReturnType.FullName != typeof(sModelSelectOptionValue[]).FullName
                             && mi.ReturnType.FullName != typeof(List<sModelSelectOptionValue>).FullName)
                         {
@@ -131,13 +145,57 @@ namespace Org.Reddragonit.BackBoneDotNet
                             foundLoadSelMethod = true;
                         }
                     }
+                    if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
+                    {
+                        Type rtype = mi.ReturnType;
+                        if (rtype.IsArray)
+                            rtype = rtype.GetElementType();
+                        else if (rtype.IsGenericType)
+                        {
+                            if (rtype.GetGenericTypeDefinition() == typeof(List<>))
+                                rtype = rtype.GetGenericArguments()[0];
+                        }
+                        if (rtype != t)
+                        {
+                            if (!invalidModels.Contains(t))
+                                invalidModels.Add(t);
+                            errors.Add(new InvalidModelListMethodReturnException(t, mi));
+                        }
+                        foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
+                        {
+                            MatchCollection mc = _regListPars.Matches(mlm.Path);
+                            if (mc.Count != mi.GetParameters().Length)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelListParameterCountException(t, mi,mlm.Path));
+                            }
+                        }
+                        foreach (ParameterInfo pi in mi.GetParameters())
+                        {
+                            if (pi.ParameterType.IsGenericType || pi.ParameterType.IsArray)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelListParameterTypeException(t, mi, pi));
+                            }
+                        }
+                    }
                 }
                 foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {
-                    if (new List<Type>(pi.PropertyType.GetInterfaces()).Contains(typeof(IModel)))
+                    Type rtype = pi.PropertyType;
+                    if (rtype.IsArray)
+                        rtype = rtype.GetElementType();
+                    else if (rtype.IsGenericType)
+                    {
+                        if (rtype.GetGenericTypeDefinition() == typeof(List<>))
+                            rtype = rtype.GetGenericArguments()[0];
+                    }
+                    if (new List<Type>(rtype.GetInterfaces()).Contains(typeof(IModel)))
                     {
                         bool foundSelMethod = false;
-                        foreach (MethodInfo mi in pi.PropertyType.GetMethods(BindingFlags.Public | BindingFlags.Static))
+                        foreach (MethodInfo mi in rtype.GetMethods(BindingFlags.Public | BindingFlags.Static))
                         {
                             if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
                             {

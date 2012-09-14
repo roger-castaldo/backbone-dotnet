@@ -13,6 +13,45 @@ namespace Org.Reddragonit.BackBoneDotNet
 {
     public static class RequestHandler
     {
+        //structure to be used for model list call checks
+        private struct sModelListCall
+        {
+            private string _path;
+            private Regex _reg;
+            private MethodInfo _method;
+
+            public string RegString
+            {
+                get { return _reg.ToString(); }
+            }
+
+            public bool HandlesRequest(IHttpRequest request)
+            {
+                return _reg.IsMatch(request.Method.ToUpper() + "\t" + request.URL + request.URL.AbsolutePath);
+            }
+
+            public object HandleRequest(IHttpRequest request)
+            {
+                object ret = null;
+                try
+                {
+                    ret = _method.Invoke(null, URLUtility.ExtractParametersForUrl(_method, request.URL.AbsolutePath, _path));
+                }
+                catch (Exception e)
+                {
+                    ret = null;
+                }
+                return ret;
+            }
+
+            public sModelListCall(ModelListMethod mlm, MethodInfo method)
+            {
+                _path = mlm.Path;
+                _reg = new Regex(URLUtility.GenerateRegexForURL(mlm, method),RegexOptions.ECMAScript|RegexOptions.Compiled);
+                _method = method;
+            }
+        }
+
         //period interval between checks for cleaning up the cache (ms)
         private const int _CACHE_TIMER_PERIOD = 60000;
         //maximum time to cache a javascript file without being accessed (minutes)
@@ -27,6 +66,8 @@ namespace Org.Reddragonit.BackBoneDotNet
 
         //houses the regex used to check and see if a request can be handled by this system
         private static Regex _REG_URL;
+        //houses a master regex for model list select calls
+        private static Regex _REG_MODELS;
         //flag used to indicate if the handler is running
         private static bool _running;
         //houses all load all calls available, key is the url
@@ -35,6 +76,8 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static Dictionary<string, MethodInfo> _Loads;
         //houses all the select list calls, key is the url
         private static Dictionary<string, MethodInfo> _SelectLists;
+        //houses all the model list calls
+        private static List<sModelListCall> _ModelListCalls;
         //houses all the cached javascript, key is the url
         private static Dictionary<string, CachedItemContainer> _CachedJScript;
         //houses a mapping from urls to model type definitions
@@ -91,6 +134,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             _CachedJScript = new Dictionary<string, CachedItemContainer>();
             _TypeMaps = new Dictionary<string, Type>();
             _cacheTimer = new Timer(new TimerCallback(_CleanJSCache), null, 0, _CACHE_TIMER_PERIOD);
+            _ModelListCalls = new List<sModelListCall>();
             string reg = "^(";
             foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
             {
@@ -117,6 +161,11 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
             reg += ")$";
             _REG_URL = new Regex(reg, RegexOptions.ECMAScript | RegexOptions.Compiled);
+            reg = "^(";
+            foreach (sModelListCall mlc in _ModelListCalls)
+                reg += (reg.EndsWith(")") ? "|" : "")+ mlc.RegString.Substring(1).TrimEnd('$');
+            reg += ")$";
+            _REG_MODELS = new Regex(reg, RegexOptions.Compiled | RegexOptions.ECMAScript);
             _running = true;
         }
 
@@ -155,6 +204,11 @@ namespace Org.Reddragonit.BackBoneDotNet
                         Load = mi;
                     else if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
                         SelectList = mi;
+                    else if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
+                    {
+                        foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
+                            _ModelListCalls.Add(new sModelListCall(mlm, mi));
+                    }
                 }
                 _Loads.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), Load);
                 string methods = "((";
@@ -210,7 +264,12 @@ namespace Org.Reddragonit.BackBoneDotNet
         public static bool HandlesURL(Uri url,string method)
         {
             if (_running)
-                return _REG_URL.IsMatch(method.ToUpper()+"\t"+url.Host+url.AbsolutePath);
+            {
+                if (!_REG_URL.IsMatch(method.ToUpper() + "\t" + url.Host + url.AbsolutePath))
+                    return _REG_MODELS.IsMatch(method.ToUpper() + "\t" + url.Host + url.AbsolutePath);
+                else
+                    return true;
+            }
             return false;
         }
 
@@ -301,14 +360,28 @@ namespace Org.Reddragonit.BackBoneDotNet
                 switch (request.Method.ToUpper())
                 {
                     case "GET":
-                        if (_LoadAlls.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
-                            ret = _LoadAlls[request.URL.Host + request.URL.AbsolutePath].Invoke(null, new object[0]);
-                        else if (_LoadAlls.ContainsKey("*" + request.URL.AbsolutePath))
-                            ret = _LoadAlls["*" + request.URL.AbsolutePath].Invoke(null, new object[0]);
-                        else if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
-                            ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
-                        else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
-                            ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                        if (_REG_MODELS.IsMatch(request.Method.ToUpper() + "\t" + request.URL.Host + request.URL.AbsolutePath))
+                        {
+                            foreach (sModelListCall mlc in _ModelListCalls)
+                            {
+                                if (mlc.HandlesRequest(request))
+                                {
+                                    ret = mlc.HandleRequest(request);
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (_LoadAlls.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
+                                ret = _LoadAlls[request.URL.Host + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                            else if (_LoadAlls.ContainsKey("*" + request.URL.AbsolutePath))
+                                ret = _LoadAlls["*" + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                            else if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
+                                ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                            else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
+                                ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                        }
                         break;
                     case "SELECT":
                         if (_SelectLists.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
@@ -503,7 +576,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             new ViewGenerator(),
             new CollectionViewGenerator(),
             new SelectListCallGenerator(),
-            new EditAddFormGenerator()
+            new EditAddFormGenerator(),
+            new ModelListCallGenerators()
         };
 
         //called to generate Javascript for the given model.  It uses all the specified IJSGenerators above
