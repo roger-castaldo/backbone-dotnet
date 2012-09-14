@@ -272,13 +272,26 @@ namespace Org.Reddragonit.BackBoneDotNet
                             }
                         }
                         request.SetResponseStatus(200);
-                        request.WriteContent(sb.ToString());
-                        request.SendResponse();
-                        lock (_CachedJScript)
+                        if (request.URL.AbsolutePath.EndsWith(".min.js"))
                         {
-                            if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
-                                _CachedJScript.Add(request.URL.Host + request.URL.AbsolutePath, new CachedItemContainer(sb.ToString()));
+                            string comp = JSMinifier.Minify(sb.ToString());
+                            request.WriteContent(comp);
+                            lock (_CachedJScript)
+                            {
+                                if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
+                                    _CachedJScript.Add(request.URL.Host + request.URL.AbsolutePath, new CachedItemContainer(comp));
+                            }
                         }
+                        else
+                        {
+                            request.WriteContent(sb.ToString());
+                            lock (_CachedJScript)
+                            {
+                                if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
+                                    _CachedJScript.Add(request.URL.Host + request.URL.AbsolutePath, new CachedItemContainer(sb.ToString()));
+                            }
+                        }
+                        request.SendResponse();
                     }
                 }
             }
@@ -314,8 +327,16 @@ namespace Org.Reddragonit.BackBoneDotNet
                             Hashtable IModelTypes = new Hashtable();
                             foreach (string str in ht.Keys)
                             {
+                                Type propType = ret.GetType().GetProperty(str).PropertyType;
+                                if (propType.IsArray)
+                                    propType = propType.GetElementType();
+                                else if (propType.IsGenericType)
+                                {
+                                    if (propType.GetGenericTypeDefinition() == typeof(List<>))
+                                        propType = propType.GetGenericArguments()[0];
+                                }
                                 var obj = _ConvertObjectToType(ht[str], ret.GetType().GetProperty(str).PropertyType);
-                                if (new List<Type>(ret.GetType().GetProperty(str).PropertyType.GetInterfaces()).Contains(typeof(IModel)))
+                                if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                                     IModelTypes.Add(str, obj);
                                 ret.GetType().GetProperty(str).SetValue(ret, obj, new object[0]);
                             }
