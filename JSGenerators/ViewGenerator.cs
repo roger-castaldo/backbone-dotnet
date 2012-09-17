@@ -23,6 +23,18 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine(" View\",");
         }
 
+        private void _AppendAttributes(Type modelType, StringBuilder sb)
+        {
+            if (modelType.GetCustomAttributes(typeof(ModelViewAttribute), false).Length > 0)
+            {
+                sb.Append("\tattributes: {");
+                object[] atts = modelType.GetCustomAttributes(typeof(ModelViewAttribute),false);
+                for (int x = 0; x < atts.Length; x++)
+                    sb.Append("\t\t\"" + ((ModelViewAttribute)atts[x]).Name + "\" : '" + ((ModelViewAttribute)atts[x]).Value + "'" + (x < atts.Length - 1 ? "," : ""));
+                sb.Append("\t},");
+            }
+        }
+
         private void _AppendRenderFunction(Type modelType,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb)
         {
             sb.AppendLine("\trender : function(){");
@@ -275,6 +287,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\ttagName : \"" + tag + "\",");
             
             _AppendClassName(modelType, sb);
+            _AppendAttributes(modelType, sb);
             _AppendRenderFunction(modelType,tag, properties, hasUpdate, hasDelete, sb);
 
             sb.AppendLine("});");

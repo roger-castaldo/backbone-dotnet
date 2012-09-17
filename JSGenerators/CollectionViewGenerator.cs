@@ -18,6 +18,18 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine(" CollectionView\",");
         }
 
+        private void _AppendAttributes(Type modelType, StringBuilder sb)
+        {
+            if (modelType.GetCustomAttributes(typeof(ModelViewAttribute), false).Length > 0)
+            {
+                sb.Append("\tattributes: {");
+                object[] atts = modelType.GetCustomAttributes(typeof(ModelViewAttribute), false);
+                for (int x = 0; x < atts.Length; x++)
+                    sb.Append("\t\t\"" + ((ModelViewAttribute)atts[x]).Name + "\" : '" + ((ModelViewAttribute)atts[x]).Value + "'" + (x < atts.Length - 1 ? "," : ""));
+                sb.Append("\t},");
+            }
+        }
+
         #region IJSGenerator Members
 
         public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties)
@@ -45,6 +57,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
 
             _AppendClassName(modelType, sb);
+            _AppendAttributes(modelType, sb);
 
             sb.AppendLine("\tinitialize : function(){");
             sb.AppendLine("\t\tthis.collection.on('reset',this.render,this);");
