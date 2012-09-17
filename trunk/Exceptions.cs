@@ -110,4 +110,20 @@ namespace Org.Reddragonit.BackBoneDotNet
             : base("The IModel type " + t.FullName + " is not valid because the parameter " + pi.Name + " in the method " + mi.Name + " is not a usable parameter for a ModelListMethod.")
         { }
     }
+
+    //thrown when the name in a model view attribute is the same as another one specified
+    public class RepeatedAttributeTagName : Exception
+    {
+        public RepeatedAttributeTagName(Type t, string tag)
+            : base("The IModel type "+t.FullName+" is not valid because the ModelViewAttribute tag "+tag+" has already been specifed by another ModelViewAttribute.")
+        {}
+    }
+
+    //thrown when the ModelViewAttribute specifies class as the tag name instead of using ModelViewClass
+    public class InvalidAttributeTagName : Exception
+    {
+        public InvalidAttributeTagName(Type t)
+            : base("The IModel type " + t.FullName + " is not valid because the ModelViewAttribute specified a tag of class instead of using ModelViewClass.")
+        { }
+    }
 }

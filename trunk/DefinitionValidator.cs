@@ -46,6 +46,8 @@ namespace Org.Reddragonit.BackBoneDotNet
          *  Select List method.
          * 8.  Check to make sure a Load method exists
          * 9.  Check to make sure that the id property is not blocked.
+         * 10. Check View Attributes to make sure class it not used (use ModelViewClass instead.
+         * 11.  Check View Attributes and make sure all names are unique
          */
         internal static List<Exception> Validate(out List<Type> invalidModels)
         {
@@ -74,6 +76,22 @@ namespace Org.Reddragonit.BackBoneDotNet
                             invalidModels.Add(t);
                             errors.Add(new NoEmptyConstructorException(t));
                         }
+                    }
+                }
+                List<string> curAttributes = new List<string>();
+                foreach (ModelViewAttribute mva in t.GetCustomAttributes(typeof(ModelViewAttribute), false))
+                {
+                    if (curAttributes.Contains(mva.Name))
+                    {
+                        invalidModels.Add(t);
+                        errors.Add(new RepeatedAttributeTagName(t, mva.Name));
+                    }
+                    else
+                        curAttributes.Add(mva.Name);
+                    if (mva.Name.ToUpper() == "CLASS")
+                    {
+                        invalidModels.Add(t);
+                        errors.Add(new InvalidAttributeTagName(t));
                     }
                 }
                 foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))

@@ -47,6 +47,7 @@
     <Compile Include="Attributes\ModelLoadMethod.cs" />
     <Compile Include="Attributes\ModelRoute.cs" />
     <Compile Include="Attributes\ModelSelectListMethod.cs" />
+    <Compile Include="Attributes\ModelViewAttribute.cs" />
     <Compile Include="Attributes\ModelViewClass.cs" />
     <Compile Include="Attributes\ModelViewTag.cs" />
     <Compile Include="Attributes\ReadOnlyModelProperty.cs" />
