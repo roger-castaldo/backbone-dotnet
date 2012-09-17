@@ -86,7 +86,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (propType.GetGenericTypeDefinition() == typeof(List<>))
                         propType = propType.GetGenericArguments()[0];
                 }
-                if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
+                if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)) || (propType == typeof(DateTime)))
                 {
                     add = true;
                     break;
@@ -134,8 +134,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         {
                             sb.AppendLine("\t\t\tattrs." + str + " = [];");
                             sb.AppendLine("\t\t\tfor (x in response." + str + "){");
-                            sb.AppendLine("\t\t\t\tattrs." + str + ".push(" + _AppendModelParseConstructor("response." + str + "[x].{0}", propType,"attrs."+str,out addSets) + ");");
-                            if (addSets!="")
+                            sb.AppendLine("\t\t\t\tattrs." + str + ".push(" + _AppendModelParseConstructor("response." + str + "[x].{0}", propType, "attrs." + str, out addSets) + ");");
+                            if (addSets != "")
                                 sbArrays.AppendLine(addSets);
                             sb.AppendLine("\t\t\t}");
                             if (!readOnlyProperties.Contains(str))
@@ -148,7 +148,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         }
                         else
                         {
-                            sb.AppendLine("\t\t\tattrs." + str + " = " + _AppendModelParseConstructor("response." + str + ".{0}", propType,"attrs."+str,out addSets) + ";");
+                            sb.AppendLine("\t\t\tattrs." + str + " = " + _AppendModelParseConstructor("response." + str + ".{0}", propType, "attrs." + str, out addSets) + ";");
                             if (addSets != "")
                                 sbArrays.AppendLine(addSets);
                             if (!readOnlyProperties.Contains(str))
@@ -159,7 +159,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     else
                     {
                         sb.AppendLine("\t\tif (response." + str + " != undefined){");
-                        sb.AppendLine("\t\tattrs." + str + " = response." + str + ";");
+                        if (propType == typeof(DateTime))
+                            sb.AppendLine("\t\tattrs." + str + " = new Date(response." + str + ");");
+                        else
+                            sb.AppendLine("\t\tattrs." + str + " = response." + str + ";");
                         sb.AppendLine("\t\t}");
                         if (str != "id" && !readOnlyProperties.Contains(str))
                             jsonb.AppendLine("\t\tattrs." + str + " = this.get('" + str + "');");
