@@ -66,7 +66,22 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t},");
 
             sb.AppendLine("\trender : function(){");
-            sb.AppendLine("\t\tthis.$el.html('');");
+            sb.AppendLine("\t\tvar el = this.$el;");
+            sb.AppendLine("\t\tel.html('');");
+            if (tag.ToLower() == "tr")
+            {
+                sb.AppendLine("\t\tvar thead = $('<thead class=\"'+this.className+'header\"></thead>');");
+                sb.AppendLine("\t\tel.append(thead);");
+                sb.AppendLine("\t\tthead.append('<tr></tr>');");
+                sb.AppendLine("\t\tthead = $(thead.children()[0]);");
+                foreach (string str in properties)
+                {
+                    if (str != "id")
+                        sb.AppendLine("\t\tthead.append('<th className=\"'+this.className+' " + str + "\">" + str + "</th>');");
+                }
+                sb.AppendLine("\t\tel.append('<tbody></tbody>');");
+                sb.AppendLine("\t\tel = $(el.children()[0]);");
+            }
             sb.AppendLine("\t\tvar alt=false;");
             sb.AppendLine("\t\tfor(var x=0;x<this.collection.length;x++){");
             sb.AppendLine("\t\t\tvar vw = new " + modelType.FullName + ".View({model:this.collection.at(x)});");
@@ -74,7 +89,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\t\t\tvw.$el.attr('class',vw.$el.attr('class')+' Alt');");
             sb.AppendLine("\t\t\t}");
             sb.AppendLine("\t\t\talt=!alt;");
-            sb.AppendLine("\t\t\tthis.$el.append(vw.$el);");
+            sb.AppendLine("\t\t\tel.append(vw.$el);");
             sb.AppendLine("\t\t\tvw.render();");
             sb.AppendLine("\t\t}");
             sb.AppendLine("\t}");
