@@ -30,7 +30,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             }
                             sb.AppendLine("){");
                             sb.AppendLine(URLUtility.CreateJavacriptUrlCode(mlm, mi, modelType));
-                            sb.AppendLine("var ret = Backbone.Collection.extend({url:url,model:" + modelType.FullName + ".Model});");
+                            sb.AppendLine("var ret = Backbone.Collection.extend({url:url,parse : function(response){return (response.Backbone == undefined ? response : response.response);},model:" + modelType.FullName + ".Model});");
                             sb.AppendLine("ret = new ret();");
                             sb.AppendLine("ret.fetch();");
                             sb.AppendLine("return ret;");

@@ -66,6 +66,47 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
+        private void _AppendValidate(Type modelType, List<string> properties, StringBuilder sb)
+        {
+            bool add = false;
+            foreach (string str in properties)
+            {
+                if (modelType.GetProperty(str).GetCustomAttributes(typeof(ModelRequiredField),false).Length > 0
+                    || modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false).Length > 0)
+                {
+                    add = true;
+                    break;
+                }
+            }
+            if (add)
+            {
+                sb.AppendLine("\tvalidate : function(attrs) {");
+                sb.AppendLine("\t\tvar atts = this.attributes;");
+                sb.AppendLine("\t\t_.extend(atts,attrs);");
+                sb.AppendLine("\t\tvar errors = new Array();");
+                foreach (string str in properties)
+                {
+                    if (modelType.GetProperty(str).GetCustomAttributes(typeof(ModelRequiredField), false).Length > 0)
+                    {
+                        ModelRequiredField mrf = (ModelRequiredField)modelType.GetProperty(str).GetCustomAttributes(typeof(ModelRequiredField), false)[0];
+                        sb.AppendLine("\t\tif (atts." + str + "==null || atts." + str + "==undefined){");
+                        sb.AppendLine("\t\t\terrors.push({field:'" + str + "',error:Backbone.TranslateValidationError('" + mrf.ErrorMessageName + "')});");
+                        sb.AppendLine("\t\t}");
+                    }
+                    else if (modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false).Length > 0)
+                    {
+                        ModelFieldValidationRegex mfvr = (ModelFieldValidationRegex)modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false)[0];
+                        sb.AppendLine("\t\tif (new RegExp('"+mfvr.Regex.Replace("'","\'")+"').test((atts." + str + "==null || atts." + str + "==undefined ? '' : atts."+str+"))){");
+                        sb.AppendLine("\t\t\terrors.push({field:'" + str + "',error:Backbone.TranslateValidationError('" + mfvr.ErrorMessageName + "')});");
+                        sb.AppendLine("\t\t}");
+                    }
+                }
+                sb.AppendLine("\t\tthis.errors = errors;");
+                sb.AppendLine("\t\tif (errors.length>0){return errors;}");
+                sb.AppendLine("},");
+            }
+        }
+
         private void _AppendParse(Type modelType, List<string> properties,List<string> readOnlyProperties, StringBuilder sb)
         {
             bool add = false;
@@ -100,6 +141,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
                 sb.AppendLine("\tparse: function(response) {");
                 sb.AppendLine("\t\tvar attrs = {};");
+                sb.AppendLine("\t\tif(response.Backbone!=undefined){");
+                sb.AppendLine("\t\t\t_.extend(Backbone,response.Backbone);");
+                sb.AppendLine("\t\t\tresponse=response.response;");
+                sb.AppendLine("\t\t}");
 
                 StringBuilder sbArrays = new StringBuilder();
                 string addSets = "";
@@ -172,6 +217,16 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine("\t},");
                 sb.Append(jsonb.ToString());
                 sb.AppendLine("\t\treturn attrs;");
+                sb.AppendLine("\t},");
+            }
+            else
+            {
+                sb.AppendLine("\tparse: function(response) {");
+                sb.AppendLine("\t\tvar attrs = {};");
+                sb.AppendLine("\t\tif(response.Backbone!=undefined){");
+                sb.AppendLine("\t\t\t_.extend(Backbone,response.Backbone);");
+                sb.AppendLine("\t\t\tresponse=response.response;");
+                sb.AppendLine("\t\t}");
                 sb.AppendLine("\t},");
             }
         }
@@ -269,6 +324,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             else if (!hasUpdate)
                 _AppendBlockUpdate(sb);
             _AppendReadonly(readOnlyProperties, sb);
+            _AppendValidate(modelType, properties, sb);
             _AppendParse(modelType, properties,readOnlyProperties, sb);
             string urlRoot = "";
             foreach (ModelRoute mr in modelType.GetCustomAttributes(typeof(ModelRoute), false))
@@ -293,7 +349,6 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\turlRoot : \"" + urlRoot + "\"});");
             return sb.ToString();
         }
-
         #endregion
     }
 }

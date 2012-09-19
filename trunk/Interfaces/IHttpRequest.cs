@@ -18,5 +18,6 @@ namespace Org.Reddragonit.BackBoneDotNet.Interfaces
         void WriteContent(string content);
         void SendResponse();
         void SetResponseStatus(int statusNumber);
+        string AcceptLanguageHeaderValue { get; }
     }
 }

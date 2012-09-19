@@ -304,6 +304,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                     request.SetResponseStatus(200);
                     request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.underscore-min.js"));
                     request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone.min.js"));
+                    request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone.validate.js"));
                     request.SendResponse();
                 }
                 else
@@ -455,7 +456,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 {
                     request.SetResponseStatus(200);
                     request.SetResponseContentType("application/json");
-                    request.WriteContent(JSON.JsonEncode(ret));
+                    request.WriteContent(JSON.JsonEncode(_SetupAdditionalBackbonehash(ret,request)));
                     request.SendResponse();
                 }
                 else
@@ -464,6 +465,19 @@ namespace Org.Reddragonit.BackBoneDotNet
                     request.SendResponse();
                 }
             }
+        }
+
+        private static Hashtable _SetupAdditionalBackbonehash(object response,IHttpRequest request)
+        {
+            Hashtable ret = new Hashtable();
+            ret.Add("response", response);
+            Hashtable Backbone = new Hashtable();
+            if (request.AcceptLanguageHeaderValue == null)
+                Backbone.Add("Language", "en");
+            else
+                Backbone.Add("Language", request.AcceptLanguageHeaderValue.Split(';')[0].Split(',')[1].Trim());
+            ret.Add("Backbone", Backbone);
+            return ret;
         }
 
         /*
@@ -571,6 +585,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //for cleaner code
         private static readonly IJSGenerator[] _generators = new IJSGenerator[]{
             new NamespaceGenerator(),
+            new ErrorMessageGenerator(),
             new ModelDefinitionGenerator(),
             new CollectionGenerator(),
             new ViewGenerator(),

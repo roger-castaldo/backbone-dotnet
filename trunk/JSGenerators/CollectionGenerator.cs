@@ -44,6 +44,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             return "//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionGenerator\n" +
                 modelType.FullName + ".Collection = Backbone.Collection.extend({\n"
                 +"\tmodel : " + modelType.FullName + ".Model,\n"
+                +"\tparse : function(response){return (response.Backbone == undefined ? response : response.response);},\n"
                 +"\turl : \"" + (urlRoot.StartsWith("/") ? "" : "/") + urlRoot + "\"\n"
                 +"});\n";
         }
