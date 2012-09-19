@@ -40,11 +40,14 @@
     <Compile Include="Attributes\ModelBlockActions.cs" />
     <Compile Include="Attributes\ModelBlockJavascriptGeneration.cs" />
     <Compile Include="Attributes\ModelEditAddType.cs" />
+    <Compile Include="Attributes\ModelErrorMessage.cs" />
+    <Compile Include="Attributes\ModelFieldValidationRegex.cs" />
     <Compile Include="Attributes\ModelIgnoreProperty.cs" />
     <Compile Include="Attributes\ModelJSFilePath.cs" />
     <Compile Include="Attributes\ModelListMethod.cs" />
     <Compile Include="Attributes\ModelLoadAllMethod.cs" />
     <Compile Include="Attributes\ModelLoadMethod.cs" />
+    <Compile Include="Attributes\ModelRequiredField.cs" />
     <Compile Include="Attributes\ModelRoute.cs" />
     <Compile Include="Attributes\ModelSelectListMethod.cs" />
     <Compile Include="Attributes\ModelViewAttribute.cs" />
@@ -60,6 +63,7 @@
     <Compile Include="JSGenerators\CollectionGenerator.cs" />
     <Compile Include="JSGenerators\CollectionViewGenerator.cs" />
     <Compile Include="JSGenerators\EditFormGenerator.cs" />
+    <Compile Include="JSGenerators\ErrorMessageGenerator.cs" />
     <Compile Include="JSGenerators\ModelDefinitionGenerator.cs" />
     <Compile Include="JSGenerators\ModelListCallGenerators.cs" />
     <Compile Include="JSGenerators\NamespaceGenerator.cs" />
@@ -80,6 +84,15 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="resources\underscore-min.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\backbone.validate.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\editFormAccept.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\arrayInputFormCode.js" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

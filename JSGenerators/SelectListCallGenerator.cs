@@ -50,7 +50,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     sb.AppendLine("\t\t\tcache:false,");
                     sb.AppendLine("\t\t\ttype : 'SELECT'");
                     sb.AppendLine("}).responseText;");
-                    sb.AppendLine("return JSON.parse(ret);");
+                    sb.AppendLine("\tvar response = JSON.parse(ret);");
+                    sb.AppendLine("\tif(response.Backbone!=undefined){");
+                    sb.AppendLine("\t\t_.extend(Backbone,response.Backbone);");
+                    sb.AppendLine("\t\tresponse=response.response;");
+                    sb.AppendLine("\t}");
+                    sb.AppendLine("return response;");
                     sb.AppendLine("}");
                     break;
                 }
