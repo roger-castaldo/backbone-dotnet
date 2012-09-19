@@ -67,8 +67,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
             sb.AppendLine("\trender : function(){");
             sb.AppendLine("\t\tthis.$el.html('');");
+            sb.AppendLine("\t\tvar alt=false;");
             sb.AppendLine("\t\tfor(var x=0;x<this.collection.length;x++){");
             sb.AppendLine("\t\t\tvar vw = new " + modelType.FullName + ".View({model:this.collection.at(x)});");
+            sb.AppendLine("\t\t\tif (alt){");
+            sb.AppendLine("\t\t\t\tvw.$el.attr('class',vw.$el.attr('class')+' Alt');");
+            sb.AppendLine("\t\t\t}");
+            sb.AppendLine("\t\t\talt=!alt;");
             sb.AppendLine("\t\t\tthis.$el.append(vw.$el);");
             sb.AppendLine("\t\t\tvw.render();");
             sb.AppendLine("\t\t}");
