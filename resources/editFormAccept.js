@@ -4,20 +4,20 @@
           var frm = event.data.frm;
           var model = event.data.view.model;
           var changes = {};
-          var inputs = frm.find('input,select');
+          var inputs = frm.find('input[type="text"],input[type="radio"]:checked,select');
           for (var x = 0; x < inputs.length; x++) {
               var name = $(inputs[x]).attr('name');
               var inp = $(inputs[x]);
-              if (inp.attr('modeltype') != '') {
+              if (inp.attr('modeltype') != null) {
                   if (inp.attr('multiple') == 'multiple') {
                       changes[inp.attr('name')] = new Array();
                       var opts = inp.find('option:selected');
                       for (var y = 0; y < opts.length; y++) {
-                          changes[inp.attr('name')].push(eval('new ' + inp.attr('modeltype') + '({id:\'' + $(opts[y]).val() + '\'});'));
+                          changes[inp.attr('name')].push(eval('new ' + inp.attr('modeltype') + '.Model({id:\'' + $(opts[y]).val() + '\'});'));
                       }
                   } else {
                       if (model.get(inp.attr('name')).get('id') != inp.val()) {
-                          changes[inp.attr('name')] = eval('new ' + inp.attr('modeltype') + '({id:\'' + inp.val() + '\'});');
+                          changes[inp.attr('name')] = eval('new ' + inp.attr('modeltype') + '.Model({id:\'' + inp.val() + '\'});');
                       }
                   }
               } else if (inp.attr('multiple') == 'multiple') {
