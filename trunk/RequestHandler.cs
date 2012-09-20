@@ -602,17 +602,20 @@ namespace Org.Reddragonit.BackBoneDotNet
             string ret = "";
             List<string> properties = new List<string>();
             List<string> readOnlyProperties = new List<string>();
+            List<string> viewIgnoreProperties = new List<string>();
             foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
                 {
                     if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length > 0)
                         readOnlyProperties.Add(pi.Name);
+                    if (pi.GetCustomAttributes(typeof(ViewIgnoreField), false).Length > 0)
+                        viewIgnoreProperties.Add(pi.Name);
                     properties.Add(pi.Name);
                 }
             }
             foreach (IJSGenerator gen in _generators)
-                ret += gen.GenerateJS(t, host, readOnlyProperties, properties);
+                ret += gen.GenerateJS(t, host, readOnlyProperties, properties,viewIgnoreProperties);
             return ret;
         }
     }

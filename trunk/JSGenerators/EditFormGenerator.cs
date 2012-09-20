@@ -203,7 +203,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\tfrm.show();");
         }
 
-        private void _RenderInlineCode(Type modelType, List<string> readOnlyProperties, List<string> properties, StringBuilder sb)
+        private void _RenderInlineCode(Type modelType, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, StringBuilder sb)
         {
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
@@ -237,7 +237,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         sb.Append("\t\tvar inp = $('");
                         _RenderFieldInput(propName,propType, sb);
                         sb.AppendLine("');");
-                        sb.AppendLine("\t\t$(frm.find('" + tstring + "." + propName + "')[0]).html(inp);");
+                        if (viewIgnoreProperties.Contains(propName))
+                        {
+                            sb.AppendLine("\t\t$(frm.find('" + tstring + ":last')[0]).before($('<" + tstring + " class=\"'+view.className+' " + propName + "\"><span class=\"'+view.className+' FieldTitle\">"+propName+"</span><br/></" + tstring + ">'));");
+                            sb.AppendLine("\t\t$(frm.find('" + tstring + "." + propName + "')[0]).append(inp);");
+                        }else
+                            sb.AppendLine("\t\t$(frm.find('" + tstring + "." + propName + "')[0]).html(inp);");
                     }
                 }
             }
@@ -256,7 +261,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties)
         {
             if (modelType.GetCustomAttributes(typeof(ModelBlockActions), false).Length > 0)
             {
@@ -276,7 +281,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     _RenderDialogCode(modelType, readOnlyProperties, properties,sb);
                     break;
                 case ModelEditAddTypes.inline:
-                    _RenderInlineCode(modelType, readOnlyProperties, properties, sb);
+                    _RenderInlineCode(modelType, readOnlyProperties, properties,viewIgnoreProperties, sb);
                     break;
             }
 

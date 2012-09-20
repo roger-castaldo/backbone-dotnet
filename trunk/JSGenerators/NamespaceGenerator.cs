@@ -12,7 +12,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     {
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties)
         {
             string ret = "";
             string tmp = "";

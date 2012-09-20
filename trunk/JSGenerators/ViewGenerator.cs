@@ -35,7 +35,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-        private void _AppendRenderFunction(Type modelType,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb)
+        private void _AppendRenderFunction(Type modelType,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb, List<string> viewIgnoreProperties)
         {
             sb.AppendLine("\trender : function(){");
             string fstring = "";
@@ -57,65 +57,68 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sbHtml.Append("\t\t$(this.el).html(");
             foreach (string prop in properties)
             {
-                Type PropType = modelType.GetProperty(prop).PropertyType;
-                bool array = false;
-                if (PropType.FullName.StartsWith("System.Nullable"))
+                if (!viewIgnoreProperties.Contains(prop))
                 {
-                    if (PropType.IsGenericType)
-                        PropType = PropType.GetGenericArguments()[0];
-                    else
-                        PropType = PropType.GetElementType();
-                }
-                if (PropType.IsArray)
-                {
-                    array = true;
-                    PropType = PropType.GetElementType();
-                }
-                else if (PropType.IsGenericType)
-                {
-                    if (PropType.GetGenericTypeDefinition() == typeof(List<>))
+                    Type PropType = modelType.GetProperty(prop).PropertyType;
+                    bool array = false;
+                    if (PropType.FullName.StartsWith("System.Nullable"))
+                    {
+                        if (PropType.IsGenericType)
+                            PropType = PropType.GetGenericArguments()[0];
+                        else
+                            PropType = PropType.GetElementType();
+                    }
+                    if (PropType.IsArray)
                     {
                         array = true;
-                        PropType = PropType.GetGenericArguments()[0];
+                        PropType = PropType.GetElementType();
                     }
-                }
-                if (new List<Type>(PropType.GetInterfaces()).Contains(typeof(IModel)))
-                {
-                    if (array)
+                    else if (PropType.IsGenericType)
                     {
-                        string tsets = "";
-                        string tcode = _RecurAddRenderModelPropertyCode(prop, PropType, "this.model.get('" + prop + "')[x].get('{0}')", out tsets,true);
-                        if (tsets != "")
-                            sb.Append(tsets);
-                        sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
-                        sb.AppendLine("\t\tfor(x in this.model.get('" + prop + "')){");
-                        sb.AppendLine("\t\t\tars" + arIndex.ToString() + "+="+string.Format(tcode,prop)+";");
-                        sb.AppendLine("\t\t}");
-                        sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
-                        arIndex++;
+                        if (PropType.GetGenericTypeDefinition() == typeof(List<>))
+                        {
+                            array = true;
+                            PropType = PropType.GetGenericArguments()[0];
+                        }
+                    }
+                    if (new List<Type>(PropType.GetInterfaces()).Contains(typeof(IModel)))
+                    {
+                        if (array)
+                        {
+                            string tsets = "";
+                            string tcode = _RecurAddRenderModelPropertyCode(prop, PropType, "this.model.get('" + prop + "')[x].get('{0}')", out tsets, true);
+                            if (tsets != "")
+                                sb.Append(tsets);
+                            sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
+                            sb.AppendLine("\t\tfor(x in this.model.get('" + prop + "')){");
+                            sb.AppendLine("\t\t\tars" + arIndex.ToString() + "+=" + string.Format(tcode, prop) + ";");
+                            sb.AppendLine("\t\t}");
+                            sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                            arIndex++;
+                        }
+                        else
+                        {
+                            string tsets = "";
+                            string code = _RecurAddRenderModelPropertyCode(prop, PropType, "this.model.get('" + prop + "').get('{0}')", out tsets, false);
+                            if (tsets != "")
+                                sb.Append(tsets);
+                            sbHtml.Append(string.Format(fstring, prop, code, (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                        }
                     }
                     else
                     {
-                        string tsets = "";
-                        string code = _RecurAddRenderModelPropertyCode(prop, PropType, "this.model.get('" + prop + "').get('{0}')",out tsets,false);
-                        if (tsets != "")
-                            sb.Append(tsets);
-                        sbHtml.Append(string.Format(fstring, prop, code, (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                        if (array)
+                        {
+                            sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
+                            sb.AppendLine("\t\tfor(x in this.model.get('" + prop + "')){");
+                            sb.AppendLine("\t\t\tars" + arIndex.ToString() + "+='<span class=\"'+this.className+' " + prop + " els\">+this.model.get('" + prop + "')[x]+'</span>';");
+                            sb.AppendLine("\t\t}");
+                            sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                            arIndex++;
+                        }
+                        else
+                            sbHtml.Append(string.Format(fstring, prop, string.Format("this.model.get('{0}')", prop), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                     }
-                }
-                else
-                {
-                    if (array)
-                    {
-                        sb.AppendLine("\t\tvar ars"+arIndex.ToString()+" = '';");
-                        sb.AppendLine("\t\tfor(x in this.model.get('" + prop + "')){");
-                        sb.AppendLine("\t\t\tars"+arIndex.ToString()+"+='<span class=\"'+this.className+' " + prop + " els\">+this.model.get('" + prop + "')[x]+'</span>';");
-                        sb.AppendLine("\t\t}");
-                        sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
-                        arIndex++;
-                    }
-                    else
-                        sbHtml.Append(string.Format(fstring, prop, string.Format("this.model.get('{0}')", prop), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                 }
             }
             sb.Append(sbHtml.ToString());
@@ -193,7 +196,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 		    {
 			    if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
 			    {
-				    if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length == 0){
+				    if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length == 0
+                        && pi.GetCustomAttributes(typeof(ViewIgnoreField), false).Length == 0)
+                    {
                         Type ptype = pi.PropertyType;
                         bool array = false;
                         if (ptype.FullName.StartsWith("System.Nullable"))
@@ -258,7 +263,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties)
         {
             if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
             {
@@ -288,7 +293,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             
             _AppendClassName(modelType, sb);
             _AppendAttributes(modelType, sb);
-            _AppendRenderFunction(modelType,tag, properties, hasUpdate, hasDelete, sb);
+            _AppendRenderFunction(modelType,tag, properties, hasUpdate, hasDelete, sb,viewIgnoreProperties);
 
             sb.AppendLine("});");
             return sb.ToString();
