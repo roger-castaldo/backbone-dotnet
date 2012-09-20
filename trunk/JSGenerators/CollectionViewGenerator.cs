@@ -92,6 +92,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\t\tel.append(vw.$el);");
             sb.AppendLine("\t\t\tvw.render();");
             sb.AppendLine("\t\t}");
+            sb.AppendLine("\t\tthis.trigger('render',this);");
             sb.AppendLine("\t}");
             sb.AppendLine("});");
             return sb.ToString();

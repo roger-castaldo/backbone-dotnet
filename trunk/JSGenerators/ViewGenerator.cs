@@ -159,6 +159,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }
             sb.AppendLine(");");
+            sb.AppendLine("\t\tthis.trigger('render',this);");
             sb.AppendLine("\t\treturn this;");
             sb.AppendLine("\t}"+(hasUpdate || hasDelete ? "," : ""));
             if (hasUpdate || hasDelete)
