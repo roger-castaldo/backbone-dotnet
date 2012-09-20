@@ -32,7 +32,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties)
         {
             if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
             {
@@ -76,7 +76,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine("\t\tthead = $(thead.children()[0]);");
                 foreach (string str in properties)
                 {
-                    if (str != "id")
+                    if (str != "id" && !viewIgnoreProperties.Contains(str))
                         sb.AppendLine("\t\tthead.append('<th className=\"'+this.className+' " + str + "\">" + str + "</th>');");
                 }
                 sb.AppendLine("\t\tel.append('<tbody></tbody>');");
