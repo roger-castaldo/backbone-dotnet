@@ -38,10 +38,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }
             if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
-                sb.Append("<select name=\"" +propName + "\" modeltype=\""+propType.FullName+"\" " + (array ? "multiple=\"multiple\"" : "") + "></select>");
+                sb.Append("<select class=\"'+view.className+' " + propName + "\" name=\"" + propName + "\" modeltype=\"" + propType.FullName + "\" " + (array ? "multiple=\"multiple\"" : "") + "></select>");
             else if (propType.IsEnum)
             {
-                sb.Append("<select name=\"" + propName + "\" " + (array ? "multiple=\"multiple\"" : "") + ">");
+                sb.Append("<select class=\"'+view.className+' " + propName + "\" name=\"" + propName + "\" " + (array ? "multiple=\"multiple\"" : "") + ">");
                 foreach (string str in Enum.GetNames(propType))
                     sb.Append("<option value=\"" + str + "\">" + str + "</option>");
                 sb.Append("</select>");
@@ -49,9 +49,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             else
             {
                 if (array)
-                    sb.Append("<input type=\"text\" name=\"" + propName + "\" isarray=\"true\" proptype=\"" + propType.FullName + "\"/><span class=\"button add\">+</span>");
+                    sb.Append("<input class=\"'+view.className+' " + propName + "\" type=\"text\" name=\"" + propName + "\" isarray=\"true\" proptype=\"" + propType.FullName + "\"/><span class=\"button add\">+</span>");
+                else if (propType == typeof(bool))
+                    sb.Append("<input class=\"'+view.className+' " + propName + " radTrue\" type=\"radio\" name=\"" + propName + "\" proptype=\"" + propType.FullName + "\" value=\"true\"/><label class=\"'+view.className+' " + propName + " lblTrue\">True</label><input class=\"'+view.className+' " + propName + " radFalse\" type=\"radio\" name=\"" + propName + "\" proptype=\"" + propType.FullName + "\" value=\"false\"/><label class=\"'+view.className+' " + propName + " lblFalse\">False</label>");
                 else
-                    sb.Append("<input type=\"text\" name=\"" + propName + "\" proptype=\"" + propType.FullName + "\"/>");
+                    sb.Append("<input class=\"'+view.className+' " + propName + "\" type=\"text\" name=\"" + propName + "\" proptype=\"" + propType.FullName + "\"/>");
             }
         }
 
@@ -138,6 +140,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.AppendLine("\t\t\t}");
                                 sb.AppendLine("\t\t}");
                             }
+                            else if (propType==typeof(bool))
+                                sb.AppendLine("\t\t$(frm.find('input[name=\"" + propName + "\"][value=\"'+view.model.get('" + propName + "')+'\"]')[0]).prop('checked', true);");
                             else
                                 sb.AppendLine("\t\t$(frm.find('input[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
                         }
