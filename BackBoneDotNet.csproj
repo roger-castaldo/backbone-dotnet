@@ -36,6 +36,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\DeleteButtonImagePath.cs" />
+    <Compile Include="Attributes\EditButtonImagePath.cs" />
     <Compile Include="Attributes\Enums.cs" />
     <Compile Include="Attributes\ModelBlockActions.cs" />
     <Compile Include="Attributes\ModelBlockJavascriptGeneration.cs" />

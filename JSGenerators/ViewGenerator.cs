@@ -35,7 +35,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-        private void _AppendRenderFunction(Type modelType,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb, List<string> viewIgnoreProperties)
+        private void _AppendRenderFunction(Type modelType,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb, List<string> viewIgnoreProperties,string editImage,string deleteImage)
         {
             bool hasUpdateFunction = true;
             if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
@@ -145,9 +145,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }
             if (hasUpdate)
-                sb.Append("+'<span class=\"'+this.className+' button edit\">Edit</span>'");
+                sb.Append("+'<span class=\"'+this.className+' button edit\">"+(editImage==null ? "Edit" : "<img src=\""+editImage+"\"/>")+"</span>'");
             if (hasDelete)
-                sb.Append("+'<span class=\"'+this.className+' button delete\">Delete</span>'");
+                sb.Append("+'<span class=\"'+this.className+' button delete\">"+(deleteImage==null ? "Delete" : "<img src=\""+deleteImage+"\"/>")+"</span>'");
             if (hasUpdate || hasDelete)
             {
                 switch (tag.ToLower())
@@ -268,6 +268,50 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             return code;
 		}
 
+        private void _LocateButtonImages(Type modelType, string host, out string editImage, out string deleteImage)
+        {
+            editImage = null;
+            deleteImage = null;
+            foreach (EditButtonImagePath edip in modelType.GetCustomAttributes(typeof(EditButtonImagePath), false))
+            {
+                if (edip.Host == host)
+                {
+                    editImage = edip.URL;
+                    break;
+                }
+            }
+            if (editImage == null)
+            {
+                foreach (EditButtonImagePath edip in modelType.GetCustomAttributes(typeof(EditButtonImagePath), false))
+                {
+                    if (edip.Host =="*")
+                    {
+                        editImage = edip.URL;
+                        break;
+                    }
+                }
+            }
+            foreach (DeleteButtonImagePath dbip in modelType.GetCustomAttributes(typeof(DeleteButtonImagePath), false))
+            {
+                if (dbip.Host == host)
+                {
+                    deleteImage = dbip.URL;
+                    break;
+                }
+            }
+            if (deleteImage == null)
+            {
+                foreach (DeleteButtonImagePath dbip in modelType.GetCustomAttributes(typeof(DeleteButtonImagePath), false))
+                {
+                    if (dbip.Host == "*")
+                    {
+                        deleteImage = dbip.URL;
+                        break;
+                    }
+                }
+            }
+        }
+
         #region IJSGenerator Members
 
         public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties)
@@ -287,6 +331,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 hasUpdate = ((int)mba.Type & (int)ModelActionTypes.Edit) == 0;
                 hasDelete = ((int)mba.Type & (int)ModelActionTypes.Delete) == 0;
             }
+            string editImage = null;
+            string deleteImage = null;
+            _LocateButtonImages(modelType, host, out editImage, out deleteImage);
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator");
             sb.AppendLine(modelType.FullName + ".View = Backbone.View.extend({");
@@ -300,7 +347,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             
             _AppendClassName(modelType, sb);
             _AppendAttributes(modelType, sb);
-            _AppendRenderFunction(modelType,tag, properties, hasUpdate, hasDelete, sb,viewIgnoreProperties);
+            _AppendRenderFunction(modelType,tag, properties, hasUpdate, hasDelete, sb,viewIgnoreProperties,editImage,deleteImage);
 
             sb.AppendLine("});");
             return sb.ToString();
