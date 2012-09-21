@@ -29,6 +29,7 @@ namespace Org.Reddragonit.BackBoneDotNet.Attributes
     {
         Collection = 1,
         View = 2,
-        CollectionView = 4
+        CollectionView = 4,
+        EditForm = 8
     }
 }

@@ -268,6 +268,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 if (((int)((ModelBlockActions)modelType.GetCustomAttributes(typeof(ModelBlockActions), false)[0]).Type & (int)ModelActionTypes.Edit) == (int)ModelActionTypes.Edit)
                     return "";
             }
+            else if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
+            {
+                if (((int)((ModelBlockJavascriptGeneration)modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false)[0]).BlockType & (int)ModelBlockJavascriptGenerations.EditForm) == (int)ModelBlockJavascriptGenerations.EditForm)
+                    return "";
+            }
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.EditAddFormGenerator");
             sb.AppendLine(modelType.FullName + ".editModel = function(view){");

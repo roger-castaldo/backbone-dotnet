@@ -37,6 +37,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         private void _AppendRenderFunction(Type modelType,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb, List<string> viewIgnoreProperties)
         {
+            bool hasUpdateFunction = true;
+            if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
+            {
+                if (((int)((ModelBlockJavascriptGeneration)modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false)[0]).BlockType & (int)ModelBlockJavascriptGenerations.EditForm) == (int)ModelBlockJavascriptGenerations.EditForm)
+                    hasUpdateFunction = false;
+            }
             sb.AppendLine("\trender : function(){");
             string fstring = "";
             switch (tag.ToLower())
@@ -162,15 +168,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\tthis.trigger('render',this);");
             sb.AppendLine("\t\treturn this;");
             sb.AppendLine("\t}"+(hasUpdate || hasDelete ? "," : ""));
-            if (hasUpdate || hasDelete)
+            if ((hasUpdate&&hasUpdateFunction) || hasDelete)
             {
                 sb.AppendLine("\tevents : {");
-                if (hasUpdate)
+                if (hasUpdate && hasUpdateFunction)
                     sb.AppendLine("\t\t'click .button.edit' : 'editModel'" + (hasDelete ? "," : ""));
                 if (hasDelete)
                     sb.AppendLine("\t\t'click .button.delete' : 'deleteModel'");
                 sb.AppendLine("\t},");
-                if (hasUpdate)
+                if (hasUpdate && hasUpdateFunction)
                 {
                     sb.AppendLine("\teditModel : function(){");
                     sb.AppendLine("\t\t" + modelType.FullName + ".editModel(this);");
