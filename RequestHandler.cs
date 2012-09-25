@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using System.Collections;
 using Org.Reddragonit.BackBoneDotNet.JSGenerators;
+using Org.Reddragonit.BackBoneDotNet.Properties;
 
 namespace Org.Reddragonit.BackBoneDotNet
 {
@@ -332,7 +333,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                             }
                         }
                         request.SetResponseStatus(200);
-                        if (request.URL.AbsolutePath.EndsWith(".min.js"))
+                        if (request.URL.AbsolutePath.EndsWith(".min.js") || Settings.Default.CompressAllJS)
                         {
                             string comp = JSMinifier.Minify(sb.ToString());
                             request.WriteContent(comp);
