@@ -12,8 +12,5 @@ namespace Org.Reddragonit.BackBoneDotNet.Interfaces
     public interface IModel
     {
         string id { get; }
-        bool Delete();
-        bool Update();
-        bool Save();
     }
 }

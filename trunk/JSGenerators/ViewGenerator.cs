@@ -314,22 +314,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
         {
             if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
             {
                 if (((int)((ModelBlockJavascriptGeneration)modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false)[0]).BlockType & (int)ModelBlockJavascriptGenerations.View) == (int)ModelBlockJavascriptGenerations.View)
                     return "";
-            }
-            bool hasAdd = true;
-            bool hasUpdate = true;
-            bool hasDelete = true;
-            if (modelType.GetCustomAttributes(typeof(ModelBlockActions), false).Length > 0)
-            {
-                ModelBlockActions mba = (ModelBlockActions)modelType.GetCustomAttributes(typeof(ModelBlockActions), false)[0];
-                hasAdd = ((int)mba.Type & (int)ModelActionTypes.Add) == 0;
-                hasUpdate = ((int)mba.Type & (int)ModelActionTypes.Edit) == 0;
-                hasDelete = ((int)mba.Type & (int)ModelActionTypes.Delete) == 0;
             }
             string editImage = null;
             string deleteImage = null;

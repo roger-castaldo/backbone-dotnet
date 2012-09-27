@@ -77,6 +77,12 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static Dictionary<string, MethodInfo> _Loads;
         //houses all the select list calls, key is the url
         private static Dictionary<string, MethodInfo> _SelectLists;
+        //houses all update methods, key is model type
+        private static Dictionary<Type, MethodInfo> _UpdateMethods;
+        //houses all delete methods, key is model type
+        private static Dictionary<Type, MethodInfo> _DeleteMethods;
+        //houses all add methods, key is model type
+        private static Dictionary<Type, MethodInfo> _SaveMethods;
         //houses all the model list calls
         private static List<sModelListCall> _ModelListCalls;
         //houses all the cached javascript, key is the url
@@ -136,6 +142,9 @@ namespace Org.Reddragonit.BackBoneDotNet
             _TypeMaps = new Dictionary<string, Type>();
             _cacheTimer = new Timer(new TimerCallback(_CleanJSCache), null, 0, _CACHE_TIMER_PERIOD);
             _ModelListCalls = new List<sModelListCall>();
+            _DeleteMethods = new Dictionary<Type, MethodInfo>();
+            _SaveMethods = new Dictionary<Type, MethodInfo>();
+            _UpdateMethods = new Dictionary<Type, MethodInfo>();
             string reg = "^(";
             foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
             {
@@ -184,18 +193,29 @@ namespace Org.Reddragonit.BackBoneDotNet
             foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))
             {
                 _TypeMaps.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), t);
-                bool hasAdd = true;
-                bool hasUpdate = true;
-                bool hasDelete = true;
+                bool hasAdd = false;
+                bool hasUpdate = false;
+                bool hasDelete = false;
                 MethodInfo LoadAll = null;
                 MethodInfo Load = null;
                 MethodInfo SelectList = null;
-                if (t.GetCustomAttributes(typeof(ModelBlockActions),false).Length > 0)
+                foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Instance))
                 {
-                    ModelBlockActions mba = (ModelBlockActions)t.GetCustomAttributes(typeof(ModelBlockActions),false)[0];
-                    hasAdd = ((int)mba.Type & (int)ModelActionTypes.Add) == 0;
-                    hasUpdate = ((int)mba.Type & (int)ModelActionTypes.Edit) == 0;
-                    hasDelete = ((int)mba.Type & (int)ModelActionTypes.Delete) == 0;
+                    if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
+                    {
+                        _SaveMethods.Add(t, mi);
+                        hasAdd = true;
+                    }
+                    else if (mi.GetCustomAttributes(typeof(ModelDeleteMethod), false).Length > 0)
+                    {
+                        _DeleteMethods.Add(t, mi);
+                        hasDelete = true;
+                    }
+                    else if (mi.GetCustomAttributes(typeof(ModelUpdateMethod), false).Length > 0)
+                    {
+                        _UpdateMethods.Add(t, mi);
+                        hasUpdate = true;
+                    }
                 }
                 foreach (MethodInfo mi in t.GetMethods(BindingFlags.Static | BindingFlags.Public))
                 {
@@ -415,7 +435,10 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     IModelTypes.Add(str, obj);
                                 ret.GetType().GetProperty(str).SetValue(ret, obj, new object[0]);
                             }
-                            ret = ((IModel)ret).Update();
+                            if (_UpdateMethods.ContainsKey(ret.GetType()))
+                                ret = _UpdateMethods[ret.GetType()].Invoke(ret, new object[0]);
+                            else
+                                ret = false;
                             if ((bool)ret && IModelTypes.Count > 0)
                                 ret = IModelTypes;
                             else if (!(bool)ret)
@@ -428,7 +451,12 @@ namespace Org.Reddragonit.BackBoneDotNet
                         else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
                         if (ret != null)
-                            ret = ((IModel)ret).Delete();
+                        {
+                            if (_DeleteMethods.ContainsKey(ret.GetType()))
+                                ret = _DeleteMethods[ret.GetType()].Invoke(ret, new object[0]);
+                            else
+                                ret = null;
+                        }
                         break;
                     case "POST":
                         Type t = null;
@@ -436,20 +464,27 @@ namespace Org.Reddragonit.BackBoneDotNet
                             t = _TypeMaps[request.URL.Host + request.URL.AbsolutePath];
                         else if (_TypeMaps.ContainsKey("*"+request.URL.AbsolutePath))
                             t = _TypeMaps["*"+request.URL.AbsolutePath];
-                        if (t!=null){
+                        if (t != null)
+                        {
                             IModel mod = (IModel)t.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
                             Hashtable mht = (Hashtable)JSON.JsonDecode(request.ParameterContent);
                             foreach (string str in mht.Keys)
                             {
-                                if (t.GetProperty(str).GetCustomAttributes(typeof(ReadOnlyModelProperty),true).Length==0)
+                                if (t.GetProperty(str).GetCustomAttributes(typeof(ReadOnlyModelProperty), true).Length == 0)
                                     t.GetProperty(str).SetValue(mod, _ConvertObjectToType(mht[str], t.GetProperty(str).PropertyType), new object[0]);
                             }
-                            if (mod.Save())
+                            if (_SaveMethods.ContainsKey(t))
                             {
-                                ret = new Hashtable();
-                                ((Hashtable)ret).Add("id",mod.id);
-                            }else
-                                ret=null;
+                                if ((bool)_SaveMethods[t].Invoke(mod, new object[0]))
+                                {
+                                    ret = new Hashtable();
+                                    ((Hashtable)ret).Add("id", mod.id);
+                                }
+                                else
+                                    ret = null;
+                            }
+                            else
+                                ret = null;
                         }
                         break;
                 }
@@ -604,6 +639,18 @@ namespace Org.Reddragonit.BackBoneDotNet
             List<string> properties = new List<string>();
             List<string> readOnlyProperties = new List<string>();
             List<string> viewIgnoreProperties = new List<string>();
+            bool hasAdd = false;
+            bool hasUpdate = false;
+            bool hasDelete = false;
+            foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
+                    hasAdd = true;
+                else if (mi.GetCustomAttributes(typeof(ModelDeleteMethod), false).Length > 0)
+                    hasDelete = true;
+                else if (mi.GetCustomAttributes(typeof(ModelUpdateMethod), false).Length > 0)
+                    hasUpdate = true;
+            }
             foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
@@ -616,7 +663,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
             }
             foreach (IJSGenerator gen in _generators)
-                ret += gen.GenerateJS(t, host, readOnlyProperties, properties,viewIgnoreProperties);
+                ret += gen.GenerateJS(t, host, readOnlyProperties, properties,viewIgnoreProperties,hasUpdate,hasAdd,hasDelete);
             return ret;
         }
     }
