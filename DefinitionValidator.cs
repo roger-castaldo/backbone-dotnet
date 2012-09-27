@@ -33,12 +33,16 @@ namespace Org.Reddragonit.BackBoneDotNet
 
         private static Regex _regListPars = new Regex("\\{(\\d+)\\}", RegexOptions.Compiled | RegexOptions.ECMAScript);
 
+        private static bool _IsValidDataActionMethod(MethodInfo method)
+        {
+            return (method.ReturnType==typeof(bool)) && (method.GetParameters().Length==0);
+        }
+
         /*
          * Called to validate all model definitions through the following checks:
          * 1.  Check to make sure that there is at least 1 route specified for the model.
          * 2.  Check for an empty constructor, and if no empty constructor is specified, ensure that the create method is blocked
-         * 3.  Check the applied model routes for the current model as well as the saved 
-         *  routes to ensure that the specified model route is unique.
+         * 3.  Check the all paths specified for the model are unique
          * 4.  Check to make sure only 1 load method exists for a model
          * 5.  Check to make sure only 1 model select load method exists
          * 6.  Check to make sure that the select model method has the right return type
@@ -62,20 +66,75 @@ namespace Org.Reddragonit.BackBoneDotNet
                     invalidModels.Add(t);
                     errors.Add(new NoRouteException(t));
                 }
-                if (t.GetConstructor(Type.EmptyTypes) == null)
+                bool hasAdd = false;
+                bool hasUpdate = false;
+                bool hasDelete = false;
+                foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Instance))
                 {
-                    if (t.GetCustomAttributes(typeof(ModelBlockActions), false).Length == 0)
+                    if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
+                    {
+                        if (hasAdd)
+                        {
+                            if (!invalidModels.Contains(t))
+                                invalidModels.Add(t);
+                            errors.Add(new DuplicateModelSaveMethodException(t, mi));
+                        }
+                        else
+                        {
+                            hasAdd = true;
+                            if (!_IsValidDataActionMethod(mi))
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelSaveMethodException(t, mi));
+                            }
+                        }
+                    }
+                    else if (mi.GetCustomAttributes(typeof(ModelDeleteMethod), false).Length > 0)
+                    {
+                        if (hasDelete)
+                        {
+                            if (!invalidModels.Contains(t))
+                                invalidModels.Add(t);
+                            errors.Add(new DuplicateModelDeleteMethodException(t, mi));
+                        }
+                        else
+                        {
+                            hasDelete = true;
+                            if (!_IsValidDataActionMethod(mi))
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelDeleteMethodException(t, mi));
+                            }
+                        }
+                    }
+                    else if (mi.GetCustomAttributes(typeof(ModelUpdateMethod), false).Length > 0)
+                    {
+                        if (hasUpdate)
+                        {
+                            if (!invalidModels.Contains(t))
+                                invalidModels.Add(t);
+                            errors.Add(new DuplicateModelUpdateMethodException(t, mi));
+                        }
+                        else
+                        {
+                            hasUpdate = true;
+                            if (!_IsValidDataActionMethod(mi))
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelUpdateMethodException(t, mi));
+                            }
+                        }
+                    }
+                }
+                if (hasAdd)
+                {
+                    if (t.GetConstructor(Type.EmptyTypes) == null)
                     {
                         invalidModels.Add(t);
                         errors.Add(new NoEmptyConstructorException(t));
-                    }
-                    else
-                    {
-                        if (((int)((ModelBlockActions)t.GetCustomAttributes(typeof(ModelBlockActions), false)[0]).Type & (int)ModelActionTypes.Add) != (int)ModelActionTypes.Add)
-                        {
-                            invalidModels.Add(t);
-                            errors.Add(new NoEmptyConstructorException(t));
-                        }
                     }
                 }
                 List<string> curAttributes = new List<string>();

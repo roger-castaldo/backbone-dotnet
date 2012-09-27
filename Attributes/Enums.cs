@@ -12,13 +12,6 @@ namespace Org.Reddragonit.BackBoneDotNet.Attributes
         div
     }
 
-    public enum ModelActionTypes
-    {
-        Add = 1,
-        Edit=2,
-        Delete = 4
-    }
-
     public enum ModelEditAddTypes
     {
         inline,

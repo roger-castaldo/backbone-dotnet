@@ -126,4 +126,53 @@ namespace Org.Reddragonit.BackBoneDotNet
             : base("The IModel type " + t.FullName + " is not valid because the ModelViewAttribute specified a tag of class instead of using ModelViewClass.")
         { }
     }
+
+    //thrown when the ModelSaveMethod Attribute is specified more than once in the Model
+    public class DuplicateModelSaveMethodException : Exception
+    {
+        public DuplicateModelSaveMethodException(Type t, MethodInfo mi)
+            :base("The IModel type "+t.FullName+" is not valid because the ModelSaveMethod is specified on the method "+mi.Name+" as well as another method.")
+        {}
+    }
+
+    //thrown when the ModelDeleteMethod Attribute is specified more than once in the Model
+    public class DuplicateModelDeleteMethodException : Exception
+    {
+        public DuplicateModelDeleteMethodException(Type t, MethodInfo mi)
+            : base("The IModel type " + t.FullName + " is not valid because the ModelDeleteMethod is specified on the method " + mi.Name + " as well as another method.")
+        { }
+    }
+
+    //thrown when the ModelUpdateMethod Attribute is specified more than once in the Model
+    public class DuplicateModelUpdateMethodException : Exception
+    {
+        public DuplicateModelUpdateMethodException(Type t, MethodInfo mi)
+            : base("The IModel type " + t.FullName + " is not valid because the ModelUpdateMethod is specified on the method " + mi.Name + " as well as another method.")
+        { }
+    }
+
+    //thrown when the ModelSaveMethod Attribute is specified more than once in the Model
+    public class InvalidModelSaveMethodException : Exception
+    {
+        public InvalidModelSaveMethodException(Type t, MethodInfo mi)
+            : base("The IModel type " + t.FullName + " is not valid because the method "+mi.Name+" is not of the pattern public bool Save() for ModelSaveMethod.")
+        { }
+    }
+
+    //thrown when the ModelDeleteMethod Attribute is specified more than once in the Model
+    public class InvalidModelDeleteMethodException : Exception
+    {
+        public InvalidModelDeleteMethodException(Type t, MethodInfo mi)
+            : base("The IModel type " + t.FullName + " is not valid because the method " + mi.Name + " is not of the pattern public bool Delete() for ModelDeleteMethod.")
+        { }
+    }
+
+    //thrown when the ModelUpdateMethod Attribute is specified more than once in the Model
+    public class InvalidModelUpdateMethodException : Exception
+    {
+        public InvalidModelUpdateMethodException(Type t, MethodInfo mi)
+            : base("The IModel type " + t.FullName + " is not valid because the method " + mi.Name + " is not of the pattern public bool Update() for ModelUpdateMethod.")
+        { }
+    }
+
 }

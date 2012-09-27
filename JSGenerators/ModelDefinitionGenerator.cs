@@ -294,7 +294,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ModelDefinitionGenerator");
@@ -305,16 +305,6 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\t}");
             sb.AppendLine("\t},");
             _AppendDefaults(modelType,properties,sb);
-            bool hasAdd = true;
-            bool hasUpdate = true;
-            bool hasDelete = true;
-            if (modelType.GetCustomAttributes(typeof(ModelBlockActions), false).Length > 0)
-            {
-                ModelBlockActions mba = (ModelBlockActions)modelType.GetCustomAttributes(typeof(ModelBlockActions), false)[0];
-                hasAdd = ((int)mba.Type & (int)ModelActionTypes.Add) == 0;
-                hasUpdate = ((int)mba.Type & (int)ModelActionTypes.Edit) == 0;
-                hasDelete = ((int)mba.Type & (int)ModelActionTypes.Delete) == 0;
-            }
             if (!hasDelete)
                 _AppendBlockDestroy(sb);
             if (!hasAdd && !hasUpdate)
