@@ -38,22 +38,32 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static string _GetRegexStringForParameter(ParameterInfo parameterInfo)
         {
             string ret = ".+";
-            if (parameterInfo.ParameterType == typeof(DateTime))
-                ret = "(\\d+)";
-            else if (parameterInfo.ParameterType == typeof(int) ||
-                parameterInfo.ParameterType == typeof(long) ||
-                parameterInfo.ParameterType == typeof(short) ||
-                parameterInfo.ParameterType == typeof(byte))
-                ret = "(-?\\d+)";
-            else if (parameterInfo.ParameterType == typeof(uint) ||
-                parameterInfo.ParameterType == typeof(ulong) ||
-                parameterInfo.ParameterType == typeof(ushort))
-                ret = "(-?\\d+)";
-            else if (parameterInfo.ParameterType == typeof(double) ||
-                parameterInfo.ParameterType == typeof(decimal) ||
-                parameterInfo.ParameterType == typeof(float))
-                ret = "(-?\\d+(.\\d+)?)";
-            else if (parameterInfo.ParameterType == typeof(bool))
+            Type ptype = parameterInfo.ParameterType;
+            bool nullable = false;
+            if (ptype.FullName.StartsWith("System.Nullable"))
+            {
+                nullable = true;
+                if (ptype.IsGenericType)
+                    ptype = ptype.GetGenericArguments()[0];
+                else
+                    ptype = ptype.GetElementType();
+            }
+            if (ptype == typeof(DateTime))
+                ret = "(\\d+"+(nullable ? "|NULL" : "")+")";
+            else if (ptype == typeof(int) ||
+                ptype == typeof(long) ||
+                ptype == typeof(short) ||
+                ptype == typeof(byte))
+                ret = "(-?\\d+" + (nullable ? "|NULL" : "") + ")";
+            else if (ptype == typeof(uint) ||
+                ptype == typeof(ulong) ||
+                ptype == typeof(ushort))
+                ret = "(-?\\d+" + (nullable ? "|NULL" : "") + ")";
+            else if (ptype == typeof(double) ||
+                ptype == typeof(decimal) ||
+                ptype == typeof(float))
+                ret = "(-?\\d+(.\\d+)?" + (nullable ? "|NULL" : "") + ")";
+            else if (ptype == typeof(bool))
                 ret = "(true|false)";
             return ret;
         }
@@ -104,7 +114,9 @@ namespace Org.Reddragonit.BackBoneDotNet
 
         private static object _ConvertParameterValue(string p, Type type)
         {
-            if (type == typeof(DateTime))
+            if (p == "NULL")
+                return null;
+            else if (type == typeof(DateTime))
                 return _UTC.AddMilliseconds(long.Parse(p));
             else if (type == typeof(int))
                 return int.Parse(p);
@@ -141,13 +153,21 @@ namespace Org.Reddragonit.BackBoneDotNet
                 StringBuilder sb = new StringBuilder();
                 for (int x = 0; x < pars.Length; x++)
                 {
+                    sb.AppendLine("if (" + pars[x].Name + " == undefined){");
+                    sb.AppendLine("\t" + pars[x].Name + " = null;");
+                    sb.AppendLine("}");
+                    sb.AppendLine("if (" + pars[x].Name + " == null){");
+                    sb.AppendLine("\t" + pars[x].Name + " = 'NULL';");
+                    sb.AppendLine("}");
                     if (pars[x].ParameterType == typeof(bool))
-                        sb.AppendLine(pars[x].Name + " = (" + pars[x].Name + " ? 'true' : 'false');");
+                        sb.AppendLine(pars[x].Name + " = ((" + pars[x].Name + " == null ? 'false' : ("+pars[x].Name+" ? 'true' : 'false'));");
                     else if (pars[x].ParameterType == typeof(DateTime)){
-                        sb.AppendLine("if (!(" + pars[x].Name + " instanceof Date)){");
-                        sb.AppendLine("\t" + pars[x].Name + " = new Date(" + pars[x].Name + ");");
+                        sb.AppendLine("if (" + pars[x].Name + " != 'NULL'){");
+                        sb.AppendLine("\tif (!(" + pars[x].Name + " instanceof Date)){");
+                        sb.AppendLine("\t\t" + pars[x].Name + " = new Date(" + pars[x].Name + ");");
+                        sb.AppendLine("\t}");
+                        sb.AppendLine("\t"+pars[x].Name + " = " + pars[x].Name + ".UTC();");
                         sb.AppendLine("}");
-                        sb.AppendLine(pars[x].Name + " = " + pars[x].Name + ".UTC();");
                     }
                     pNames[x] = "'+"+pars[x].Name+"+'";
                 }
