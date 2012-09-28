@@ -211,7 +211,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 MethodInfo LoadAll = null;
                 MethodInfo Load = null;
                 MethodInfo SelectList = null;
-                foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+                foreach (MethodInfo mi in t.GetMethods(Constants.STORE_DATA_METHOD_FLAGS))
                 {
                     if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
                     {
@@ -229,7 +229,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         hasUpdate = true;
                     }
                 }
-                foreach (MethodInfo mi in t.GetMethods(BindingFlags.Static | BindingFlags.Public))
+                foreach (MethodInfo mi in t.GetMethods(Constants.LOAD_METHOD_FLAGS))
                 {
                     if (mi.GetCustomAttributes(typeof(ModelLoadAllMethod), false).Length > 0)
                         LoadAll = mi;
@@ -605,7 +605,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 MethodInfo loadMethod = null;
                 if (new List<Type>(expectedType.GetInterfaces()).Contains(typeof(IModel)))
                 {
-                    foreach (MethodInfo mi in expectedType.GetMethods(BindingFlags.Public | BindingFlags.Static))
+                    foreach (MethodInfo mi in expectedType.GetMethods(Constants.LOAD_METHOD_FLAGS))
                     {
                         if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
                         {
@@ -654,7 +654,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             bool hasAdd = false;
             bool hasUpdate = false;
             bool hasDelete = false;
-            foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            foreach (MethodInfo mi in t.GetMethods(Constants.STORE_DATA_METHOD_FLAGS))
             {
                 if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
                     hasAdd = true;

@@ -70,7 +70,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 bool hasAdd = false;
                 bool hasUpdate = false;
                 bool hasDelete = false;
-                foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+                foreach (MethodInfo mi in t.GetMethods(Constants.STORE_DATA_METHOD_FLAGS))
                 {
                     if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
                     {
@@ -170,7 +170,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
                 bool found = false;
                 bool foundLoadSelMethod = false;
-                foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Static))
+                foreach (MethodInfo mi in t.GetMethods(Constants.LOAD_METHOD_FLAGS))
                 {
                     if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
                     {
@@ -180,7 +180,16 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 invalidModels.Add(t);
                             errors.Add(new InvalidModelListMethodReturnException(t, mi));
                         }
-                        if (mi.ReturnType.FullName == t.FullName)
+                        if (mi.ReturnType != t)
+                        {
+                            if (!mi.ReturnType.IsAssignableFrom(t))
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidLoadMethodReturnType(t, mi.Name));
+                            }
+                        }
+                        if (mi.ReturnType== t)
                         {
                             if (mi.GetParameters().Length == 1)
                             {
@@ -336,7 +345,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                     if (new List<Type>(rtype.GetInterfaces()).Contains(typeof(IModel)))
                     {
                         bool foundSelMethod = false;
-                        foreach (MethodInfo mi in rtype.GetMethods(BindingFlags.Public | BindingFlags.Static))
+                        foreach (MethodInfo mi in rtype.GetMethods(Constants.LOAD_METHOD_FLAGS))
                         {
                             if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
                             {

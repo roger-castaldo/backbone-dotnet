@@ -15,7 +15,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ModelListCallGenerators");
-            foreach (MethodInfo mi in modelType.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            foreach (MethodInfo mi in modelType.GetMethods(Constants.LOAD_METHOD_FLAGS))
             {
                 if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
                 {
