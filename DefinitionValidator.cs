@@ -52,6 +52,7 @@ namespace Org.Reddragonit.BackBoneDotNet
          * 9.  Check to make sure that the id property is not blocked.
          * 10. Check View Attributes to make sure class it not used (use ModelViewClass instead.
          * 11.  Check View Attributes and make sure all names are unique
+         * 12.  Check to make sure all paged select lists have proper parameters
          */
         internal static List<Exception> Validate(out List<Type> invalidModels)
         {
@@ -245,23 +246,72 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 invalidModels.Add(t);
                             errors.Add(new InvalidModelListMethodReturnException(t, mi));
                         }
+                        bool isPaged = false;
+                        foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
+                        {
+                            if (mlm.Paged)
+                            {
+                                isPaged = true;
+                                break;
+                            }
+                        }
                         foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
                         {
                             MatchCollection mc = _regListPars.Matches(mlm.Path);
-                            if (mc.Count != mi.GetParameters().Length)
+                            if (isPaged && !mlm.Paged)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelListNotAllPagedException(t, mi, mlm.Path));
+                            }
+                            if (mc.Count != mi.GetParameters().Length-(isPaged ? 3 : 0))
                             {
                                 if (!invalidModels.Contains(t))
                                     invalidModels.Add(t);
                                 errors.Add(new InvalidModelListParameterCountException(t, mi,mlm.Path));
                             }
                         }
-                        foreach (ParameterInfo pi in mi.GetParameters())
+                        ParameterInfo[] pars = mi.GetParameters();
+                        for(int x=0;x<pars.Length;x++)
                         {
+                            ParameterInfo pi = pars[x];
                             if (pi.ParameterType.IsGenericType || pi.ParameterType.IsArray)
                             {
                                 if (!invalidModels.Contains(t))
                                     invalidModels.Add(t);
                                 errors.Add(new InvalidModelListParameterTypeException(t, mi, pi));
+                            }
+                            if (pi.IsOut && (!isPaged || x!=pars.Length-1))
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelListParameterOutException(t, mi, pi));
+                            }
+                            if (isPaged && x >= pars.Length - 3)
+                            {
+                                Type ptype = pi.ParameterType;
+                                if (pi.IsOut)
+                                    ptype = ptype.GetElementType();
+                                if (ptype != typeof(int)
+                                    && ptype != typeof(long)
+                                    && ptype != typeof(short)
+                                    && ptype != typeof(uint)
+                                    && ptype != typeof(ulong)
+                                    && ptype != typeof(ushort))
+                                {
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new InvalidModelListPageParameterTypeException(t, mi, pi));
+                                }
+                            }
+                            if (isPaged && x == pars.Length - 1)
+                            {
+                                if (!pi.IsOut)
+                                {
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new InvalidModelListPageTotalPagesNotOutException(t, mi, pi));
+                                }
                             }
                         }
                     }

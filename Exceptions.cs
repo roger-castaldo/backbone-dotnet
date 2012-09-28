@@ -111,6 +111,37 @@ namespace Org.Reddragonit.BackBoneDotNet
         { }
     }
 
+    //thrown when a parameter used for paging a model list is not a valid type of parameter
+    public class InvalidModelListPageParameterTypeException : Exception
+    {
+        public InvalidModelListPageParameterTypeException(Type t, MethodInfo mi, ParameterInfo pi)
+            : base("The IModel type " + t.FullName + " is not valid because the parameter " + pi.Name + " in the method " + mi.Name + " is not a usable as a paging parameter for a ModelListMethod.")
+        {}
+    }
+
+    //thrown when the parameter to indicate the total pages in a paged model list is not an out parameter
+    public class InvalidModelListPageTotalPagesNotOutException : Exception{
+        public InvalidModelListPageTotalPagesNotOutException(Type t, MethodInfo mi, ParameterInfo pi)
+            : base("The IModel type " + t.FullName + " is not valid because the parameter " + pi.Name + " in the method " + mi.Name + " is not an out parameter which is needed to indicate the total number of pages.")
+        {}
+    }
+
+    //thrown when the parameter of a ModelListMethod is an out parameter and it is not a paged call
+    public class InvalidModelListParameterOutException : Exception
+    {
+        public InvalidModelListParameterOutException(Type t, MethodInfo mi, ParameterInfo pi)
+            : base("The IModel type " + t.FullName + " is not valid because the parameter " + pi.Name + " in the method " + mi.Name + " is an out parameter.")
+        { }
+    }
+
+    //thrown when multiple ModelListMethod are delcared and 1 or more but not all are declared as paged
+    public class InvalidModelListNotAllPagedException : Exception
+    {
+        public InvalidModelListNotAllPagedException(Type t, MethodInfo mi, string path)
+            : base("The IModel type " + t.FullName + " is not valid because ModelListMethod for the path "+path+" is not marked as paged likst the others.")
+        { }
+    }
+
     //thrown when the name in a model view attribute is the same as another one specified
     public class RepeatedAttributeTagName : Exception
     {
