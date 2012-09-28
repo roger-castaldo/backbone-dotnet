@@ -26,6 +26,14 @@ namespace Org.Reddragonit.BackBoneDotNet
             : base("The IModel type " + t.FullName + " is not valid because the method " + methodName + " is tagged as a load method when a valid load method already exists.") { }
     }
 
+    //thrown when the return type of a load method is not of the model or of the models inheritance
+    public class InvalidLoadMethodReturnType : Exception
+    {
+        public InvalidLoadMethodReturnType(Type t, string methodName)
+            : base("The IModel type "+t.FullName+" is not valid because the method "+methodName+" does not return a valid type for loading.")
+        { }
+    }
+
     //thrown when no Load method is specified
     public class NoLoadMethodException : Exception
     {

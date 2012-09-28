@@ -60,6 +60,7 @@
     <Compile Include="Attributes\ReadOnlyModelProperty.cs" />
     <Compile Include="Attributes\ViewIgnoreField.cs" />
     <Compile Include="CachedItemContainer.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="DefinitionValidator.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Interfaces\IHttpRequest.cs" />

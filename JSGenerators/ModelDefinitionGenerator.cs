@@ -39,7 +39,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         private void _AppendBlockSave(StringBuilder sb)
         {
-            sb.AppendLine("\tsave : function(attributes,options){return false;}");
+            sb.AppendLine("\tsave : function(attributes,options){return false;},");
         }
 
         private void _AppendBlockAdd(StringBuilder sb)
