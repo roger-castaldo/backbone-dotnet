@@ -20,6 +20,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             private string _path;
             private Regex _reg;
             private MethodInfo _method;
+            private bool _isPaged;
 
             public string RegString
             {
@@ -36,7 +37,17 @@ namespace Org.Reddragonit.BackBoneDotNet
                 object ret = null;
                 try
                 {
-                    ret = _method.Invoke(null, URLUtility.ExtractParametersForUrl(_method, request.URL.AbsolutePath, _path));
+                    object[] pars = URLUtility.ExtractParametersForUrl(_method, request.URL, _path,_isPaged);
+                    ret = _method.Invoke(null, pars);
+                    if (_isPaged)
+                    {
+                        Hashtable tmp = new Hashtable();
+                        tmp.Add("response", ret);
+                        Hashtable pager = new Hashtable();
+                        tmp.Add("Pager", pager);
+                        pager.Add("TotalPages", pars[pars.Length - 1]);
+                        ret = tmp;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -47,6 +58,7 @@ namespace Org.Reddragonit.BackBoneDotNet
 
             public sModelListCall(ModelListMethod mlm, MethodInfo method)
             {
+                _isPaged = mlm.Paged;
                 _path = mlm.Path;
                 _reg = new Regex(URLUtility.GenerateRegexForURL(mlm, method),RegexOptions.ECMAScript|RegexOptions.Compiled);
                 _method = method;

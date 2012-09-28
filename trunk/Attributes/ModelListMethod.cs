@@ -19,16 +19,29 @@ namespace Org.Reddragonit.BackBoneDotNet.Attributes
             get { return _path; }
         }
 
-        public ModelListMethod(string host,string path)
+        private bool _paged;
+        public bool Paged
+        {
+            get { return _paged; }
+        }
+
+        public ModelListMethod(string host,string path, bool paged)
         {
             _path = path;
             _host = host;
+            _paged = paged;
         }
 
         public ModelListMethod(string path)
-        {
-            _path = path;
-            _host = "*";
-        }
+            :this("*",path,false)
+        {}
+
+        public ModelListMethod(string host, string path)
+            : this(host, path, false)
+        { }
+
+        public ModelListMethod(string path, bool paged)
+            : this("*", path, paged)
+        { }
     }
 }

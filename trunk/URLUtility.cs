@@ -68,7 +68,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             return ret;
         }
 
-        internal static object[] ExtractParametersForUrl(MethodInfo mi, string url, string path)
+        internal static object[] ExtractParametersForUrl(MethodInfo mi, Uri url, string path,bool isPaged)
         {
             object[] ret = new object[0];
             ParameterInfo[] pars = mi.GetParameters();
@@ -77,6 +77,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 List<string> spars = new List<string>();
                 List<int> indexes = new List<int>();
                 ret = new object[pars.Length];
+                string surl = url.AbsolutePath;
                 while (path.Contains("{"))
                 {
                     if (path[0] == '{')
@@ -85,28 +86,35 @@ namespace Org.Reddragonit.BackBoneDotNet
                         path = path.Substring(path.IndexOf('}') + 1);
                         if (path.Contains("{"))
                         {
-                            spars.Add(url.Substring(0, url.IndexOf(path.Substring(0, path.IndexOf("{")))));
-                            url = url.Substring(0, url.IndexOf(path.Substring(0, path.IndexOf("{"))));
+                            spars.Add(surl.Substring(0, surl.IndexOf(path.Substring(0, path.IndexOf("{")))));
+                            surl = surl.Substring(0, surl.IndexOf(path.Substring(0, path.IndexOf("{"))));
                         }
                         else if (path == "")
                         {
-                            spars.Add(url);
-                            url = "";
+                            spars.Add(surl);
+                            surl = "";
                         }
                         else
                         {
-                            spars.Add(url.Substring(0, url.IndexOf(path)));
-                            url = url.Substring(0, url.IndexOf(path));
+                            spars.Add(surl.Substring(0, surl.IndexOf(path)));
+                            surl = surl.Substring(0, surl.IndexOf(path));
                         }
                     }
                     else
                     {
                         path = path.Substring(1);
-                        url = url.Substring(1);
+                        surl = surl.Substring(1);
                     }
                 }
                 for(int x=0;x<indexes.Count;x++){
                     ret[indexes[x]] = _ConvertParameterValue(spars[x],pars[x].ParameterType);
+                }
+                if (isPaged)
+                {
+                    string[] qpars = url.Query.Split('&');
+                    ret[ret.Length - 3] = _ConvertParameterValue(qpars[0].Substring(qpars[0].IndexOf("=") + 1), pars[ret.Length-3].ParameterType);
+                    ret[ret.Length - 2] = _ConvertParameterValue(qpars[1].Substring(qpars[1].IndexOf("=") + 1), pars[ret.Length - 2].ParameterType);
+                    ret[ret.Length - 1] = null;
                 }
             }
             return ret;
@@ -151,7 +159,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 string[] pNames = new string[pars.Length];
                 StringBuilder sb = new StringBuilder();
-                for (int x = 0; x < pars.Length; x++)
+                for (int x = 0; x < (mlm.Paged ? pars.Length -3 : pars.Length); x++)
                 {
                     sb.AppendLine("if (" + pars[x].Name + " == undefined){");
                     sb.AppendLine("\t" + pars[x].Name + " = null;");
