@@ -22,11 +22,6 @@ namespace Org.Reddragonit.BackBoneDotNet
             private MethodInfo _method;
             private bool _isPaged;
 
-            public string RegString
-            {
-                get { return _reg.ToString(); }
-            }
-
             public bool HandlesRequest(IHttpRequest request)
             {
                 return _reg.IsMatch(request.Method.ToUpper() + "\t" + request.URL + request.URL.AbsolutePath);
@@ -78,9 +73,9 @@ namespace Org.Reddragonit.BackBoneDotNet
         }
 
         //houses the regex used to check and see if a request can be handled by this system
-        private static Regex _REG_URL;
-        //houses a master regex for model list select calls
-        private static Regex _REG_MODELS;
+        private static RequestPathChecker _RPC_URL;
+        //houses the regex used to check and see if a request can be handled by this system
+        private static RequestPathChecker _RPC_SELECT;
         //flag used to indicate if the handler is running
         private static bool _running;
         //houses all load all calls available, key is the url
@@ -157,11 +152,12 @@ namespace Org.Reddragonit.BackBoneDotNet
             _DeleteMethods = new Dictionary<Type, MethodInfo>();
             _SaveMethods = new Dictionary<Type, MethodInfo>();
             _UpdateMethods = new Dictionary<Type, MethodInfo>();
-            string reg = "^(";
+            _RPC_URL = new RequestPathChecker();
+            _RPC_SELECT = new RequestPathChecker();
             foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
             {
                 if (!_invalidModels.Contains(t))
-                    AppendURLRegex(ref reg, t);
+                    AppendURLRegex(t);
             }
             _jqueryURL = jqueryURL;
             _jsonURL = jsonURL;
@@ -169,25 +165,18 @@ namespace Org.Reddragonit.BackBoneDotNet
             if (_jqueryURL != null)
             {
                 _jqueryURL = (!_jqueryURL.StartsWith("/") ? "/" + _jqueryURL : "");
-                reg += (reg.EndsWith(")") ? "|" : "") + "(GET\t.+" + _jqueryURL + ")";
+                _RPC_URL.AddMethod("GET", "*", _jqueryURL);
             }
             if (_jsonURL != null)
             {
                 _jsonURL = (!_jsonURL.StartsWith("/") ? "/" + _jsonURL : "");
-                reg += (reg.EndsWith(")") ? "|" : "") + "(GET\t.+" + _jsonURL + ")";
+                _RPC_URL.AddMethod("GET", "*", _jsonURL);
             }
             if (_backboneURL != null)
             {
                 _backboneURL = (!_backboneURL.StartsWith("/") ? "/" + _backboneURL : "");
-                reg += (reg.EndsWith(")") ? "|" : "") + "(GET\t.+" + _backboneURL + ")";
+                _RPC_URL.AddMethod("GET", "*", _backboneURL);
             }
-            reg += ")$";
-            _REG_URL = new Regex(reg, RegexOptions.ECMAScript | RegexOptions.Compiled);
-            reg = "^(";
-            foreach (sModelListCall mlc in _ModelListCalls)
-                reg += (reg.EndsWith(")") ? "|" : "")+ mlc.RegString.Substring(1).TrimEnd('$');
-            reg += ")$";
-            _REG_MODELS = new Regex(reg, RegexOptions.Compiled | RegexOptions.ECMAScript);
             _running = true;
         }
 
@@ -196,12 +185,8 @@ namespace Org.Reddragonit.BackBoneDotNet
          * to handle the supplied model type.  it does this through checking the different specified 
          * attributes to specify hosts, available commands, etc.
          */
-        private static void AppendURLRegex(ref string reg, Type t)
+        private static void AppendURLRegex(Type t)
         {
-            if (reg.EndsWith(")"))
-                reg += "|(";
-            else
-                reg += "(";
             foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))
             {
                 _TypeMaps.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), t);
@@ -240,47 +225,43 @@ namespace Org.Reddragonit.BackBoneDotNet
                     else if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
                     {
                         foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
+                        {
+                            _RPC_SELECT.AddMethod("GET", mlm.Host, mlm.Path);
                             _ModelListCalls.Add(new sModelListCall(mlm, mi));
+                        }
                     }
                 }
                 _Loads.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), Load);
-                string methods = "((";
                 if (LoadAll != null)
                 {
-                    methods += "GET";
+                    _RPC_URL.AddMethod("GET", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'));
                     _LoadAlls.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), LoadAll);
                 }
                 if (hasAdd)
-                    methods += (methods.EndsWith("(") ? "" : "|") + "POST";
+                    _RPC_URL.AddMethod("POST", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'));
                 if (SelectList != null)
                 {
-                    methods += (methods.EndsWith("(") ? "" : "|") + "SELECT";
+                    _RPC_URL.AddMethod("SELECT", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'));
                     _SelectLists.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), SelectList);
                 }
-                methods += ")";
-                if (methods!="(()")
-                    reg += (reg.EndsWith(")") ? "|" : "") + methods + "\t" + (mr.Host == "*" ? ".+" : mr.Host) + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/') + ")";
-                string adds = "(GET";
+                _RPC_URL.AddMethod("GET", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
                 if (hasUpdate)
-                    adds += "|PUT";
+                    _RPC_URL.AddMethod("PUT", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
                 if (hasDelete)
-                    adds += "|DELETE";
-                adds += ")";
-                reg += (reg.EndsWith(")") ? "|" : "") + "("+adds+"\t" + (mr.Host == "*" ? ".+" : mr.Host) + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + ".+)";
+                    _RPC_URL.AddMethod("DELETE", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
             }
             foreach (ModelJSFilePath mj in t.GetCustomAttributes(typeof(ModelJSFilePath), false))
             {
-                if (!reg.Contains("(" + (mj.Host == "*" ? ".+" : mj.Host) + (mj.Path.StartsWith("/") ? mj.Path : "/" + mj.Path) + ")"))
-                    reg += (reg.EndsWith(")") ? "|" : "") + "(GET\t" + (mj.Host == "*" ? ".+" : mj.Host) + (mj.Path.StartsWith("/") ? mj.Path : "/" + mj.Path) + ")";
+                _RPC_URL.AddMethod("GET", mj.Host, (mj.Path.StartsWith("/") ? mj.Path : "/" + mj.Path));
             }
-            reg += ")";
         }
 
         // called to stop the handler and clear up resources
         public static void Stop()
         {
             _running = false;
-            _REG_URL = null;
+            _RPC_URL = null;
+            _RPC_SELECT = null;
             _invalidModels = null;
             _cacheTimer.Dispose();
             _jsonURL = null;
@@ -298,8 +279,8 @@ namespace Org.Reddragonit.BackBoneDotNet
         {
             if (_running)
             {
-                if (!_REG_URL.IsMatch(method.ToUpper() + "\t" + url.Host + url.AbsolutePath))
-                    return _REG_MODELS.IsMatch(method.ToUpper() + "\t" + url.Host + url.AbsolutePath);
+                if (!_RPC_URL.IsMatch(method.ToUpper(), url.Host, url.AbsolutePath))
+                    return _RPC_SELECT.IsMatch(method.ToUpper(), url.Host, url.AbsolutePath);
                 else
                     return true;
             }
@@ -394,7 +375,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 switch (request.Method.ToUpper())
                 {
                     case "GET":
-                        if (_REG_MODELS.IsMatch(request.Method.ToUpper() + "\t" + request.URL.Host + request.URL.AbsolutePath))
+                        if (_RPC_SELECT.IsMatch(request.Method.ToUpper(),request.URL.Host,request.URL.AbsolutePath))
                         {
                             foreach (sModelListCall mlc in _ModelListCalls)
                             {
