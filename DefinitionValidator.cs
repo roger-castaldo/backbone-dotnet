@@ -156,7 +156,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
                 foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))
                 {
-                    Regex reg = new Regex((mr.Host == "*" ? ".+" : mr.Host) + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path), RegexOptions.ECMAScript | RegexOptions.Compiled);
+                    Regex reg = new Regex("^("+(mr.Host == "*" ? ".+" : mr.Host) + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path)+")$", RegexOptions.ECMAScript | RegexOptions.Compiled);
                     foreach (sPathTypePair p in paths)
                     {
                         if (reg.IsMatch(p.Path) && (p.ModelType.FullName != t.FullName))
@@ -327,37 +327,40 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
                 foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {
-                    Type rtype = pi.PropertyType;
-                    if (rtype.FullName.StartsWith("System.Nullable"))
+                    if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
                     {
-                        if (rtype.IsGenericType)
-                            rtype = rtype.GetGenericArguments()[0];
-                        else
-                            rtype = rtype.GetElementType();
-                    }
-                    if (rtype.IsArray)
-                        rtype = rtype.GetElementType();
-                    else if (rtype.IsGenericType)
-                    {
-                        if (rtype.GetGenericTypeDefinition() == typeof(List<>))
-                            rtype = rtype.GetGenericArguments()[0];
-                    }
-                    if (new List<Type>(rtype.GetInterfaces()).Contains(typeof(IModel)))
-                    {
-                        bool foundSelMethod = false;
-                        foreach (MethodInfo mi in rtype.GetMethods(Constants.LOAD_METHOD_FLAGS))
+                        Type rtype = pi.PropertyType;
+                        if (rtype.FullName.StartsWith("System.Nullable"))
                         {
-                            if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
-                            {
-                                foundSelMethod = true;
-                                break;
-                            }
+                            if (rtype.IsGenericType)
+                                rtype = rtype.GetGenericArguments()[0];
+                            else
+                                rtype = rtype.GetElementType();
                         }
-                        if (!foundSelMethod)
+                        if (rtype.IsArray)
+                            rtype = rtype.GetElementType();
+                        else if (rtype.IsGenericType)
                         {
-                            if (!invalidModels.Contains(t))
-                                invalidModels.Add(t);
-                            errors.Add(new NoModelSelectMethodException(t, pi));
+                            if (rtype.GetGenericTypeDefinition() == typeof(List<>))
+                                rtype = rtype.GetGenericArguments()[0];
+                        }
+                        if (new List<Type>(rtype.GetInterfaces()).Contains(typeof(IModel)))
+                        {
+                            bool foundSelMethod = false;
+                            foreach (MethodInfo mi in rtype.GetMethods(Constants.LOAD_METHOD_FLAGS))
+                            {
+                                if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
+                                {
+                                    foundSelMethod = true;
+                                    break;
+                                }
+                            }
+                            if (!foundSelMethod)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new NoModelSelectMethodException(t, pi));
+                            }
                         }
                     }
                 }
