@@ -41,7 +41,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionViewGenerator");
-            sb.AppendLine(modelType.FullName + ".CollectionView = Backbone.View.extend({");
+            sb.AppendLine(modelType.FullName + " = _.extend("+modelType.FullName+", {CollectionView : Backbone.View.extend({");
             
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
@@ -94,7 +94,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\t}");
             sb.AppendLine("\t\tthis.trigger('render',this);");
             sb.AppendLine("\t}");
-            sb.AppendLine("});");
+            sb.AppendLine("})});");
             return sb.ToString();
         }
 
