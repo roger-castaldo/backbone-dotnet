@@ -298,7 +298,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ModelDefinitionGenerator");
-            sb.AppendLine(modelType.FullName+".Model = Backbone.Model.extend({");
+            sb.AppendLine(modelType.FullName+" = _.extend("+modelType.FullName+", {Model : Backbone.Model.extend({");
             sb.AppendLine("\tinitialize : function() {");
             sb.AppendLine("\t\tif (this._revertReadonlyFields != undefined){");
             sb.AppendLine("\t\t\tthis.on(\"change\",this._revertReadonlyFields);");
@@ -336,7 +336,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                 }
             }
-            sb.AppendLine("\turlRoot : \"" + urlRoot + "\"});");
+            sb.AppendLine("\turlRoot : \"" + urlRoot + "\"})});");
             return sb.ToString();
         }
         #endregion

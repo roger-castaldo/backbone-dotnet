@@ -272,7 +272,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.EditAddFormGenerator");
-            sb.AppendLine(modelType.FullName + ".editModel = function(view){");
+            sb.AppendLine(modelType.FullName + " = _.extend("+modelType.FullName+",{editModel : function(view){");
 
             ModelEditAddTypes meat = ModelEditAddTypes.dialog;
             if (modelType.GetCustomAttributes(typeof(ModelEditAddType), false).Length > 0)
@@ -287,7 +287,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     break;
             }
 
-            sb.AppendLine("}");
+            sb.AppendLine("}});");
             return sb.ToString();
         }
 

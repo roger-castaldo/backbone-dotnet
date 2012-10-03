@@ -23,7 +23,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         if (mlm.Host == host || mlm.Host == "*")
                         {
-                            sb.Append(modelType.FullName + "." + mi.Name + " = function(");
+                            sb.Append(modelType.FullName + " = _.extend("+modelType.FullName+", {"+ mi.Name + " : function(");
                             for (int x = 0; x < (mlm.Paged ? mi.GetParameters().Length-3 : mi.GetParameters().Length); x++)
                             {
                                 sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
@@ -79,7 +79,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("ret = new ret();");
                             sb.AppendLine("ret.fetch();");
                             sb.AppendLine("return ret;");
-                            sb.AppendLine("}");
+                            sb.AppendLine("}});");
                             break;
                         }
                     }
