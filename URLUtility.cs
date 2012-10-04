@@ -168,7 +168,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                     sb.AppendLine("\t" + pars[x].Name + " = 'NULL';");
                     sb.AppendLine("}");
                     if (pars[x].ParameterType == typeof(bool))
-                        sb.AppendLine(pars[x].Name + " = ((" + pars[x].Name + " == null ? 'false' : ("+pars[x].Name+" ? 'true' : 'false'));");
+                        sb.AppendLine(pars[x].Name + " = (" + pars[x].Name + " == null ? 'false' : ("+pars[x].Name+" ? 'true' : 'false'));");
                     else if (pars[x].ParameterType == typeof(DateTime)){
                         sb.AppendLine("if (" + pars[x].Name + " != 'NULL'){");
                         sb.AppendLine("\tif (!(" + pars[x].Name + " instanceof Date)){");
