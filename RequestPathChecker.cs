@@ -31,7 +31,20 @@ namespace Org.Reddragonit.BackBoneDotNet
             public void MergeInPath(string[] path, int index)
             {
                 if (path.Length > index + 1)
-                    subPortions.Add(new sPathPortion(path, index + 1));
+                {
+                    bool add = true;
+                    foreach (sPathPortion spp in subPortions)
+                    {
+                        if (spp.Path == path[index + 1])
+                        {
+                            spp.MergeInPath(path, index + 1);
+                            add = false;
+                            break;
+                        }
+                    }
+                    if (!add)
+                        subPortions.Add(new sPathPortion(path, index + 1));
+                }
                 else
                     _isEnd = true;
             }
@@ -40,7 +53,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 if (path[index] == _path || (_path.StartsWith("{") && _path.EndsWith("}")))
                 {
-                    if (path[index] == _path && _isEnd)
+                    if (path[index] == _path && _isEnd && index==path.Length-1)
                         return true;
                     else if (path.Length>index+1)
                     {
@@ -94,9 +107,11 @@ namespace Org.Reddragonit.BackBoneDotNet
                 bool ret = false;
                 foreach (sPathPortion por in _paths)
                 {
-                    ret = por.IsMatch(url, 0);
-                    if (ret)
+                    if (por.Path == url[0])
+                    {
+                        ret = por.IsMatch(url, 0);
                         break;
+                    }
                 }
                 return ret;
             }
@@ -115,7 +130,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 _method = method;
                 _hosts = new List<sHost>();
-                _hosts.Add(new sHost(host, path.Split('/')));
+                _hosts.Add(new sHost(host, path.Trim('/').Split('/')));
             }
 
             public void MergeInPath(string host,string path)
@@ -128,13 +143,13 @@ namespace Org.Reddragonit.BackBoneDotNet
                 {
                     if (sh.Host == host)
                     {
-                        sh.MergeInPath(path.Split('/'));
+                        sh.MergeInPath(path.Trim('/').Split('/'));
                         add = false;
                         break;
                     }
                 }
                 if (add)
-                    _hosts.Add(new sHost(host, path.Split('/')));
+                    _hosts.Add(new sHost(host, path.Trim('/').Split('/')));
             }
 
             public bool IsMatch(string host,string url)
@@ -144,7 +159,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 {
                     if (sh.Host == host || sh.Host == "*")
                     {
-                        ret = sh.IsMatch(url.Split('/'));
+                        ret = sh.IsMatch(url.Trim('/').Split('/'));
                         if (ret)
                             break;
                     }
@@ -171,7 +186,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
             }
             if (add)
-                _methods.Add(new sMethod(method,host, url));
+                _methods.Add(new sMethod(method,host, url.Trim('/')));
         }
 
         public bool IsMatch(string method,string host, string url)
@@ -181,7 +196,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 if (smt.Method == method)
                 {
-                    ret = smt.IsMatch(host,url);
+                    ret = smt.IsMatch(host, url.Trim('/'));
                     break;
                 }
             }
