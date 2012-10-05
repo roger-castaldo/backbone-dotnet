@@ -227,6 +227,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine("\t\t\t_.extend(Backbone,response.Backbone);");
                 sb.AppendLine("\t\t\tresponse=response.response;");
                 sb.AppendLine("\t\t}");
+                sb.AppendLine("\t\tattrs = response;");
+                sb.AppendLine("\t\treturn attrs;");
                 sb.AppendLine("\t},");
             }
         }
