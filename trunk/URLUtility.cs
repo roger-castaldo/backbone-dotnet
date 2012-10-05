@@ -65,6 +65,13 @@ namespace Org.Reddragonit.BackBoneDotNet
                 ret = "(-?\\d+(.\\d+)?" + (nullable ? "|NULL" : "") + ")";
             else if (ptype == typeof(bool))
                 ret = "(true|false)";
+            else if (ptype.IsEnum)
+            {
+                ret = "(";
+                foreach (string str in Enum.GetNames(ptype))
+                    ret += str + "|";
+                ret = ret.Substring(0, ret.Length - 1) + ")";
+            }
             return ret;
         }
 
@@ -87,7 +94,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         if (path.Contains("{"))
                         {
                             spars.Add(surl.Substring(0, surl.IndexOf(path.Substring(0, path.IndexOf("{")))));
-                            surl = surl.Substring(0, surl.IndexOf(path.Substring(0, path.IndexOf("{"))));
+                            surl = surl.Substring(surl.IndexOf(path.Substring(0, path.IndexOf("{"))));
                         }
                         else if (path == "")
                         {
@@ -148,6 +155,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                 return float.Parse(p);
             else if (type == typeof(bool))
                 return bool.Parse(p);
+            else if (type.IsEnum)
+                return Enum.Parse(type, p);
             else
                 return p;
         }
