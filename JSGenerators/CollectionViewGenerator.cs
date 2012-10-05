@@ -89,10 +89,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\t\t\tvw.$el.attr('class',vw.$el.attr('class')+' Alt');");
             sb.AppendLine("\t\t\t}");
             sb.AppendLine("\t\t\talt=!alt;");
+            sb.AppendLine("\t\t\tif(x+1==this.collection.length){");
+            sb.AppendLine("\t\t\t\tvw.on('render',function(){this.trigger('render',this);},this);");
+            sb.AppendLine("\t\t\t}");
             sb.AppendLine("\t\t\tel.append(vw.$el);");
             sb.AppendLine("\t\t\tvw.render();");
             sb.AppendLine("\t\t}");
-            sb.AppendLine("\t\tthis.trigger('render',this);");
             sb.AppendLine("\t}");
             sb.AppendLine("})});");
             return sb.ToString();
