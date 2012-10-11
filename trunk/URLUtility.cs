@@ -14,8 +14,61 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static Regex _regListPars = new Regex("\\{(\\d+)\\}", RegexOptions.Compiled | RegexOptions.ECMAScript);
         private static readonly DateTime _UTC = new DateTime(1970, 1, 1, 00, 00, 00);
 
+        internal static string[] SplitUrl(string url)
+        {
+            List<string> tret = new List<string>();
+            if (url.Contains("?"))
+            {
+                string[] tmp = url.Trim('/').Split('?');
+                foreach (string s in tmp[0].Split('/'))
+                {
+                    tret.Add(s);
+                    tret.Add("/");
+                }
+                tret.RemoveAt(tret.Count - 1);
+                tret.Add("?");
+                tmp[1] = Uri.UnescapeDataString(tmp[1]);
+                foreach (string str in tmp[1].Split('&'))
+                {
+                    if (str.Length > 0)
+                    {
+                        if (str.Contains("="))
+                        {
+                            foreach (string s in str.Split('='))
+                            {
+                                if (s != "")
+                                {
+                                    tret.Add(s);
+                                    tret.Add("=");
+                                }
+                            }
+                            if (tret[tret.Count - 1] == "=")
+                                tret.RemoveAt(tret.Count - 1);
+                        }
+                        else if (str.Length > 0)
+                            tret.Add(str);
+                        tret.Add("&");
+                    }
+                }
+                if (tret[tret.Count - 1] == "&")
+                    tret.RemoveAt(tret.Count - 1);
+            }
+            else
+            {
+                foreach (string s in url.Trim('/').Split('/'))
+                {
+                    tret.Add(s);
+                    tret.Add("/");
+                }
+                tret.RemoveAt(tret.Count - 1);
+            }
+            return tret.ToArray();
+
+        }
+
         internal static string GenerateRegexForURL(ModelListMethod mlm, MethodInfo mi)
         {
+            Logger.Debug("Generating regular expression for model list method at path " + mlm.Path);
             string ret = "^(GET\t";
             if (mlm.Host == "*")
                 ret += ".+";
@@ -26,12 +79,16 @@ namespace Org.Reddragonit.BackBoneDotNet
                 ParameterInfo[] pars = mi.GetParameters();
                 string[] regexs = new string[pars.Length];
                 for (int x = 0; x < pars.Length; x++)
+                {
+                    Logger.Trace("Adding parameter " + pars[x].Name+"["+pars[x].ParameterType.FullName+"]");
                     regexs[x] = _GetRegexStringForParameter(pars[x]);
-                string path = string.Format(mlm.Path, regexs);
+                }
+                string path = string.Format((mlm.Path+(mlm.Paged ? (mlm.Path.Contains("?") ? "&" : "?")+"PageStartIndex={"+(regexs.Length-3).ToString()+"}&PageSize={"+(regexs.Length-2).ToString()+"}" : "")).Replace("?","\\?"), regexs);
                 ret += (path.StartsWith("/") ? path : "/" + path).TrimEnd('/');
             }
             else
-                ret += (mlm.Path.StartsWith("/") ? mlm.Path : "/" + mlm.Path).TrimEnd('/');
+                ret += (mlm.Path.StartsWith("/") ? mlm.Path : "/" + mlm.Path).Replace("?", "\\?").TrimEnd('/');
+            Logger.Trace("Regular expression constructed: " + ret + ")$");
             return ret+")$";
         }
 
@@ -77,50 +134,56 @@ namespace Org.Reddragonit.BackBoneDotNet
 
         internal static object[] ExtractParametersForUrl(MethodInfo mi, Uri url, string path,bool isPaged)
         {
+            Logger.Debug("Extracting parameters (for model list method) from url " + url.AbsolutePath + (path.Contains("?") ? "?" + url.Query : ""));
             object[] ret = new object[0];
             ParameterInfo[] pars = mi.GetParameters();
             if (pars.Length > 0)
             {
-                List<string> spars = new List<string>();
-                List<int> indexes = new List<int>();
                 ret = new object[pars.Length];
-                string surl = url.AbsolutePath;
-                while (path.Contains("{"))
+                string[] surl = SplitUrl(url.AbsolutePath + (path.Contains("?") ? url.Query : ""));
+                string[] spath = SplitUrl(path);
+                int x = 0;
+                int y = 0;
+                while (x < spath.Length)
                 {
-                    if (path[0] == '{')
+                    if (spath[x] == surl[y])
                     {
-                        indexes.Add(int.Parse(path.Substring(1, path.IndexOf('}')-1)));
-                        path = path.Substring(path.IndexOf('}') + 1);
-                        if (path.Contains("{"))
+                        x++;
+                        y++;
+                    }
+                    else if (spath[x].StartsWith("{") && spath[x].EndsWith("}"))
+                    {
+                        int index = int.Parse(spath[x].TrimStart('{').TrimEnd('}'));
+                        string par = "";
+                        if (x == spath.Length - 1)
                         {
-                            spars.Add(surl.Substring(0, surl.IndexOf(path.Substring(0, path.IndexOf("{")))));
-                            surl = surl.Substring(surl.IndexOf(path.Substring(0, path.IndexOf("{"))));
-                        }
-                        else if (path == "")
-                        {
-                            spars.Add(surl);
-                            surl = "";
+                            while (y < surl.Length)
+                            {
+                                par += surl[y];
+                                y++;
+                                if (y < surl.Length)
+                                {
+                                    if (surl[y] == "&" && isPaged)
+                                        break;
+                                }
+                            }
                         }
                         else
                         {
-                            spars.Add(surl.Substring(0, surl.IndexOf(path)));
-                            surl = surl.Substring(0, surl.IndexOf(path));
+                            while (surl[x + 1] != spath[y])
+                            {
+                                par += spath[y];
+                                y++;
+                            }
                         }
+                        ret[index] = _ConvertParameterValue(par, pars[index].ParameterType);
+                        x++;
                     }
-                    else
-                    {
-                        path = path.Substring(1);
-                        surl = surl.Substring(1);
-                    }
-                }
-                for(int x=0;x<indexes.Count;x++){
-                    ret[indexes[x]] = _ConvertParameterValue(spars[x],pars[x].ParameterType);
                 }
                 if (isPaged)
                 {
-                    string[] qpars = url.Query.Split('&');
-                    ret[ret.Length - 3] = _ConvertParameterValue(qpars[0].Substring(qpars[0].IndexOf("=") + 1), pars[ret.Length-3].ParameterType);
-                    ret[ret.Length - 2] = _ConvertParameterValue(qpars[1].Substring(qpars[1].IndexOf("=") + 1), pars[ret.Length - 2].ParameterType);
+                    ret[ret.Length - 3] = _ConvertParameterValue(surl[y + 3], pars[ret.Length - 3].ParameterType);
+                    ret[ret.Length - 2] = _ConvertParameterValue(surl[y + 7], pars[ret.Length - 3].ParameterType);
                     ret[ret.Length - 1] = null;
                 }
             }
@@ -129,6 +192,8 @@ namespace Org.Reddragonit.BackBoneDotNet
 
         private static object _ConvertParameterValue(string p, Type type)
         {
+            p = Uri.UnescapeDataString(p);
+            Logger.Trace("Converting \"" + p + "\" to " + type.FullName);
             if (p == "NULL")
                 return null;
             else if (type == typeof(DateTime))
@@ -163,6 +228,7 @@ namespace Org.Reddragonit.BackBoneDotNet
 
         internal static string CreateJavacriptUrlCode(ModelListMethod mlm,MethodInfo mi, Type modelType)
         {
+            Logger.Debug("Creating the javascript url call for the model list method at path " + mlm.Path);
             ParameterInfo[] pars = mi.GetParameters();
             if (pars.Length > 0)
             {

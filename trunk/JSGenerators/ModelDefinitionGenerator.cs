@@ -20,12 +20,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             {
                 sb.AppendLine("\tdefaults:{");
                 object obj = modelType.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
-                foreach (string propName in properties)
+                if (obj != null)
                 {
-                    if (obj != null)
+                    foreach (string propName in properties)
                     {
                         object pobj = modelType.GetProperty(propName).GetValue(obj, new object[0]);
-                        sb.AppendLine("\t\t"+propName+": "+(pobj == null ? "null" : JSON.JsonEncode(pobj))+(properties.IndexOf(propName)==properties.Count-1 ? "" : ","));
+                        sb.AppendLine("\t\t" + propName + ": " + (pobj == null ? "null" : JSON.JsonEncode(pobj)) + (properties.IndexOf(propName) == properties.Count - 1 ? "" : ","));
                     }
                 }
                 sb.AppendLine("\t},");

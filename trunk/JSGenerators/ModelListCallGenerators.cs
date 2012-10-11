@@ -40,7 +40,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             {
                                 sb.AppendLine("pageStartIndex = (pageStartIndex == undefined ? 0 : (pageStartIndex == null ? 0 : pageStartIndex));");
                                 sb.AppendLine("pageSize = (pageSize == undefined ? 0 : (pageSize == null ? 0 : pageSize));");
-                                sb.AppendLine("var ret = Backbone.Collection.extend({url:url+'?PageStartIndex='+pageStartIndex+'&PageSize='+pageSize,");
+                                sb.AppendLine("var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" : "?")+"PageStartIndex='+pageStartIndex+'&PageSize='+pageSize,");
                                 sb.AppendLine("\tcurrentIndex : pageStartIndex*pageSize,");
                                 sb.AppendLine("\tcurrentPageSize : pageSize,");
                                 sb.AppendLine("\tparse : function(response){");
