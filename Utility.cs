@@ -63,6 +63,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //which by default Type.Load does not perform.
         public static Type LocateType(string typeName)
         {
+            Logger.Debug("Attempting to locate type " + typeName);
             Type t = null;
             lock (_TYPE_CACHE)
             {
@@ -106,6 +107,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //Called to locate all child classes of a given parent type
         public static List<Type> LocateTypeInstances(Type parent)
         {
+            Logger.Debug("Attempting to locate instances of type " + parent.FullName);
             List<Type> ret = null;
             lock (_INSTANCES_CACHE)
             {
@@ -148,6 +150,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //called to open a stream of a given embedded resource, again searches through all assemblies
         public static Stream LocateEmbededResource(string name)
         {
+            Logger.Debug("Locating embedded resource " + name);
             Stream ret = typeof(Utility).Assembly.GetManifestResourceStream(name);
             if (ret == null)
             {
@@ -177,6 +180,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //returns a string containing the contents of an embedded resource
         public static string ReadEmbeddedResource(string name)
         {
+            Logger.Debug("Reading embedded resource " + name);
             Stream s = LocateEmbededResource(name);
             string ret = "";
             if (s != null)

@@ -24,28 +24,36 @@ namespace Org.Reddragonit.BackBoneDotNet
 
             public bool HandlesRequest(IHttpRequest request)
             {
-                return _reg.IsMatch(request.Method.ToUpper() + "\t" + request.URL + request.URL.AbsolutePath);
+                Logger.Trace("Checking if url " + request.URL.AbsolutePath + " is handled in path " + _path);
+                return _reg.IsMatch(request.Method.ToUpper() + "\t" + request.URL.Host +request.URL.AbsolutePath+(_path.Contains("?") ? request.URL.Query : ""));
             }
 
             public object HandleRequest(IHttpRequest request)
             {
+                Logger.Debug("Attempting to handle model list call for path "+_path);
                 object ret = null;
                 try
                 {
+                    Logger.Trace("Parsing parameters from url for path " + _path);
                     object[] pars = URLUtility.ExtractParametersForUrl(_method, request.URL, _path,_isPaged);
+                    Logger.Trace("Invoking method for path " + _path);
                     ret = _method.Invoke(null, pars);
+                    Logger.Trace("Model list method invoked successfully");
                     if (_isPaged)
                     {
+                        Logger.Trace("Adding required paging values for the pager collection javascript");
                         Hashtable tmp = new Hashtable();
                         tmp.Add("response", ret);
                         Hashtable pager = new Hashtable();
                         tmp.Add("Pager", pager);
+                        Logger.Trace("Total pages for path " + _path + " " + pars[pars.Length - 1].ToString());
                         pager.Add("TotalPages", pars[pars.Length - 1]);
                         ret = tmp;
                     }
                 }
                 catch (Exception e)
                 {
+                    Logger.LogError(e);
                     ret = null;
                 }
                 return ret;
@@ -115,6 +123,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //called by the cache timer to clean up cached javascript
         private static void _CleanJSCache(object obj)
         {
+            Logger.Trace("Cleaning cached javascript");
             lock (_CachedJScript)
             {
                 DateTime now = DateTime.Now;
@@ -123,7 +132,10 @@ namespace Org.Reddragonit.BackBoneDotNet
                 foreach (string str in keys)
                 {
                     if (now.Subtract(_CachedJScript[str].LastAccess).TotalMinutes > _CACHE_TIMEOUT_MINUTES)
+                    {
+                        Logger.Trace("Removing cached javascript for path " + str);
                         _CachedJScript.Remove(str);
+                    }
                 }
             }
         }
@@ -135,9 +147,20 @@ namespace Org.Reddragonit.BackBoneDotNet
          * It will then create the url check regex, locat all load,loadalls, and select list methods
          * as well as specify types to urls, once complete it flags running to allow for handling requests.
          */
-        public static void Start(StartTypes startType,string jqueryURL,string jsonURL,string backboneURL)
+        public static void Start(StartTypes startType,string jqueryURL,string jsonURL,string backboneURL,ILogWriter logWriter)
         {
+            Logger.Setup(logWriter);
+            Logger.Debug("Starting up BackBone request handler");
             List<Exception> errors = DefinitionValidator.Validate(out _invalidModels);
+            if (errors.Count > 0)
+            {
+                Logger.Error("Backbone validation errors:");
+                foreach (Exception e in errors)
+                    Logger.LogError(e);
+                Logger.Error("Invalid IModels:");
+                foreach (Type t in _invalidModels)
+                    Logger.Error(t.FullName);
+            }
             if (startType == StartTypes.ThrowInvalidExceptions && errors.Count > 0)
                 throw new ModelValidationException(errors);
             if (startType==StartTypes.DisableInvalidModels)
@@ -157,7 +180,10 @@ namespace Org.Reddragonit.BackBoneDotNet
             foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
             {
                 if (!_invalidModels.Contains(t))
+                {
+                    Logger.Trace("Adding URL path checks for type " + t.FullName);
                     AppendURLRegex(t);
+                }
             }
             _jqueryURL = jqueryURL;
             _jsonURL = jsonURL;
@@ -177,6 +203,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 _backboneURL = (!_backboneURL.StartsWith("/") ? "/" + _backboneURL : "");
                 _RPC_URL.AddMethod("GET", "*", _backboneURL);
             }
+            Logger.Debug("Backbone request handler successfully started");
             _running = true;
         }
 
@@ -187,50 +214,66 @@ namespace Org.Reddragonit.BackBoneDotNet
          */
         private static void AppendURLRegex(Type t)
         {
+            bool hasAdd = false;
+            bool hasUpdate = false;
+            bool hasDelete = false;
+            MethodInfo LoadAll = null;
+            MethodInfo Load = null;
+            MethodInfo SelectList = null;
+            foreach (MethodInfo mi in t.GetMethods(Constants.LOAD_METHOD_FLAGS))
+            {
+                if (mi.GetCustomAttributes(typeof(ModelLoadAllMethod), false).Length > 0)
+                {
+                    Logger.Trace("Found load all method for type " + t.FullName);
+                    LoadAll = mi;
+                }
+                else if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
+                {
+                    Logger.Trace("Found load method for type " + t.FullName);
+                    Load = mi;
+                }
+                else if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
+                {
+                    Logger.Trace("Found select list method for type " + t.FullName);
+                    SelectList = mi;
+                }
+                else if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
+                {
+                    foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
+                    {
+                        _RPC_SELECT.AddMethod("GET", mlm.Host, mlm.Path+(mlm.Paged ? (mlm.Path.Contains("?") ? "&" : "?")+"PageStartIndex={"+(mi.GetParameters().Length-3).ToString()+"}&PageSize={"+(mi.GetParameters().Length-2).ToString()+"}" : ""));
+                        _ModelListCalls.Add(new sModelListCall(mlm, mi));
+                    }
+                }
+            }
+            foreach (MethodInfo mi in t.GetMethods(Constants.STORE_DATA_METHOD_FLAGS))
+            {
+                if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
+                {
+                    Logger.Trace("Save method located for type " + t.FullName);
+                    if (!_SaveMethods.ContainsKey(t))
+                        _SaveMethods.Add(t, mi);
+                    hasAdd = true;
+                }
+                else if (mi.GetCustomAttributes(typeof(ModelDeleteMethod), false).Length > 0)
+                {
+                    Logger.Trace("Delete method located for type " + t.FullName);
+                    if (!_DeleteMethods.ContainsKey(t))
+                        _DeleteMethods.Add(t, mi);
+                    hasDelete = true;
+                }
+                else if (mi.GetCustomAttributes(typeof(ModelUpdateMethod), false).Length > 0)
+                {
+                    Logger.Trace("Update method located for type " + t.FullName);
+                    if (!_UpdateMethods.ContainsKey(t))
+                        _UpdateMethods.Add(t, mi);
+                    hasUpdate = true;
+                }
+            }
             foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))
             {
+                Logger.Trace("Adding route " + mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/') + " for type " + t.FullName);
                 _TypeMaps.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), t);
-                bool hasAdd = false;
-                bool hasUpdate = false;
-                bool hasDelete = false;
-                MethodInfo LoadAll = null;
-                MethodInfo Load = null;
-                MethodInfo SelectList = null;
-                foreach (MethodInfo mi in t.GetMethods(Constants.STORE_DATA_METHOD_FLAGS))
-                {
-                    if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
-                    {
-                        _SaveMethods.Add(t, mi);
-                        hasAdd = true;
-                    }
-                    else if (mi.GetCustomAttributes(typeof(ModelDeleteMethod), false).Length > 0)
-                    {
-                        _DeleteMethods.Add(t, mi);
-                        hasDelete = true;
-                    }
-                    else if (mi.GetCustomAttributes(typeof(ModelUpdateMethod), false).Length > 0)
-                    {
-                        _UpdateMethods.Add(t, mi);
-                        hasUpdate = true;
-                    }
-                }
-                foreach (MethodInfo mi in t.GetMethods(Constants.LOAD_METHOD_FLAGS))
-                {
-                    if (mi.GetCustomAttributes(typeof(ModelLoadAllMethod), false).Length > 0)
-                        LoadAll = mi;
-                    else if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
-                        Load = mi;
-                    else if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
-                        SelectList = mi;
-                    else if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
-                    {
-                        foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
-                        {
-                            _RPC_SELECT.AddMethod("GET", mlm.Host, mlm.Path);
-                            _ModelListCalls.Add(new sModelListCall(mlm, mi));
-                        }
-                    }
-                }
                 _Loads.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), Load);
                 if (LoadAll != null)
                 {
@@ -252,6 +295,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
             foreach (ModelJSFilePath mj in t.GetCustomAttributes(typeof(ModelJSFilePath), false))
             {
+                Logger.Trace("Adding js path " + mj.Host + (mj.Path.StartsWith("/") ? mj.Path : "/" + mj.Path) + " for type " + t.FullName);
                 _RPC_URL.AddMethod("GET", mj.Host, (mj.Path.StartsWith("/") ? mj.Path : "/" + mj.Path));
             }
         }
@@ -259,6 +303,8 @@ namespace Org.Reddragonit.BackBoneDotNet
         // called to stop the handler and clear up resources
         public static void Stop()
         {
+            Logger.Debug("Stopping model handler by clearing out all held resources");
+            Logger.Destroy();
             _running = false;
             _RPC_URL = null;
             _RPC_SELECT = null;
@@ -279,8 +325,9 @@ namespace Org.Reddragonit.BackBoneDotNet
         {
             if (_running)
             {
+                Logger.Debug("Checking if url " + url.ToString()+ " is handled by the Backbone request handler");
                 if (!_RPC_URL.IsMatch(method.ToUpper(), url.Host, url.AbsolutePath))
-                    return _RPC_SELECT.IsMatch(method.ToUpper(), url.Host, url.AbsolutePath);
+                    return _RPC_SELECT.IsMatch(method.ToUpper(), url.Host, url.AbsolutePath+(url.Query!="" ? url.Query : ""));
                 else
                     return true;
             }
@@ -298,23 +345,27 @@ namespace Org.Reddragonit.BackBoneDotNet
          */
         public static void HandleRequest(IHttpRequest request)
         {
+            Logger.Debug("Handling backbone request for path " + request.URL.ToString());
             if (request.URL.AbsolutePath.EndsWith(".js") && request.Method.ToUpper() == "GET")
             {
                 request.SetResponseContentType("text/javascript");
                 if (request.URL.AbsolutePath == (_jqueryURL == null ? "" : _jqueryURL))
                 {
+                    Logger.Trace("Sending jquery javascript response through backbone handler");
                     request.SetResponseStatus(200);
                     request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.jquery.min.js"));
                     request.SendResponse();
                 }
                 else if (request.URL.AbsolutePath == (_jsonURL == null ? "" : _jsonURL))
                 {
+                    Logger.Trace("Sending json javascript response through backbone handler");
                     request.SetResponseStatus(200);
                     request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.json2.min.js"));
                     request.SendResponse();
                 }
                 else if (request.URL.AbsolutePath == (_backboneURL == null ? "" : _backboneURL))
                 {
+                    Logger.Trace("Sending modified backbone javascript response through backbone handler");
                     request.SetResponseStatus(200);
                     request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.underscore-min.js"));
                     request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone.min.js"));
@@ -328,6 +379,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                     {
                         if (_CachedJScript.ContainsKey(request.URL.Host+request.URL.AbsolutePath))
                         {
+                            Logger.Trace("Sending cached javascript response for path " + request.URL.Host + request.URL.AbsolutePath);
                             found = true;
                             request.SetResponseStatus(200);
                             request.WriteContent((string)_CachedJScript[request.URL.Host+request.URL.AbsolutePath].Value);
@@ -336,19 +388,25 @@ namespace Org.Reddragonit.BackBoneDotNet
                     }
                     if (!found)
                     {
+                        Logger.Trace("Buidling model javascript for path " + request.URL.Host + request.URL.AbsolutePath);
                         StringBuilder sb = new StringBuilder();
                         foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
                         {
                             foreach (ModelJSFilePath mj in t.GetCustomAttributes(typeof(ModelJSFilePath), false))
                             {
                                 if ((mj.Host == "*" || mj.Host == request.URL.Host) && mj.Path == request.URL.AbsolutePath)
+                                {
+                                    Logger.Trace("Appending model " + t.FullName + " to path " + request.URL.Host + request.URL.AbsolutePath);
                                     sb.Append(_GenerateModelJSFile(t, request.URL.Host));
+                                }
                             }
                         }
                         request.SetResponseStatus(200);
                         if (request.URL.AbsolutePath.EndsWith(".min.js") || Settings.Default.CompressAllJS)
                         {
+                            Logger.Trace("Compressing javascript for path "+request.URL.Host+request.URL.AbsolutePath);
                             string comp = JSMinifier.Minify(sb.ToString());
+                            Logger.Trace("Caching compressed javascript for path " + request.URL.Host + request.URL.AbsolutePath);
                             request.WriteContent(comp);
                             lock (_CachedJScript)
                             {
@@ -375,8 +433,10 @@ namespace Org.Reddragonit.BackBoneDotNet
                 switch (request.Method.ToUpper())
                 {
                     case "GET":
-                        if (_RPC_SELECT.IsMatch(request.Method.ToUpper(),request.URL.Host,request.URL.AbsolutePath))
+                        Logger.Trace("Attempting to handle GET request");
+                        if (_RPC_SELECT.IsMatch(request.Method.ToUpper(), request.URL.Host, request.URL.AbsolutePath + (request.URL.Query != "" ? request.URL.Query : "")))
                         {
+                            Logger.Trace("Handling request as a model list method");
                             foreach (sModelListCall mlc in _ModelListCalls)
                             {
                                 if (mlc.HandlesRequest(request))
@@ -389,22 +449,36 @@ namespace Org.Reddragonit.BackBoneDotNet
                         else
                         {
                             if (_LoadAlls.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
+                            {
+                                Logger.Trace("Handling Load All request");
                                 ret = _LoadAlls[request.URL.Host + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                            }
                             else if (_LoadAlls.ContainsKey("*" + request.URL.AbsolutePath))
+                            {
+                                Logger.Trace("Handling Load All request");
                                 ret = _LoadAlls["*" + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                            }
                             else if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
+                            {
+                                Logger.Trace("Handling Load request");
                                 ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                            }
                             else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
+                            {
+                                Logger.Trace("Handling Load request");
                                 ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                            }
                         }
                         break;
                     case "SELECT":
+                        Logger.Trace("Handling Select List request");
                         if (_SelectLists.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
                             ret = _SelectLists[request.URL.Host + request.URL.AbsolutePath].Invoke(null, new object[0]);
                         else if (_SelectLists.ContainsKey("*" + request.URL.AbsolutePath))
                             ret = _SelectLists["*" + request.URL.AbsolutePath].Invoke(null, new object[0]);
                         break;
                     case "PUT":
+                        Logger.Trace("Handling Put request");
                         if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
                         else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
@@ -439,6 +513,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         }
                         break;
                     case "DELETE":
+                        Logger.Trace("Handling Delete request");
                         if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
                         else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
@@ -452,6 +527,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         }
                         break;
                     case "POST":
+                        Logger.Trace("Handling Post request");
                         Type t = null;
                         if (_TypeMaps.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
                             t = _TypeMaps[request.URL.Host + request.URL.AbsolutePath];
@@ -483,6 +559,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
                 if (ret != null)
                 {
+                    Logger.Trace("Request successfully handled, sending response");
                     request.SetResponseStatus(200);
                     request.SetResponseContentType("application/json");
                     request.WriteContent(JSON.JsonEncode(_SetupAdditionalBackbonehash(ret,request)));
@@ -490,6 +567,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
                 else
                 {
+                    Logger.Trace("Handling of request failed, sending 404 response");
                     request.SetResponseStatus(404);
                     request.SendResponse();
                 }
@@ -498,6 +576,7 @@ namespace Org.Reddragonit.BackBoneDotNet
 
         private static Hashtable _SetupAdditionalBackbonehash(object response,IHttpRequest request)
         {
+            Logger.Trace("Adding additional Backbone variables");
             Hashtable ret = new Hashtable();
             ret.Add("response", response);
             Hashtable Backbone = new Hashtable();
@@ -514,6 +593,7 @@ namespace Org.Reddragonit.BackBoneDotNet
          */
         private static object _ConvertObjectToType(object obj, Type expectedType)
         {
+            Logger.Debug("Attempting to convert object of type " + (obj == null ? "NULL" : obj.GetType().FullName) + " to " + expectedType.FullName);
             if (expectedType.Equals(typeof(bool)) && (obj == null))
                 return false;
             if (obj == null)
@@ -628,6 +708,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //they were broken into components for easier code reading.
         private static string _GenerateModelJSFile(Type t,string host)
         {
+            Logger.Debug("Generating js file for type " + t.FullName);
             string ret = "";
             List<string> properties = new List<string>();
             List<string> readOnlyProperties = new List<string>();
@@ -656,7 +737,10 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
             }
             foreach (IJSGenerator gen in _generators)
-                ret += gen.GenerateJS(t, host, readOnlyProperties, properties,viewIgnoreProperties,hasUpdate,hasAdd,hasDelete);
+            {
+                Logger.Trace("Running js generator " + gen.GetType().FullName);
+                ret += gen.GenerateJS(t, host, readOnlyProperties, properties, viewIgnoreProperties, hasUpdate, hasAdd, hasDelete);
+            }
             return ret;
         }
     }
