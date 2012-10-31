@@ -63,7 +63,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sbHtml.Append("\t\t$(this.el).html(");
             foreach (string prop in properties)
             {
-                if (!viewIgnoreProperties.Contains(prop))
+                if (!viewIgnoreProperties.Contains(prop)&&prop!="id")
                 {
                     Type PropType = modelType.GetProperty(prop).PropertyType;
                     bool array = false;
@@ -127,7 +127,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                 }
             }
-            sb.Append(sbHtml.ToString());
+            sb.Append(sbHtml.ToString().Trim('+'));
             if (hasUpdate || hasDelete)
             {
                 switch (tag.ToLower())
@@ -165,6 +165,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }
             sb.AppendLine(");");
+            sb.AppendLine("\t\t$(this.el).attr('name',this.model.id);");
             sb.AppendLine("\t\tthis.trigger('render',this);");
             sb.AppendLine("\t\treturn this;");
             sb.AppendLine("\t}"+(hasUpdate || hasDelete ? "," : ""));
