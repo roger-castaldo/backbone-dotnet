@@ -96,8 +96,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (tsets != "")
                                 sb.Append(tsets);
                             sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
-                            sb.AppendLine("\t\tfor(x in this.model.get('" + prop + "')){");
-                            sb.AppendLine("\t\t\tars" + arIndex.ToString() + "+=" + string.Format(tcode, prop) + ";");
+                            sb.AppendLine("\t\tif(this.model.get('" + prop + "')!=null){");
+                            sb.AppendLine("\t\t\tfor(x in this.model.get('" + prop + "')){");
+                            sb.AppendLine("\t\t\t\tars" + arIndex.ToString() + "+=" + string.Format(tcode, prop) + ";");
+                            sb.AppendLine("\t\t\t}");
                             sb.AppendLine("\t\t}");
                             sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                             arIndex++;
@@ -108,7 +110,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             string code = _RecurAddRenderModelPropertyCode(prop, PropType, "this.model.get('" + prop + "').get('{0}')", out tsets, false);
                             if (tsets != "")
                                 sb.Append(tsets);
-                            sbHtml.Append(string.Format(fstring, prop, code, (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                            sbHtml.Append(string.Format(fstring, prop, "(this.model.get('" + prop + "') == null ? '' : "+code+")", (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                         }
                     }
                     else
@@ -116,14 +118,18 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         if (array)
                         {
                             sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
-                            sb.AppendLine("\t\tfor(x in this.model.get('" + prop + "')){");
-                            sb.AppendLine("\t\t\tars" + arIndex.ToString() + "+='<span class=\"'+this.className+' " + prop + " els\">+this.model.get('" + prop + "')[x]+'</span>';");
+                            sb.AppendLine("\t\tif(this.model.get('" + prop + "')!=null){");
+                            sb.AppendLine("\t\t\tfor(x in this.model.get('" + prop + "')){");
+                            sb.AppendLine("\t\t\t\tif(this.model.get('" + prop + "')[x]!=null){");
+                            sb.AppendLine("\t\t\t\t\tars" + arIndex.ToString() + "+='<span class=\"'+this.className+' " + prop + " els\">+this.model.get('" + prop + "')[x]+'</span>';");
+                            sb.AppendLine("\t\t\t\t}");
+                            sb.AppendLine("\t\t\t}");
                             sb.AppendLine("\t\t}");
                             sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                             arIndex++;
                         }
                         else
-                            sbHtml.Append(string.Format(fstring, prop, string.Format("this.model.get('{0}')", prop), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                            sbHtml.Append(string.Format(fstring, prop, string.Format("(this.model.get('{0}')==null ? '' : this.model.get('{0}'))", prop), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                     }
                 }
             }
@@ -237,16 +243,18 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 if (tsets != "")
                                     sb.Append(tsets);
                                 sb.AppendLine("\t\tvar ars" + prop + arIndex.ToString() + " = '';");
-                                sb.AppendLine("\t\tfor(x in " + string.Format(modelstring, pi.Name) + "){");
-                                sb.AppendLine("\t\t\tars" + prop + arIndex.ToString() + " += '<span class=\"" + className + " " + pi.Name + " els\">'+" + tcode + "+'</span>'");
+                                sb.AppendLine("\t\tif(" + string.Format(modelstring, pi.Name) + "!=null){");
+                                sb.AppendLine("\t\t\tfor(x in " + string.Format(modelstring, pi.Name) + "){");
+                                sb.AppendLine("\t\t\t\tars" + prop + arIndex.ToString() + " += '<span class=\"" + className + " " + pi.Name + " els\">'+" + tcode + "+'</span>'");
+                                sb.AppendLine("\t\t\t}");
                                 sb.AppendLine("\t\t}");
-                                code += (code.EndsWith(">'") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+ars" + prop + arIndex.ToString() + "+'</span>'";
+                                code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+ars" + prop + arIndex.ToString() + "+'</span>'";
                                 arIndex++;
                             }
                             else
                             {
                                 string tsets = "";
-                                code += (code.EndsWith(">'") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+" + _RecurAddRenderModelPropertyCode(pi.Name, ptype, string.Format(modelstring, pi.Name) + ".get('{0}')",out tsets,false) + "+'</span>'";
+                                code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "") + "("+string.Format(modelstring,prop)+"==null ? '' : '<span class=\"" + className + " " + pi.Name + "\">'+" + _RecurAddRenderModelPropertyCode(pi.Name, ptype, string.Format(modelstring, pi.Name) + ".get('{0}')",out tsets,false) + "+'</span>')";
                                 if (tsets != "")
                                     sb.Append(tsets);
                             }
@@ -254,13 +262,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (array)
                             {
                                 sb.AppendLine("\t\tvar ars" + prop + arIndex.ToString() + " = '';");
-                                sb.AppendLine("\t\tfor(x in " + string.Format(modelstring, pi.Name) + "){");
-                                sb.AppendLine("\t\t\tars" + prop + arIndex.ToString() + " += '<span class=\"" + className + " " + pi.Name + " els\">'+" + string.Format(modelstring,pi.Name) + "[x]+'</span>'");
+                                sb.AppendLine("\t\tif (" + string.Format(modelstring, pi.Name) + "!=null){");
+                                sb.AppendLine("\t\t\tfor(x in " + string.Format(modelstring, pi.Name) + "){");
+                                sb.AppendLine("\t\t\t\tars" + prop + arIndex.ToString() + " += '<span class=\"" + className + " " + pi.Name + " els\">'+" + string.Format(modelstring,pi.Name) + "[x]+'</span>'");
+                                sb.AppendLine("\t\t\t}");
                                 sb.AppendLine("\t\t}");
-                                code += (code.EndsWith(">'") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+ars" + prop + arIndex.ToString() + "+'</span>'";
+                                code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+ars" + prop + arIndex.ToString() + "+'</span>'";
                                 arIndex++;
                             }else
-                                code += (code.EndsWith(">'") ? "+" : "")+"'<span class=\"" + className + " " + pi.Name + "\">'+" + string.Format(modelstring, pi.Name) + "+'</span>'";
+                                code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "")+"'<span class=\"" + className + " " + pi.Name + "\">'+(" + string.Format(modelstring, pi.Name) + "==null ? '' : "+string.Format(modelstring,pi.Name)+")+'</span>'";
                         }
                     }
 			    }
