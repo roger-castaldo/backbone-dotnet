@@ -183,21 +183,18 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (addSets != "")
                                 sbArrays.AppendLine(addSets);
                             sb.AppendLine("\t\t\t}");
-                            if (!readOnlyProperties.Contains(str))
-                            {
-                                jsonb.AppendLine("\t\t\tattrs." + str + " = [];");
-                                jsonb.AppendLine("\t\t\tfor(x in this.get('" + str + "')){");
-                                jsonb.AppendLine("\t\t\t\tattrs." + str + ".push({id:this.get('" + str + "')[x].get('id')});");
-                                jsonb.AppendLine("\t\t\t}");
-                            }
+
+                            jsonb.AppendLine("\t\t\tattrs." + str + " = [];");
+                            jsonb.AppendLine("\t\t\tfor(x in this.get('" + str + "')){");
+                            jsonb.AppendLine("\t\t\t\tattrs." + str + ".push({id:this.get('" + str + "')[x].get('id')});");
+                            jsonb.AppendLine("\t\t\t}");
                         }
                         else
                         {
                             sb.AppendLine("\t\t\tattrs." + str + " = " + _AppendModelParseConstructor("response." + str + ".{0}", propType, "attrs." + str, out addSets) + ";");
                             if (addSets != "")
                                 sbArrays.AppendLine(addSets);
-                            if (!readOnlyProperties.Contains(str))
-                                jsonb.AppendLine("\t\tattrs." + str + " = {id : this.get('" + str + "').get('id')};");
+                            jsonb.AppendLine("\t\tattrs." + str + " = {id : this.get('" + str + "').get('id')};");
                         }
                         sb.AppendLine("\t\t}");
                     }
@@ -209,7 +206,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         else
                             sb.AppendLine("\t\tattrs." + str + " = response." + str + ";");
                         sb.AppendLine("\t\t}");
-                        if (str != "id" && !readOnlyProperties.Contains(str))
+                        if (str != "id")
                             jsonb.AppendLine("\t\tattrs." + str + " = this.get('" + str + "');");
                     }
                 }
