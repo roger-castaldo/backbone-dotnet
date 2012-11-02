@@ -489,18 +489,24 @@ namespace Org.Reddragonit.BackBoneDotNet
                             Hashtable IModelTypes = new Hashtable();
                             foreach (string str in ht.Keys)
                             {
-                                Type propType = ret.GetType().GetProperty(str).PropertyType;
-                                if (propType.IsArray)
-                                    propType = propType.GetElementType();
-                                else if (propType.IsGenericType)
+                                if (str != "id")
                                 {
-                                    if (propType.GetGenericTypeDefinition() == typeof(List<>))
-                                        propType = propType.GetGenericArguments()[0];
+                                    if (ret.GetType().GetProperty(str).GetCustomAttributes(typeof(ReadOnlyModelProperty), true).Length == 0)
+                                    {
+                                        Type propType = ret.GetType().GetProperty(str).PropertyType;
+                                        if (propType.IsArray)
+                                            propType = propType.GetElementType();
+                                        else if (propType.IsGenericType)
+                                        {
+                                            if (propType.GetGenericTypeDefinition() == typeof(List<>))
+                                                propType = propType.GetGenericArguments()[0];
+                                        }
+                                        var obj = _ConvertObjectToType(ht[str], ret.GetType().GetProperty(str).PropertyType);
+                                        if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
+                                            IModelTypes.Add(str, obj);
+                                        ret.GetType().GetProperty(str).SetValue(ret, obj, new object[0]);
+                                    }
                                 }
-                                var obj = _ConvertObjectToType(ht[str], ret.GetType().GetProperty(str).PropertyType);
-                                if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
-                                    IModelTypes.Add(str, obj);
-                                ret.GetType().GetProperty(str).SetValue(ret, obj, new object[0]);
                             }
                             if (_UpdateMethods.ContainsKey(ret.GetType()))
                                 ret = _UpdateMethods[ret.GetType()].Invoke(ret, new object[0]);
@@ -539,7 +545,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                             Hashtable mht = (Hashtable)JSON.JsonDecode(request.ParameterContent);
                             foreach (string str in mht.Keys)
                             {
-                                if (t.GetProperty(str).GetCustomAttributes(typeof(ReadOnlyModelProperty), true).Length == 0)
+                                if (str != "id")
                                     t.GetProperty(str).SetValue(mod, _ConvertObjectToType(mht[str], t.GetProperty(str).PropertyType), new object[0]);
                             }
                             if (_SaveMethods.ContainsKey(t))
