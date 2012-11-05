@@ -238,53 +238,50 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             {
                 if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
                 {
-                    if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length == 0)
+                    Type ptype = pi.PropertyType;
+                    bool array = false;
+                    if (ptype.FullName.StartsWith("System.Nullable"))
                     {
-                        Type ptype = pi.PropertyType;
-                        bool array = false;
-                        if (ptype.FullName.StartsWith("System.Nullable"))
-                        {
-                            if (ptype.IsGenericType)
-                                ptype = ptype.GetGenericArguments()[0];
-                            else
-                                ptype = ptype.GetElementType();
-                        }
-                        if (ptype.IsArray)
+                        if (ptype.IsGenericType)
+                            ptype = ptype.GetGenericArguments()[0];
+                        else
+                            ptype = ptype.GetElementType();
+                    }
+                    if (ptype.IsArray)
+                    {
+                        array = true;
+                        ptype = ptype.GetElementType();
+                    }
+                    else if (ptype.IsGenericType)
+                    {
+                        if (ptype.GetGenericTypeDefinition() == typeof(List<>))
                         {
                             array = true;
-                            ptype = ptype.GetElementType();
+                            ptype = ptype.GetGenericArguments()[0];
                         }
-                        else if (ptype.IsGenericType)
+                    }
+                    if (new List<Type>(ptype.GetInterfaces()).Contains(typeof(IModel)))
+                    {
+                        if (array)
                         {
-                            if (ptype.GetGenericTypeDefinition() == typeof(List<>))
-                            {
-                                array = true;
-                                ptype = ptype.GetGenericArguments()[0];
-                            }
-                        }
-                        if (new List<Type>(ptype.GetInterfaces()).Contains(typeof(IModel)))
-                        {
-                            if (array)
-                            {
-                                string tsets = "";
-                                arraySetCodes += propertyPath + "." + pi.Name + " = [];\n";
-                                arraySetCodes += "for(x in " + string.Format(p, pi.Name) + "){\n";
-                                arraySetCodes += "\t" + propertyPath + "." + pi.Name + ".push(" + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype, propertyPath + "." + pi.Name, out tsets) + ");\n";
-                                arraySetCodes += "}\n";
-                                if (tsets != "")
-                                    arraySetCodes += tsets;
-                            }
-                            else
-                            {
-                                string tsets = "";
-                                ret += pi.Name + " : " + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype, propertyPath + "." + pi.Name, out tsets) + ",";
-                                if (tsets != "")
-                                    arraySetCodes += tsets;
-                            }
+                            string tsets = "";
+                            arraySetCodes += propertyPath + "." + pi.Name + " = [];\n";
+                            arraySetCodes += "for(x in " + string.Format(p, pi.Name) + "){\n";
+                            arraySetCodes += "\t" + propertyPath + "." + pi.Name + ".push(" + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype, propertyPath + "." + pi.Name, out tsets) + ");\n";
+                            arraySetCodes += "}\n";
+                            if (tsets != "")
+                                arraySetCodes += tsets;
                         }
                         else
-                            ret += pi.Name + " : " + string.Format(p, pi.Name) + ",";
+                        {
+                            string tsets = "";
+                            ret += pi.Name + " : " + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype, propertyPath + "." + pi.Name, out tsets) + ",";
+                            if (tsets != "")
+                                arraySetCodes += tsets;
+                        }
                     }
+                    else
+                        ret += pi.Name + " : " + string.Format(p, pi.Name) + ",";
                 }
             }
             ret = ret.Substring(0, ret.Length - 1);
