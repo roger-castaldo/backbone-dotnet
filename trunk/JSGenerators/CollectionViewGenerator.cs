@@ -93,9 +93,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\t\t\t}");
             sb.AppendLine("\t\t\t\talt=!alt;");
             sb.AppendLine("\t\t\t\tif(x+1==this.collection.length){");
-            sb.AppendLine("\t\t\t\t\tvw.on('render',function(){this.trigger('item_render',this);this.trigger('render',this);},this);");
+            sb.AppendLine("\t\t\t\t\tvw.on('render',function(){this.col.trigger('item_render',this.view);this.col.trigger('render',this.col);},{col:this,view:vw});");
             sb.AppendLine("\t\t\t\t}else{");
-            sb.AppendLine("\t\t\t\t\tvw.on('render',function(){this.trigger('item_render',this);},this);");
+            sb.AppendLine("\t\t\t\t\tvw.on('render',function(){this.col.trigger('item_render',this.view);},{col:this,view:vw});");
             sb.AppendLine("\t\t\t\t}");
             sb.AppendLine("\t\t\t\tel.append(vw.$el);");
             sb.AppendLine("\t\t\t\tvw.render();");
