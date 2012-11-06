@@ -145,6 +145,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine("\t\t\t_.extend(Backbone,response.Backbone);");
                 sb.AppendLine("\t\t\tresponse=response.response;");
                 sb.AppendLine("\t\t}");
+                sb.AppendLine("\t\tif (response!=true){");
 
                 StringBuilder sbArrays = new StringBuilder();
                 string addSets = "";
@@ -210,6 +211,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             jsonb.AppendLine("\t\tattrs." + str + " = this.get('" + str + "');");
                     }
                 }
+                sb.AppendLine("\t\t}");
                 sb.AppendLine("\t\treturn attrs;");
                 sb.AppendLine("\t},");
                 sb.Append(jsonb.ToString());
