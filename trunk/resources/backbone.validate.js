@@ -31,3 +31,13 @@ Backbone.ShowModelError = function(model) {
     }
     erDialog.show();
 }
+Backbone.Model.prototype.syncSave = function(attrs, options) {
+    if (!options) { options = {}; }
+    options = _.extend(options, { async: false });
+    this.save(attrs, options);
+}
+Backbone.Model.prototype.syncDestroy = function(attrs, options) {
+    if (!options) { options = {}; }
+    options = _.extend(options, { async: false });
+    this.destroy(attrs, options);
+}
