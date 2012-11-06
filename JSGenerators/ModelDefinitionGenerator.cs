@@ -24,8 +24,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 {
                     foreach (string propName in properties)
                     {
-                        object pobj = modelType.GetProperty(propName).GetValue(obj, new object[0]);
-                        sb.AppendLine("\t\t" + propName + ": " + (pobj == null ? "null" : JSON.JsonEncode(pobj)) + (properties.IndexOf(propName) == properties.Count - 1 ? "" : ","));
+                        if (propName != "id")
+                        {
+                            object pobj = modelType.GetProperty(propName).GetValue(obj, new object[0]);
+                            sb.AppendLine("\t\t" + propName + ": " + (pobj == null ? "null" : JSON.JsonEncode(pobj)) + (properties.IndexOf(propName) == properties.Count - 1 ? "" : ","));
+                        }
                     }
                 }
                 sb.AppendLine("\t},");
@@ -207,8 +210,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         else
                             sb.AppendLine("\t\tattrs." + str + " = response." + str + ";");
                         sb.AppendLine("\t\t}");
-                        if (str != "id")
-                            jsonb.AppendLine("\t\tattrs." + str + " = this.get('" + str + "');");
+                        jsonb.AppendLine("\t\tattrs." + str + " = this.get('" + str + "');");
                     }
                 }
                 sb.AppendLine("\t\t}");
