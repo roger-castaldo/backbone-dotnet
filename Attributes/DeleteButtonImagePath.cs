@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
-    [AttributeUsage(AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Class,AllowMultiple=false)]
     public class DeleteButtonImagePath : Attribute
     {
         private string _url;
