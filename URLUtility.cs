@@ -172,7 +172,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         {
                             while (surl[x + 1] != spath[y])
                             {
-                                par += spath[y];
+                                par += surl[y];
                                 y++;
                             }
                         }
