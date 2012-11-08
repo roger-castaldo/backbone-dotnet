@@ -590,6 +590,12 @@ namespace Org.Reddragonit.BackBoneDotNet
                 Backbone.Add("Language", "en");
             else
                 Backbone.Add("Language", request.AcceptLanguageHeaderValue.Split(';')[0].Split(',')[1].Trim());
+            Hashtable ht = request.AdditionalBackboneVariables;
+            if (ht != null)
+            {
+                foreach (string str in ht.Keys)
+                    Backbone.Add(str, ht[str]);
+            }
             ret.Add("Backbone", Backbone);
             return ret;
         }

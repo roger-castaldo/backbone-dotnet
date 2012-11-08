@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Collections;
 
 namespace Org.Reddragonit.BackBoneDotNet.Interfaces
 {
@@ -19,5 +20,6 @@ namespace Org.Reddragonit.BackBoneDotNet.Interfaces
         void SendResponse();
         void SetResponseStatus(int statusNumber);
         string AcceptLanguageHeaderValue { get; }
+        Hashtable AdditionalBackboneVariables { get; }
     }
 }
