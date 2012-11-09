@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Org.Reddragonit.BackBoneDotNet.Interfaces;
+using Org.Reddragonit.BackBoneDotNet.Attributes;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
@@ -16,7 +17,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         {
             string ret = "";
             string tmp = "";
-            foreach (string str in modelType.FullName.Split('.'))
+            foreach (string str in ModelNamespace.GetFullNameForModel(modelType,host).Split('.'))
             {
                 ret += (tmp.Length == 0 ? "var " + str : tmp + "." + str) + " = " + (tmp.Length == 0 ? "" : tmp + ".") + str + " || {};\n";
                 tmp += (tmp.Length == 0 ? "" : ".") + str;

@@ -13,10 +13,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
      */
     internal class ViewGenerator : IJSGenerator
     {
-        private void _AppendClassName(Type modelType, StringBuilder sb)
+        private void _AppendClassName(Type modelType,string host, StringBuilder sb)
         {
             sb.Append("\tclassName : \"");
-            foreach (string str in modelType.FullName.Split('.'))
+            foreach (string str in ModelNamespace.GetFullNameForModel(modelType, host).Split('.'))
                 sb.Append(str + " ");
             foreach (ModelViewClass mvc in modelType.GetCustomAttributes(typeof(ModelViewClass), false))
                 sb.Append(mvc.ClassName + " ");
@@ -35,7 +35,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-        private void _AppendRenderFunction(Type modelType,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb, List<string> viewIgnoreProperties,string editImage,string deleteImage,EditButtonDefinition edDef,DeleteButtonDefinition delDef)
+        private void _AppendRenderFunction(Type modelType,string host,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb, List<string> viewIgnoreProperties,string editImage,string deleteImage,EditButtonDefinition edDef,DeleteButtonDefinition delDef)
         {
             bool hasUpdateFunction = true;
             if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
@@ -92,7 +92,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         if (array)
                         {
                             string tsets = "";
-                            string tcode = _RecurAddRenderModelPropertyCode(prop, PropType, "this.model.get('" + prop + "')[x].get('{0}')", out tsets, true);
+                            string tcode = _RecurAddRenderModelPropertyCode(prop, PropType,host, "this.model.get('" + prop + "')[x].get('{0}')", out tsets, true);
                             if (tsets != "")
                                 sb.Append(tsets);
                             sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
@@ -107,7 +107,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         else
                         {
                             string tsets = "";
-                            string code = _RecurAddRenderModelPropertyCode(prop, PropType, "this.model.get('" + prop + "').get('{0}')", out tsets, false);
+                            string code = _RecurAddRenderModelPropertyCode(prop, PropType,host, "this.model.get('" + prop + "').get('{0}')", out tsets, false);
                             if (tsets != "")
                                 sb.Append(tsets);
                             sbHtml.Append(string.Format(fstring, prop, "(this.model.get('" + prop + "') == null ? '' : "+code+")", (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
@@ -212,7 +212,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 if (hasUpdate && hasUpdateFunction)
                 {
                     sb.AppendLine("\teditModel : function(){");
-                    sb.AppendLine("\t\t" + modelType.FullName + ".editModel(this);");
+                    sb.AppendLine("\t\t" + ModelNamespace.GetFullNameForModel(modelType, host) + ".editModel(this);");
                     sb.AppendLine("\t}" + (hasDelete ? "," : ""));
                 }
                 if (hasDelete)
@@ -224,9 +224,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-		private string _RecurAddRenderModelPropertyCode(string prop,Type PropType,string modelstring,out string arstring,bool addEls)
+		private string _RecurAddRenderModelPropertyCode(string prop,Type PropType,string host,string modelstring,out string arstring,bool addEls)
 		{
-            string className = PropType.FullName.Replace(".", " ")+(addEls ? " els ": "");
+            string className = ModelNamespace.GetFullNameForModel(PropType, host).Replace(".", " ") + (addEls ? " els " : "");
             foreach (ModelViewClass mvc in PropType.GetCustomAttributes(typeof(ModelViewClass), false))
                 className += mvc.ClassName + " ";
             string code = "";
@@ -265,7 +265,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (array)
                             {
                                 string tsets = "";
-                                string tcode = _RecurAddRenderModelPropertyCode(pi.Name, ptype, string.Format(modelstring, pi.Name) + "[x].get('{0}')", out tsets,true);
+                                string tcode = _RecurAddRenderModelPropertyCode(pi.Name, ptype,host, string.Format(modelstring, pi.Name) + "[x].get('{0}')", out tsets,true);
                                 if (tsets != "")
                                     sb.Append(tsets);
                                 sb.AppendLine("\t\tvar ars" + prop + arIndex.ToString() + " = '';");
@@ -280,7 +280,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             else
                             {
                                 string tsets = "";
-                                code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "") + "("+string.Format(modelstring,prop)+"==null ? '' : '<span class=\"" + className + " " + pi.Name + "\">'+" + _RecurAddRenderModelPropertyCode(pi.Name, ptype, string.Format(modelstring, pi.Name) + ".get('{0}')",out tsets,false) + "+'</span>')";
+                                code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "") + "("+string.Format(modelstring,prop)+"==null ? '' : '<span class=\"" + className + " " + pi.Name + "\">'+" + _RecurAddRenderModelPropertyCode(pi.Name, ptype,host, string.Format(modelstring, pi.Name) + ".get('{0}')",out tsets,false) + "+'</span>')";
                                 if (tsets != "")
                                     sb.Append(tsets);
                             }
@@ -404,7 +404,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             _LocateButtonImages(modelType, host, out editImage, out deleteImage,out edDef,out delDef);
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator");
-            sb.AppendLine(modelType.FullName + " = _.extend("+modelType.FullName+",{View : Backbone.View.extend({");
+            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ",{View : Backbone.View.extend({");
             sb.AppendLine("\tinitialize : function(){");
             sb.AppendLine("\t\tthis.model.on('change',this.render,this);");
             sb.AppendLine("\t},");
@@ -413,9 +413,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 tag = ((ModelViewTag)modelType.GetCustomAttributes(typeof(ModelViewTag), false)[0]).TagName;
             sb.AppendLine("\ttagName : \"" + tag + "\",");
             
-            _AppendClassName(modelType, sb);
+            _AppendClassName(modelType,host, sb);
             _AppendAttributes(modelType, sb);
-            _AppendRenderFunction(modelType,tag, properties, hasUpdate, hasDelete, sb,viewIgnoreProperties,editImage,deleteImage,edDef,delDef);
+            _AppendRenderFunction(modelType,host,tag, properties, hasUpdate, hasDelete, sb,viewIgnoreProperties,editImage,deleteImage,edDef,delDef);
 
             sb.AppendLine("})});");
             return sb.ToString();

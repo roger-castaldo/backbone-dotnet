@@ -51,6 +51,7 @@
     <Compile Include="Attributes\ModelListMethod.cs" />
     <Compile Include="Attributes\ModelLoadAllMethod.cs" />
     <Compile Include="Attributes\ModelLoadMethod.cs" />
+    <Compile Include="Attributes\ModelNamespace.cs" />
     <Compile Include="Attributes\ModelRequiredField.cs" />
     <Compile Include="Attributes\ModelRoute.cs" />
     <Compile Include="Attributes\ModelSaveMethod.cs" />
