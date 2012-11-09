@@ -8,10 +8,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
     internal class CollectionViewGenerator : IJSGenerator
     {
-        private void _AppendClassName(Type modelType, StringBuilder sb)
+        private void _AppendClassName(Type modelType,string host, StringBuilder sb)
         {
             sb.Append("\tclassName : \"");
-            foreach (string str in modelType.FullName.Split('.'))
+            foreach (string str in ModelNamespace.GetFullNameForModel(modelType, host).Split('.'))
                 sb.Append(str + " ");
             foreach (ModelViewClass mvc in modelType.GetCustomAttributes(typeof(ModelViewClass), false))
                 sb.Append(mvc.ClassName + " ");
@@ -41,7 +41,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionViewGenerator");
-            sb.AppendLine(modelType.FullName + " = _.extend("+modelType.FullName+", {CollectionView : Backbone.View.extend({");
+            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ", {CollectionView : Backbone.View.extend({");
             
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
@@ -56,7 +56,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     break;
             }
 
-            _AppendClassName(modelType, sb);
+            _AppendClassName(modelType,host, sb);
             _AppendAttributes(modelType, sb);
 
             sb.AppendLine("\tinitialize : function(){");
@@ -87,7 +87,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\t}else{");
             sb.AppendLine("\t\t\tvar alt=false;");
             sb.AppendLine("\t\t\tfor(var x=0;x<this.collection.length;x++){");
-            sb.AppendLine("\t\t\t\tvar vw = new " + modelType.FullName + ".View({model:this.collection.at(x)});");
+            sb.AppendLine("\t\t\t\tvar vw = new " + ModelNamespace.GetFullNameForModel(modelType, host) + ".View({model:this.collection.at(x)});");
             sb.AppendLine("\t\t\t\tif (alt){");
             sb.AppendLine("\t\t\t\t\tvw.$el.attr('class',vw.$el.attr('class')+' Alt');");
             sb.AppendLine("\t\t\t\t}");

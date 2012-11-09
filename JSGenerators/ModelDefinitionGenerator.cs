@@ -110,7 +110,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-        private void _AppendParse(Type modelType, List<string> properties,List<string> readOnlyProperties, StringBuilder sb)
+        private void _AppendParse(Type modelType,string host, List<string> properties,List<string> readOnlyProperties, StringBuilder sb)
         {
             bool add = false;
             foreach (string str in properties)
@@ -183,7 +183,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         {
                             sb.AppendLine("\t\t\tattrs." + str + " = [];");
                             sb.AppendLine("\t\t\tfor (x in response." + str + "){");
-                            sb.AppendLine("\t\t\t\tattrs." + str + ".push(" + _AppendModelParseConstructor("response." + str + "[x].{0}", propType, "attrs." + str, out addSets) + ");");
+                            sb.AppendLine("\t\t\t\tattrs." + str + ".push(" + _AppendModelParseConstructor("response." + str + "[x].{0}", propType,host, "attrs." + str, out addSets) + ");");
                             if (addSets != "")
                                 sbArrays.AppendLine(addSets);
                             sb.AppendLine("\t\t\t}");
@@ -195,7 +195,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         }
                         else
                         {
-                            sb.AppendLine("\t\t\tattrs." + str + " = " + _AppendModelParseConstructor("response." + str + ".{0}", propType, "attrs." + str, out addSets) + ";");
+                            sb.AppendLine("\t\t\tattrs." + str + " = " + _AppendModelParseConstructor("response." + str + ".{0}", propType,host, "attrs." + str, out addSets) + ";");
                             if (addSets != "")
                                 sbArrays.AppendLine(addSets);
                             jsonb.AppendLine("\t\tattrs." + str + " = {id : this.get('" + str + "').get('id')};");
@@ -234,9 +234,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-        private string _AppendModelParseConstructor(string p, Type type,string propertyPath,out string arraySetCodes)
+        private string _AppendModelParseConstructor(string p, Type type,string host,string propertyPath,out string arraySetCodes)
         {
-            string ret = "new "+type.FullName+".Model({";
+            string ret = "new " + ModelNamespace.GetFullNameForModel(type, host) + ".Model({";
             arraySetCodes = "";
             foreach (PropertyInfo pi in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
@@ -271,7 +271,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             string tsets = "";
                             arraySetCodes += propertyPath + "." + pi.Name + " = [];\n";
                             arraySetCodes += "for(x in " + string.Format(p, pi.Name) + "){\n";
-                            arraySetCodes += "\t" + propertyPath + "." + pi.Name + ".push(" + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype, propertyPath + "." + pi.Name, out tsets) + ");\n";
+                            arraySetCodes += "\t" + propertyPath + "." + pi.Name + ".push(" + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype,host, propertyPath + "." + pi.Name, out tsets) + ");\n";
                             arraySetCodes += "}\n";
                             if (tsets != "")
                                 arraySetCodes += tsets;
@@ -279,7 +279,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         else
                         {
                             string tsets = "";
-                            ret += pi.Name + " : " + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype, propertyPath + "." + pi.Name, out tsets) + ",";
+                            ret += pi.Name + " : " + _AppendModelParseConstructor(string.Format(p, pi.Name) + ".{0}", ptype,host, propertyPath + "." + pi.Name, out tsets) + ",";
                             if (tsets != "")
                                 arraySetCodes += tsets;
                         }
@@ -298,7 +298,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ModelDefinitionGenerator");
-            sb.AppendLine(modelType.FullName+" = _.extend("+modelType.FullName+", {Model : Backbone.Model.extend({");
+            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ", {Model : Backbone.Model.extend({");
             sb.AppendLine("\tinitialize : function() {");
             sb.AppendLine("\t\tif (this._revertReadonlyFields != undefined){");
             sb.AppendLine("\t\t\tthis.on(\"change\",this._revertReadonlyFields);");
@@ -315,7 +315,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 _AppendBlockUpdate(sb);
             _AppendReadonly(readOnlyProperties, sb);
             _AppendValidate(modelType, properties, sb);
-            _AppendParse(modelType, properties,readOnlyProperties, sb);
+            _AppendParse(modelType,host, properties,readOnlyProperties, sb);
             string urlRoot = "";
             foreach (ModelRoute mr in modelType.GetCustomAttributes(typeof(ModelRoute), false))
             {

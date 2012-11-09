@@ -23,7 +23,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         if (mlm.Host == host || mlm.Host == "*")
                         {
-                            sb.Append(modelType.FullName + " = _.extend("+modelType.FullName+", {"+ mi.Name + " : function(");
+                            sb.Append(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ", {" + mi.Name + " : function(");
                             for (int x = 0; x < (mlm.Paged ? mi.GetParameters().Length-3 : mi.GetParameters().Length); x++)
                             {
                                 sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
@@ -62,7 +62,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.AppendLine("\t\tthis.currentPageSize = pageSize;");
                                 sb.AppendLine("\t\tthis.MoveToPage(Math.floor(this.currentIndex/pageSize));");
                                 sb.AppendLine("\t},");
-                                sb.AppendLine("\tmodel:" + modelType.FullName + ".Model");
+                                sb.AppendLine("\tmodel:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model");
                                 sb.AppendLine("});");
                             }
                             else
@@ -74,7 +74,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.AppendLine("\t}else{");
                                 sb.AppendLine("\treturn response;");
                                 sb.AppendLine("\t}");
-                                sb.AppendLine("},model:" + modelType.FullName + ".Model});");
+                                sb.AppendLine("},model:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model});");
                             }
                             sb.AppendLine("ret = new ret();");
                             sb.AppendLine("ret.fetch();");

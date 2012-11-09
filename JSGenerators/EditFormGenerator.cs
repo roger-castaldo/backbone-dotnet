@@ -14,7 +14,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     internal class EditFormGenerator : IJSGenerator
     {
 
-        private void _RenderFieldInput(string propName,Type propType,StringBuilder sb)
+        private void _RenderFieldInput(string propName,Type propType,string host,StringBuilder sb)
         {
             bool array = false;
             if (propType.FullName.StartsWith("System.Nullable"))
@@ -38,7 +38,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }
             if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
-                sb.Append("<select class=\"'+view.className+' " + propName + "\" name=\"" + propName + "\" modeltype=\"" + propType.FullName + "\" " + (array ? "multiple=\"multiple\"" : "") + "></select>");
+                sb.Append("<select class=\"'+view.className+' " + propName + "\" name=\"" + propName + "\" modeltype=\"" + ModelNamespace.GetFullNameForModel(propType, host) + "\" " + (array ? "multiple=\"multiple\"" : "") + "></select>");
             else if (propType.IsEnum)
             {
                 sb.Append("<select class=\"'+view.className+' " + propName + "\" name=\"" + propName + "\" " + (array ? "multiple=\"multiple\"" : "") + ">");
@@ -62,7 +62,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.Append(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.arrayInputFormCode.js"));
         }
 
-        private void _AppendInputSetupCode(StringBuilder sb, List<string> properties, List<string> readOnlyProperties, Type modelType)
+        private void _AppendInputSetupCode(StringBuilder sb,string host, List<string> properties, List<string> readOnlyProperties, Type modelType)
         {
             foreach (string propName in properties)
             {
@@ -95,7 +95,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                         {
                             sb.AppendLine("\t\tvar sel" + propName + " = $(frm.find('select[name=\"" + propName + "\"]')[0]);");
-                            sb.AppendLine("\t\tvar opts = " + propType.FullName + ".SelectList();");
+                            sb.AppendLine("\t\tvar opts = " + ModelNamespace.GetFullNameForModel(propType, host) + ".SelectList();");
                             sb.AppendLine("\t\tfor(var x=0;x<opts.length;x++){");
                             sb.AppendLine("\t\t\tvar opt = opts[x];");
                             sb.AppendLine("\t\t\tsel" + propName + ".append($('<option value=\"'+opt.ID+'\">'+opt.Text+'</option>'));");
@@ -156,10 +156,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.Append(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.editFormAccept.js"));
         }
 
-        private void _RenderDialogConstructCode(Type modelType,List<string> readOnlyProperties, List<string> properties, StringBuilder sb){
-            sb.AppendLine("\t\tif($('#" + modelType.FullName.Replace(".","_") + "_dialog').length==0){");
+        private void _RenderDialogConstructCode(Type modelType,string host,List<string> readOnlyProperties, List<string> properties, StringBuilder sb){
+            sb.AppendLine("\t\tif($('#" + ModelNamespace.GetFullNameForModel(modelType, host).Replace(".", "_") + "_dialog').length==0){");
             sb.AppendLine("\t\t\tvar dlog = $('<div></div>');");
-            sb.AppendLine("\t\t\tdlog.attr('id','" + modelType.FullName.Replace(".","_") + "_dialog');");
+            sb.AppendLine("\t\t\tdlog.attr('id','" + ModelNamespace.GetFullNameForModel(modelType, host).Replace(".", "_") + "_dialog');");
             sb.AppendLine("\t\t\tdlog.attr('class',view.className+' dialog');");
             sb.AppendLine("\t\t\tvar frm = $('<table></table>');");
             sb.AppendLine("\t\t\tdlog.append(frm);");
@@ -174,7 +174,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
                         sb.Append("\t\t\tfrm.append($('<tr><td class=\"fieldName\">" + propName + "</td><td class=\"fieldInput " + propType.Name + "\" proptype=\"" + propType.Name + "\">");
-                        _RenderFieldInput(propName,propType, sb);
+                        _RenderFieldInput(propName,propType,host, sb);
                         sb.AppendLine("</td></tr>'));");
                     }
                 }
@@ -183,27 +183,27 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\t\tfrm.append($('<tr><td colspan=\"2\" style=\"text-align:center\"><span class=\"button accept\">Okay</span><span class=\"button cancel\">Cancel</span></td></tr>'));");
             sb.AppendLine("\t\t\tvar butCancel = $(dlog.find('tr>td>span.cancel')[0]);");
             sb.AppendLine("\t\t\tbutCancel.bind('click',function(){");
-            sb.AppendLine("\t\t\t\t$('#" + modelType.FullName.Replace(".","_") + "_dialog').hide();");
+            sb.AppendLine("\t\t\t\t$('#" + ModelNamespace.GetFullNameForModel(modelType, host).Replace(".", "_") + "_dialog').hide();");
             sb.AppendLine("\t\t\t\t$('#Org_Reddragonit_BackBoneDotNet_DialogBackground').hide();");
             sb.AppendLine("\t\t\t});");
             sb.AppendLine("\t\t\t$(document.body).append(dlog);");
             sb.AppendLine("\t\t}");
         }
 
-        private void _RenderDialogCode(Type modelType, List<string> readOnlyProperties, List<string> properties, StringBuilder sb)
+        private void _RenderDialogCode(Type modelType,string host, List<string> readOnlyProperties, List<string> properties, StringBuilder sb)
         {
-            _RenderDialogConstructCode(modelType,readOnlyProperties,properties,sb);
+            _RenderDialogConstructCode(modelType,host,readOnlyProperties,properties,sb);
             sb.AppendLine("\t\tif($('#Org_Reddragonit_BackBoneDotNet_DialogBackground').length==0){");
             sb.AppendLine("\t\t\t$(document.body).append($('<div id=\"Org_Reddragonit_BackBoneDotNet._DialogBackground\" class=\"Org Reddragonit BackBoneDotNet DialogBackground\"></div>'));");
             sb.AppendLine("\t\t}");
             sb.AppendLine("\t\t$('#Org_Reddragonit_BackBoneDotNet_DialogBackground').show();");
-            sb.AppendLine("\t\tvar frm = $('#" + modelType.FullName.Replace(".","_") + "_dialog');");
-            _AppendInputSetupCode(sb, properties, readOnlyProperties, modelType);
+            sb.AppendLine("\t\tvar frm = $('#" + ModelNamespace.GetFullNameForModel(modelType, host).Replace(".", "_") + "_dialog');");
+            _AppendInputSetupCode(sb,host, properties, readOnlyProperties, modelType);
             _AppendAcceptCode(sb);
             sb.AppendLine("\t\tfrm.show();");
         }
 
-        private void _RenderInlineCode(Type modelType, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, StringBuilder sb)
+        private void _RenderInlineCode(Type modelType,string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, StringBuilder sb)
         {
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
@@ -235,7 +235,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
                         sb.Append("\t\tvar inp = $('");
-                        _RenderFieldInput(propName,propType, sb);
+                        _RenderFieldInput(propName,propType,host, sb);
                         sb.AppendLine("');");
                         if (viewIgnoreProperties.Contains(propName))
                         {
@@ -247,7 +247,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }
 
-            _AppendInputSetupCode(sb, properties, readOnlyProperties, modelType);
+            _AppendInputSetupCode(sb,host, properties, readOnlyProperties, modelType);
             _AppendArrayInputsCode(sb);
 
             sb.AppendLine("\t\t\t$(frm.find('"+tstring+".buttons')[0]).append($('<span class=\"button accept\">Okay</span><span class=\"button cancel\">Cancel</span>'));");
@@ -272,7 +272,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.EditAddFormGenerator");
-            sb.AppendLine(modelType.FullName + " = _.extend("+modelType.FullName+",{editModel : function(view){");
+            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ",{editModel : function(view){");
 
             ModelEditAddTypes meat = ModelEditAddTypes.dialog;
             if (modelType.GetCustomAttributes(typeof(ModelEditAddType), false).Length > 0)
@@ -280,10 +280,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             switch (meat)
             {
                 case ModelEditAddTypes.dialog:
-                    _RenderDialogCode(modelType, readOnlyProperties, properties,sb);
+                    _RenderDialogCode(modelType,host, readOnlyProperties, properties,sb);
                     break;
                 case ModelEditAddTypes.inline:
-                    _RenderInlineCode(modelType, readOnlyProperties, properties,viewIgnoreProperties, sb);
+                    _RenderInlineCode(modelType,host, readOnlyProperties, properties,viewIgnoreProperties, sb);
                     break;
             }
 

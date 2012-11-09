@@ -43,7 +43,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             {
                 if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
                 {
-                    sb.AppendLine(modelType.FullName+" = _.extend("+modelType.FullName+",{SelectList : function(){");
+                    sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ",{SelectList : function(){");
                     sb.AppendLine("\tvar ret=$.ajax(");
                     sb.AppendLine("\t\t'" + urlRoot + "',{");
                     sb.AppendLine("\t\t\tasync:false,");
