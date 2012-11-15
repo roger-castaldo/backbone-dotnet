@@ -70,7 +70,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\tel.html('');");
             if (tag.ToLower() == "tr")
             {
-                sb.AppendLine("\t\tvar thead = $('<thead class=\"'+this.className+'header\"></thead>');");
+                sb.AppendLine("\t\tvar thead = $('<thead class=\"'+this.className+' header\"></thead>');");
                 sb.AppendLine("\t\tel.append(thead);");
                 sb.AppendLine("\t\tthead.append('<tr></tr>');");
                 sb.AppendLine("\t\tthead = $(thead.children()[0]);");
