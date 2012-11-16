@@ -62,6 +62,16 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.AppendLine("\t\tthis.currentPageSize = pageSize;");
                                 sb.AppendLine("\t\tthis.MoveToPage(Math.floor(this.currentIndex/pageSize));");
                                 sb.AppendLine("\t},");
+                                sb.AppendLine("\tMoveToNextPage : function(){");
+                                sb.AppendLine("\t\tif(Math.floor(this.currentIndex/pageSize)+1<this.TotalPages){");
+                                sb.AppendLine("\t\t\tthis.MoveToPage(Math.floor(this.currentIndex/pageSize)+1);");
+                                sb.AppendLine("\t\t}");
+                                sb.AppendLine("\t},");
+                                sb.AppendLine("\tMoveToPreviousPage : function(){");
+                                sb.AppendLine("\t\tif(Math.floor(this.currentIndex/pageSize)-1>=0){");
+                                sb.AppendLine("\t\t\tthis.MoveToPage(Math.floor(this.currentIndex/pageSize)-1);");
+                                sb.AppendLine("\t\t}");
+                                sb.AppendLine("\t},");
                                 sb.AppendLine("\tmodel:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model");
                                 sb.AppendLine("});");
                             }

@@ -25,7 +25,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             public bool HandlesRequest(IHttpRequest request)
             {
                 Logger.Trace("Checking if url " + request.URL.AbsolutePath + " is handled in path " + _path);
-                return _reg.IsMatch(request.Method.ToUpper() + "\t" + request.URL.Host +request.URL.AbsolutePath+(_path.Contains("?") ? request.URL.Query : ""));
+                return _reg.IsMatch(request.Method.ToUpper() + "\t" + request.URL.Host +request.URL.AbsolutePath+(_path.Contains("?") || _isPaged ? request.URL.Query : ""));
             }
 
             public object HandleRequest(IHttpRequest request)
