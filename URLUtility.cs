@@ -140,7 +140,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             if (pars.Length > 0)
             {
                 ret = new object[pars.Length];
-                string[] surl = SplitUrl(url.AbsolutePath + (path.Contains("?") ? url.Query : ""));
+                path += (isPaged ? (path.Contains("?") ? "&" : "?")+"PageStartIndex={"+(ret.Length-3).ToString()+"}&PageSize={"+(ret.Length-2).ToString()+"}" : "");
+                string[] surl = SplitUrl(url.AbsolutePath + (path.Contains("?") || isPaged ? url.Query : ""));
                 string[] spath = SplitUrl(path);
                 int x = 0;
                 int y = 0;
@@ -181,11 +182,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                     }
                 }
                 if (isPaged)
-                {
-                    ret[ret.Length - 3] = _ConvertParameterValue(surl[y + 3], pars[ret.Length - 3].ParameterType);
-                    ret[ret.Length - 2] = _ConvertParameterValue(surl[y + 7], pars[ret.Length - 3].ParameterType);
                     ret[ret.Length - 1] = null;
-                }
             }
             return ret;
         }
@@ -194,6 +191,8 @@ namespace Org.Reddragonit.BackBoneDotNet
         {
             p = Uri.UnescapeDataString(p);
             Logger.Trace("Converting \"" + p + "\" to " + type.FullName);
+            if (type.IsGenericType)
+                type = type.GetGenericArguments()[0];
             if (p == "NULL")
                 return null;
             else if (type == typeof(DateTime))

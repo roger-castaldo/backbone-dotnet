@@ -284,7 +284,25 @@ namespace Org.Reddragonit.BackBoneDotNet
                         for(int x=0;x<pars.Length;x++)
                         {
                             ParameterInfo pi = pars[x];
-                            if (pi.ParameterType.IsGenericType || pi.ParameterType.IsArray)
+                            if (pi.ParameterType.IsGenericType)
+                            {
+                                if (pi.ParameterType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                                {
+                                    if (pi.ParameterType.GetGenericArguments()[0].IsGenericType || pi.ParameterType.GetGenericArguments()[0].IsArray)
+                                    {
+                                        if (!invalidModels.Contains(t))
+                                            invalidModels.Add(t);
+                                        errors.Add(new InvalidModelListParameterTypeException(t, mi, pi));
+                                    }
+                                }
+                                else
+                                {
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new InvalidModelListParameterTypeException(t, mi, pi));
+                                }
+                            }
+                            else if (pi.ParameterType.IsArray)
                             {
                                 if (!invalidModels.Contains(t))
                                     invalidModels.Add(t);
