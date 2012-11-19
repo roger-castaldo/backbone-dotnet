@@ -14,11 +14,11 @@ namespace Org.Reddragonit.BackBoneDotNet
                 get{return _path;}
             }
             private bool _isEnd;
-            private List<sPathPortion> subPortions;
+            private List<object> subPortions;
 
             public sPathPortion(string[] path,int index){
                 _path = path[index];
-                subPortions = new List<sPathPortion>();
+                subPortions = new List<object>();
                 if (path.Length>index+1)
                 {
                     _isEnd = false;
