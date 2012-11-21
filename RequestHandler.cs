@@ -546,7 +546,11 @@ namespace Org.Reddragonit.BackBoneDotNet
                             foreach (string str in mht.Keys)
                             {
                                 if (str != "id")
-                                    t.GetProperty(str).SetValue(mod, _ConvertObjectToType(mht[str], t.GetProperty(str).PropertyType), new object[0]);
+                                {
+                                    PropertyInfo pi = t.GetProperty(str);
+                                    if (pi.CanWrite)
+                                        t.GetProperty(str).SetValue(mod, _ConvertObjectToType(mht[str], t.GetProperty(str).PropertyType), new object[0]);
+                                }
                             }
                             if (_SaveMethods.ContainsKey(t))
                             {

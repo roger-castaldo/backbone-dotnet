@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Net;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
+using Org.Reddragonit.BackBoneDotNet.Interfaces;
 
 namespace Org.Reddragonit.BackBoneDotNet
 {
@@ -720,7 +721,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     builder.Append(", ");
                                 SerializeString(pi.Name, builder);
                                 builder.Append(":");
-                                SerializeValue(pi.GetValue(value, new object[0]), builder);
+                                _SerializePropertyValue(pi, value,builder);
                                 first = false;
                             }
                         }
@@ -742,7 +743,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     builder.Append(", ");
                                 SerializeString(pi.Name, builder);
                                 builder.Append(":");
-                                SerializeValue(pi.GetValue(value, new object[0]), builder);
+                                _SerializePropertyValue(pi, value, builder);
                                 first = false;
                             }
                         }
@@ -767,7 +768,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                         builder.Append(", ");
                                     SerializeString(pi.Name, builder);
                                     builder.Append(":");
-                                    SerializeValue(pi.GetValue(value, new object[0]), builder);
+                                    _SerializePropertyValue(pi, value, builder);
                                     first = false;
                                 }
                             }
@@ -777,6 +778,42 @@ namespace Org.Reddragonit.BackBoneDotNet
                 builder.Append("}");
             }
             return true;
+        }
+
+        private void _SerializePropertyValue(PropertyInfo pi, object value, StringBuilder builder)
+        {
+            if (pi.GetCustomAttributes(typeof(ModelPropertyLazyLoadExternalModel), false).Length > 0)
+            {
+                object mod = pi.GetValue(value, new object[0]);
+                if (mod == null)
+                    builder.Append("null");
+                else
+                {
+                    if (pi.PropertyType.IsArray)
+                    {
+                        builder.Append("[");
+                        bool first = true;
+                        foreach (IModel m in (IModel[])mod)
+                        {
+                            if (!first)
+                                builder.Append(",");
+                            builder.Append("{\"id\":");
+                            SerializeString(m.id, builder);
+                            builder.Append("}");
+                            first = false;
+                        }
+                        builder.Append("]");
+                    }
+                    else
+                    {
+                        builder.Append("{\"id\":");
+                        SerializeString(((IModel)mod).id, builder);
+                        builder.Append("}");
+                    }
+                }
+            }
+            else
+                SerializeValue(pi.GetValue(value, new object[0]), builder);
         }
 
         protected void SerializeString(string aString, StringBuilder builder)
