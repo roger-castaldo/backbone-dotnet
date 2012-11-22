@@ -88,7 +88,15 @@ namespace Org.Reddragonit.BackBoneDotNet
             if (json == null)
                 return null;
             StringBuilder builder = new StringBuilder(BUILDER_CAPACITY);
-            bool success = JSON.instance.SerializeValue(json, builder);
+            bool success = false;
+            try
+            {
+                success = JSON.instance.SerializeValue(json, builder);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("JSON ERROR, made it to \"" + builder.ToString() + "\"", e);
+            }
             return (success ? builder.ToString() : null);
         }
 
@@ -719,8 +727,6 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 foundProperties.Add(pi.Name);
                                 if (!first)
                                     builder.Append(", ");
-                                SerializeString(pi.Name, builder);
-                                builder.Append(":");
                                 _SerializePropertyValue(pi, value,builder);
                                 first = false;
                             }
@@ -741,8 +747,6 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 foundProperties.Add(pi.Name);
                                 if (!first)
                                     builder.Append(", ");
-                                SerializeString(pi.Name, builder);
-                                builder.Append(":");
                                 _SerializePropertyValue(pi, value, builder);
                                 first = false;
                             }
@@ -766,8 +770,6 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     foundProperties.Add(pi.Name);
                                     if (!first)
                                         builder.Append(", ");
-                                    SerializeString(pi.Name, builder);
-                                    builder.Append(":");
                                     _SerializePropertyValue(pi, value, builder);
                                     first = false;
                                 }
@@ -782,6 +784,8 @@ namespace Org.Reddragonit.BackBoneDotNet
 
         private void _SerializePropertyValue(PropertyInfo pi, object value, StringBuilder builder)
         {
+            SerializeString(pi.Name, builder);
+            builder.Append(":");
             if (pi.GetCustomAttributes(typeof(ModelPropertyLazyLoadExternalModel), false).Length > 0)
             {
                 object mod = pi.GetValue(value, new object[0]);
