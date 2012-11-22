@@ -223,6 +223,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 getb.AppendLine("\t\t\tif (this.attributes[attr]!=null){");
                                 getb.AppendLine("\t\t\t\tif (!this.attributes[attr].isLoaded){");
                                 getb.AppendLine("\t\t\t\t\tthis.attributes[attr].fetch({ async: false });");
+                                getb.AppendLine("\t\t\t\t\tthis.attributes[attr].isLoaded=true;");
                                 getb.AppendLine("\t\t\t\t}");
                                 getb.AppendLine("\t\t\t}");
                                 getb.AppendLine("\t\t}");
