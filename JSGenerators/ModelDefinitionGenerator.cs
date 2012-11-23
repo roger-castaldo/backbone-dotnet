@@ -185,7 +185,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("\t\t\tattrs." + str + " = [];");
                             sb.AppendLine("\t\t\tfor (x in response." + str + "){");
                             sb.AppendLine("\t\t\t\tattrs." + str + ".push(new " + ModelNamespace.GetFullNameForModel(propType,host)+".Model({'id':response." + str + "[x].id}));");
-                            sb.AppendLine("\t\t\t\tattrs." + str + "[x].parse(response." + str + "[x]));");
+                            sb.AppendLine("\t\t\t\tattrs."+str+"[x].attributes=attrs." + str + "[x].parse(response." + str + "[x]));");
                             if (isLazy)
                                 sb.AppendLine("\t\t\t\tattrs." + str + "[x].isLoaded=false;");
                             sb.AppendLine("\t\t\t}");
@@ -214,7 +214,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         else
                         {
                             sb.AppendLine("\t\t\tattrs." + str + " = new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + ".id});");
-                            sb.AppendLine("\t\t\tattrs." + str + ".parse(response." + str + ");");
+                            sb.AppendLine("\t\t\tattrs."+str+".attributes=attrs." + str + ".parse(response." + str + ");");
                             if (isLazy)
                                 sb.Append("\t\t\tattrs." + str + ".isLoaded=false;");
                             jsonb.AppendLine("\t\tattrs." + str + " = {id : this.attributes['" + str + "'].get('id')};");
