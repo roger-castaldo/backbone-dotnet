@@ -190,9 +190,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.AppendLine("\t\t\t\tattrs." + str + "[x].isLoaded=false;");
                             sb.AppendLine("\t\t\t}");
 
-                            jsonb.AppendLine("\t\t\tattrs." + str + " = [];");
-                            jsonb.AppendLine("\t\t\tfor(x in this.attributes['" + str + "']){");
-                            jsonb.AppendLine("\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].get('id')});");
+                            jsonb.AppendLine("\t\t\tif(this.attributes['" + str + "']!=null){");
+                            jsonb.AppendLine("\t\t\t\tattrs." + str + " = [];");
+                            jsonb.AppendLine("\t\t\t\tfor(x in this.attributes['" + str + "']){");
+                            jsonb.AppendLine("\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].get('id')});");
+                            jsonb.AppendLine("\t\t\t\t}");
                             jsonb.AppendLine("\t\t\t}");
 
                             if (isLazy)
@@ -217,7 +219,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("\t\t\tattrs."+str+".attributes=attrs." + str + ".parse(response." + str + ");");
                             if (isLazy)
                                 sb.Append("\t\t\tattrs." + str + ".isLoaded=false;");
-                            jsonb.AppendLine("\t\tattrs." + str + " = {id : this.attributes['" + str + "'].get('id')};");
+                            
+                            jsonb.AppendLine("\t\tif(this.attributes['" + str + "']!=null){");
+                            jsonb.AppendLine("\t\t\tattrs." + str + " = {id : this.attributes['" + str + "'].get('id')};");
+                            jsonb.AppendLine("\t\t}");
 
                             if (isLazy)
                             {
