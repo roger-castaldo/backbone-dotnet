@@ -19,7 +19,7 @@ namespace Org.Reddragonit.BackBoneDotNet
 	/// JSON uses Arrays and Objects. These correspond here to the datatypes ArrayList and Hashtable.
 	/// All numbers are parsed to doubles.
 	/// </summary>
-	internal class JSON
+	public class JSON
 	{
         public const int TOKEN_NONE = 0;
         public const int TOKEN_CURLY_OPEN = 1;
@@ -733,26 +733,6 @@ namespace Org.Reddragonit.BackBoneDotNet
                         }
                     }
                 }
-                if (value.GetType().BaseType != null)
-                {
-                    Type tmp = value.GetType();
-                    while ((tmp = tmp.BaseType) != null)
-                    {
-                        if (tmp.FullName == "Org.Reddragonit.Dbpro.Structure.Table")
-                            break;
-                        foreach (PropertyInfo pi in tmp.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance))
-                        {
-                            if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
-                            {
-                                foundProperties.Add(pi.Name);
-                                if (!first)
-                                    builder.Append(", ");
-                                _SerializePropertyValue(pi, value, builder);
-                                first = false;
-                            }
-                        }
-                    }
-                }
                 foreach (Type t in value.GetType().GetInterfaces())
                 {
                     if (t == typeof(IDictionary))
@@ -762,6 +742,29 @@ namespace Org.Reddragonit.BackBoneDotNet
                     else
                     {
                         foreach (PropertyInfo pi in t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic))
+                        {
+                            if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
+                            {
+                                if (!foundProperties.Contains(pi.Name))
+                                {
+                                    foundProperties.Add(pi.Name);
+                                    if (!first)
+                                        builder.Append(", ");
+                                    _SerializePropertyValue(pi, value, builder);
+                                    first = false;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (value.GetType().BaseType != null)
+                {
+                    Type tmp = value.GetType();
+                    while ((tmp = tmp.BaseType) != null)
+                    {
+                        if (tmp.FullName == "Org.Reddragonit.Dbpro.Structure.Table")
+                            break;
+                        foreach (PropertyInfo pi in tmp.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance))
                         {
                             if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
                             {
