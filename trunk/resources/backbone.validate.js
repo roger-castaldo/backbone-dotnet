@@ -37,12 +37,12 @@
             syncSave:function(attrs, options) {
                 if (!options) { options = {}; }
                 options = _.extend(options, { async: false });
-                this.save(attrs, options);
+                return this.save(attrs, options);
             },
             syncDestroy:function(attrs,options){
                 if (!options) { options = {}; }
                 options = _.extend(options, { async: false });
-                this.destroy(attrs, options);
+                return this.destroy(attrs, options);
             },
             change: function(options) {
                 options || (options = {});
