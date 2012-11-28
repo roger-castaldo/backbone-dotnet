@@ -372,7 +372,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
 
             if (_regDateTime.IsMatch(s))
-                return DateTime.ParseExact(s, "yyyy-MM-dd'T'HH:mm:ss.fff'Z'", null);
+                return DateTime.ParseExact(s, "yyyy-MM-dd'T'HH:mm:ss.fff'Z'", null,DateTimeStyles.AssumeUniversal);
             return s;
         }
 
