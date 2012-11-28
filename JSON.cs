@@ -19,7 +19,7 @@ namespace Org.Reddragonit.BackBoneDotNet
 	/// JSON uses Arrays and Objects. These correspond here to the datatypes ArrayList and Hashtable.
 	/// All numbers are parsed to doubles.
 	/// </summary>
-	public class JSON
+	internal class JSON
 	{
         public const int TOKEN_NONE = 0;
         public const int TOKEN_CURLY_OPEN = 1;
@@ -372,7 +372,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
 
             if (_regDateTime.IsMatch(s))
-                return DateTime.ParseExact(s, "yyyy-MM-dd'T'HH:mm:ss.fff'Z'", null,DateTimeStyles.AssumeUniversal);
+                return DateTime.ParseExact(s, "yyyy-MM-dd'T'HH:mm:ss.fff'Z'",null);
             return s;
         }
 
