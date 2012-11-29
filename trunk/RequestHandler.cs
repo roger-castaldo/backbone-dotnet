@@ -693,11 +693,30 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
                 if (loadMethod == null)
                 {
-                    ret = expectedType.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
-                    foreach (string str in ((Hashtable)obj).Keys)
+                    MethodInfo conMethod = null;
+                    foreach (MethodInfo mi in expectedType.GetMethods(BindingFlags.Static | BindingFlags.Public))
                     {
-                        PropertyInfo pi = expectedType.GetProperty(str);
-                        pi.SetValue(ret, _ConvertObjectToType(((Hashtable)obj)[str], pi.PropertyType), new object[0]);
+                        if (mi.Name == "op_Implicit" || mi.Name == "op_Explicit")
+                        {
+                            if (mi.ReturnType.Equals(expectedType)
+                                && mi.GetParameters().Length == 1
+                                && mi.GetParameters()[0].ParameterType.Equals(obj.GetType()))
+                            {
+                                conMethod = mi;
+                                break;
+                            }
+                        }
+                    }
+                    if (conMethod != null)
+                        ret = conMethod.Invoke(null, new object[] { obj });
+                    else
+                    {
+                        ret = expectedType.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
+                        foreach (string str in ((Hashtable)obj).Keys)
+                        {
+                            PropertyInfo pi = expectedType.GetProperty(str);
+                            pi.SetValue(ret, _ConvertObjectToType(((Hashtable)obj)[str], pi.PropertyType), new object[0]);
+                        }
                     }
                 }
                 else
