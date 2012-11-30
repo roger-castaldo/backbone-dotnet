@@ -461,12 +461,12 @@ namespace Org.Reddragonit.BackBoneDotNet
                             else if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             {
                                 Logger.Trace("Handling Load request");
-                                ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                                ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                             }
                             else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             {
                                 Logger.Trace("Handling Load request");
-                                ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                                ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                             }
                         }
                         break;
