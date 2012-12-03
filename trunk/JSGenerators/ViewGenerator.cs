@@ -121,7 +121,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("\t\tif(this.model.get('" + prop + "')!=null){");
                             sb.AppendLine("\t\t\tfor(x in this.model.get('" + prop + "')){");
                             sb.AppendLine("\t\t\t\tif(this.model.get('" + prop + "')[x]!=null){");
-                            sb.AppendLine("\t\t\t\t\tars" + arIndex.ToString() + "+='<span class=\"'+this.className+' " + prop + " els\">+this.model.get('" + prop + "')[x]+'</span>';");
+                            sb.AppendLine("\t\t\t\t\tars" + arIndex.ToString() + "+='<span class=\"'+this.className+' " + prop + " els\">'+this.model.get('" + prop + "')[x]+'</span>';");
                             sb.AppendLine("\t\t\t\t}");
                             sb.AppendLine("\t\t\t}");
                             sb.AppendLine("\t\t}");
