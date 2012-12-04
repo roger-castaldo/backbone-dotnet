@@ -480,9 +480,9 @@ namespace Org.Reddragonit.BackBoneDotNet
                     case "PUT":
                         Logger.Trace("Handling Put request");
                         if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
-                            ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                            ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                         else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
-                            ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                            ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                         if (ret != null)
                         {
                             Hashtable ht = (Hashtable)JSON.JsonDecode(request.ParameterContent);
