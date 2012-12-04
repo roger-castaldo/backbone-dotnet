@@ -99,7 +99,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     else if (modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false).Length > 0)
                     {
                         ModelFieldValidationRegex mfvr = (ModelFieldValidationRegex)modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false)[0];
-                        sb.AppendLine("\t\tif (new RegExp('"+mfvr.Regex.Replace("'","\'")+"').test((atts." + str + "==null || atts." + str + "==undefined ? '' : atts."+str+"))){");
+                        sb.AppendLine("\t\tif (!new RegExp('"+mfvr.Regex.Replace("'","\'")+"').test((atts." + str + "==null || atts." + str + "==undefined ? '' : atts."+str+"))){");
                         sb.AppendLine("\t\t\terrors.push({field:'" + str + "',error:Backbone.TranslateValidationError('" + mfvr.ErrorMessageName + "')});");
                         sb.AppendLine("\t\t}");
                     }
@@ -193,7 +193,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             jsonb.AppendLine("\t\t\tif(this.attributes['" + str + "']!=null){");
                             jsonb.AppendLine("\t\t\t\tattrs." + str + " = [];");
                             jsonb.AppendLine("\t\t\t\tfor(x in this.attributes['" + str + "']){");
-                            jsonb.AppendLine("\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].get('id')});");
+                            jsonb.AppendLine("\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].id});");
                             jsonb.AppendLine("\t\t\t\t}");
                             jsonb.AppendLine("\t\t\t}");
 
@@ -221,7 +221,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.Append("\t\t\tattrs." + str + ".isLoaded=false;");
                             
                             jsonb.AppendLine("\t\tif(this.attributes['" + str + "']!=null){");
-                            jsonb.AppendLine("\t\t\tattrs." + str + " = {id : this.attributes['" + str + "'].get('id')};");
+                            jsonb.AppendLine("\t\t\tattrs." + str + " = {id : this.attributes['" + str + "'].id};");
                             jsonb.AppendLine("\t\t}");
 
                             if (isLazy)
