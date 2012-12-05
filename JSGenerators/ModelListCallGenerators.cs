@@ -87,7 +87,6 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.AppendLine("},model:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model});");
                             }
                             sb.AppendLine("ret = new ret();");
-                            sb.AppendLine("ret.fetch();");
                             sb.AppendLine("return ret;");
                             sb.AppendLine("}});");
                             break;
