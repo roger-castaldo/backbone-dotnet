@@ -190,25 +190,26 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         {
                             sb.AppendLine("\t\t\tattrs." + str + " = [];");
                             sb.AppendLine("\t\t\tfor (x in response." + str + "){");
-                            sb.AppendLine("\t\t\t\tattrs." + str + ".push(new " + ModelNamespace.GetFullNameForModel(propType,host)+".Model({'id':response." + str + "[x].id}));");
-                            sb.AppendLine("\t\t\t\tattrs."+str+"[x].attributes=attrs." + str + "[x].parse(response." + str + "[x]);");
+                            sb.AppendLine("\t\t\t\tattrs." + str + ".push(new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + "[x].id}));");
+                            sb.AppendLine("\t\t\t\tattrs." + str + "[x].attributes=attrs." + str + "[x].parse(response." + str + "[x]);");
                             if (isLazy)
                                 sb.AppendLine("\t\t\t\tattrs." + str + "[x].isLoaded=false;");
                             sb.AppendLine("\t\t\t}");
 
-                            if (!isReadOnly)
-                            {
-                                jsonb.AppendLine("\t\t\tif(this.attributes['" + str + "']!=null){");
-                                jsonb.AppendLine("\t\t\t\tattrs." + str + " = [];");
-                                jsonb.AppendLine("\t\t\t\tfor(x in this.attributes['" + str + "']){");
-                                jsonb.AppendLine("\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].id});");
-                                jsonb.AppendLine("\t\t\t\t}");
-                                jsonb.AppendLine("\t\t\t}");
-                            }
+                            if (isReadOnly)
+                                jsonb.AppendLine("if (this.isNew()){");
+                            jsonb.AppendLine("\t\t\tif(this.attributes['" + str + "']!=null){");
+                            jsonb.AppendLine("\t\t\t\tattrs." + str + " = [];");
+                            jsonb.AppendLine("\t\t\t\tfor(x in this.attributes['" + str + "']){");
+                            jsonb.AppendLine("\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].id});");
+                            jsonb.AppendLine("\t\t\t\t}");
+                            jsonb.AppendLine("\t\t\t}");
+                            if (isReadOnly)
+                                jsonb.AppendLine("}");
 
                             if (isLazy)
                             {
-                                getb.AppendLine("\t\t"+(getb.Length > 0 ? "else " : "") + "if (attr=='" + str + "'){");
+                                getb.AppendLine("\t\t" + (getb.Length > 0 ? "else " : "") + "if (attr=='" + str + "'){");
                                 getb.AppendLine("\t\t\tif (this.attributes[attr]!=null){");
                                 getb.AppendLine("\t\t\t\tif (this.attributes[attr].length>0){");
                                 getb.AppendLine("\t\t\t\t\tif (!this.attributes[attr][0].isLoaded){");
@@ -225,20 +226,21 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         else
                         {
                             sb.AppendLine("\t\t\tattrs." + str + " = new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + ".id});");
-                            sb.AppendLine("\t\t\tattrs."+str+".attributes=attrs." + str + ".parse(response." + str + ");");
+                            sb.AppendLine("\t\t\tattrs." + str + ".attributes=attrs." + str + ".parse(response." + str + ");");
                             if (isLazy)
                                 sb.Append("\t\t\tattrs." + str + ".isLoaded=false;");
 
-                            if (!isReadOnly)
-                            {
-                                jsonb.AppendLine("\t\tif(this.attributes['" + str + "']!=null){");
-                                jsonb.AppendLine("\t\t\tattrs." + str + " = {id : this.attributes['" + str + "'].id};");
-                                jsonb.AppendLine("\t\t}");
-                            }
+                            if (isReadOnly)
+                                jsonb.AppendLine("if (this.isNew()){");
+                            jsonb.AppendLine("\t\tif(this.attributes['" + str + "']!=null){");
+                            jsonb.AppendLine("\t\t\tattrs." + str + " = {id : this.attributes['" + str + "'].id};");
+                            jsonb.AppendLine("\t\t}");
+                            if (isReadOnly)
+                                jsonb.AppendLine("}");
 
                             if (isLazy)
                             {
-                                getb.AppendLine("\t\t"+(getb.Length > 0 ? "else " : "") + "if (attr=='" + str + "'){");
+                                getb.AppendLine("\t\t" + (getb.Length > 0 ? "else " : "") + "if (attr=='" + str + "'){");
                                 getb.AppendLine("\t\t\tif (this.attributes[attr]!=null){");
                                 getb.AppendLine("\t\t\t\tif (!this.attributes[attr].isLoaded){");
                                 getb.AppendLine("\t\t\t\t\tthis.attributes[attr].fetch({ async: false });");
@@ -258,8 +260,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         else
                             sb.AppendLine("\t\tattrs." + str + " = response." + str + ";");
                         sb.AppendLine("\t\t}");
-                        if (!isReadOnly)
-                            jsonb.AppendLine("\t\tattrs." + str + " = this.attributes['" + str + "'];");
+                        if (isReadOnly)
+                            jsonb.AppendLine("if (this.isNew()){");
+                        jsonb.AppendLine("\t\tattrs." + str + " = this.attributes['" + str + "'];");
+                        if (isReadOnly)
+                            jsonb.AppendLine("}");
                     }
                 }
                 sb.AppendLine("\t\t}");
