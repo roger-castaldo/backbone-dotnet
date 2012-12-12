@@ -80,7 +80,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         sb.AppendLine("\t\tthead.append('<th className=\"'+this.className+' " + str + "\">" + str + "</th>');");
                 }
                 sb.AppendLine("\t\tel.append('<tbody></tbody>');");
-                sb.AppendLine("\t\tel = $(el.children()[0]);");
+                sb.AppendLine("\t\tel = $(el.children()[1]);");
             }
             sb.AppendLine("\t\tif(this.collection.length==0){");
             sb.AppendLine("\t\t\tthis.trigger('render',this);");
