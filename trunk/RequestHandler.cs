@@ -190,17 +190,17 @@ namespace Org.Reddragonit.BackBoneDotNet
             _backboneURL = backboneURL;
             if (_jqueryURL != null)
             {
-                _jqueryURL = (!_jqueryURL.StartsWith("/") ? "/" + _jqueryURL : "");
+                _jqueryURL = (!_jqueryURL.StartsWith("/") ? "/" + _jqueryURL : _jqueryURL);
                 _RPC_URL.AddMethod("GET", "*", _jqueryURL);
             }
             if (_jsonURL != null)
             {
-                _jsonURL = (!_jsonURL.StartsWith("/") ? "/" + _jsonURL : "");
+                _jsonURL = (!_jsonURL.StartsWith("/") ? "/" + _jsonURL : _jsonURL);
                 _RPC_URL.AddMethod("GET", "*", _jsonURL);
             }
             if (_backboneURL != null)
             {
-                _backboneURL = (!_backboneURL.StartsWith("/") ? "/" + _backboneURL : "");
+                _backboneURL = (!_backboneURL.StartsWith("/") ? "/" + _backboneURL : _backboneURL);
                 _RPC_URL.AddMethod("GET", "*", _backboneURL);
             }
             Logger.Debug("Backbone request handler successfully started");
