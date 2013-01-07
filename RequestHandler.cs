@@ -764,11 +764,14 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
                 {
-                    if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length > 0)
-                        readOnlyProperties.Add(pi.Name);
-                    if (pi.GetCustomAttributes(typeof(ViewIgnoreField), false).Length > 0)
-                        viewIgnoreProperties.Add(pi.Name);
-                    properties.Add(pi.Name);
+                    if (!pi.PropertyType.FullName.Contains("+KeyCollection") && pi.GetGetMethod().GetParameters().Length == 0)
+                    {
+                        if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length > 0)
+                            readOnlyProperties.Add(pi.Name);
+                        if (pi.GetCustomAttributes(typeof(ViewIgnoreField), false).Length > 0)
+                            viewIgnoreProperties.Add(pi.Name);
+                        properties.Add(pi.Name);
+                    }
                 }
             }
             foreach (IJSGenerator gen in _generators)
