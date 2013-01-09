@@ -44,82 +44,80 @@
                 options = _.extend(options, { async: false });
                 return this.destroy(options);
             },
-            _save: function(key, value, options) {
-                var attrs, current;
+            _save: function(key, val, options) {
+              var attrs, current, done;
 
-                // Handle both `("key", value)` and `({key: value})` -style calls.
-                if (_.isObject(key) || key == null) {
-                    attrs = key;
-                    options = value;
-                } else {
-                    attrs = {};
-                    attrs[key] = value;
-                }
-                options = options ? _.clone(options) : {};
+              // Handle both `"key", value` and `{key: value}` -style arguments.
+              if (key == null || _.isObject(key)) {
+                attrs = key;
+                options = val;
+              } else if (key != null) {
+                (attrs = {})[key] = val;
+              }
+              options = options ? _.clone(options) : {};
 
-                // If we're "wait"-ing to set changed attributes, validate early.
-                if (options.wait) {
-                    if (!this._validate(attrs, options)) return false;
-                    current = _.clone(this.attributes);
-                }
+              // If we're "wait"-ing to set changed attributes, validate early.
+              if (options.wait) {
+                if (attrs && !this._validate(attrs, options)) return false;
+                current = _.clone(this.attributes);
+              }
 
-                // Regular saves `set` attributes before persisting to the server.
-                var silentOptions = _.extend({}, options, { silent: true });
-                if (attrs && !this.set(attrs, options.wait ? silentOptions : options)) {
-                    return false;
-                }
+              // Regular saves `set` attributes before persisting to the server.
+              var silentOptions = _.extend({}, options, {silent: true});
+              if (attrs && !this.set(attrs, options.wait ? silentOptions : options)) {
+                return false;
+              }
 
-                // After a successful server-side save, the client is (optionally)
-                // updated with the server-side state.
-                var model = this;
-                var success = options.success;
-                options.success = function(resp, status, xhr) {
-                    var serverAttrs = model.parse(resp, xhr);
-                    if (options.wait) {
-                        delete options.wait;
-                        serverAttrs = _.extend(attrs || {}, serverAttrs);
-                    }
-                    if (!model.set(serverAttrs, options)) return false;
-                    if (success) {
-                        success(model, resp);
-                    } else {
-                        model.trigger('sync', model, resp, options);
-                    }
-                };
+              // Do not persist invalid models.
+              if (!attrs && !this._validate(null, options)) return false;
 
-                // Finish configuring and sending the Ajax request.
-                options.error = Backbone.wrapError(options.error, model, options);
-                var method = this.isNew() ? 'create' : 'update';
-                var xhr = (this.sync || Backbone.sync).call(this, method, this, options);
-                if (options.wait) this.set(current, silentOptions);
-                return xhr;
+              // After a successful server-side save, the client is (optionally)
+              // updated with the server-side state.
+              var model = this;
+              var success = options.success;
+              options.success = function(resp, status, xhr) {
+                done = true;
+                var serverAttrs = model.parse(resp);
+                if (options.wait) serverAttrs = _.extend(attrs || {}, serverAttrs);
+                if (!model.set(serverAttrs, options)) return false;
+                if (success) success(model, resp, options);
+              };
+
+              // Finish configuring and sending the Ajax request.
+              var method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
+              if (method == 'patch') options.attrs = attrs;
+              var xhr = this.sync(method, this, options);
+
+              // When using `wait`, reset attributes to original values unless
+              // `success` has been called already.
+              if (!done && options.wait) {
+                this.clear(silentOptions);
+                this.set(current, silentOptions);
+              }
+
+              return xhr;
             },
             _destroy: function(options) {
                 options = options ? _.clone(options) : {};
                 var model = this;
                 var success = options.success;
 
-                var triggerDestroy = function() {
+                var destroy = function() {
                     model.trigger('destroy', model, model.collection, options);
                 };
 
+                options.success = function(resp) {
+                    if (options.wait || model.isNew()) destroy();
+                    if (success) success(model, resp, options);
+                };
+
                 if (this.isNew()) {
-                    triggerDestroy();
+                    options.success();
                     return false;
                 }
 
-                options.success = function(resp) {
-                    if (options.wait) triggerDestroy();
-                    if (success) {
-                        success(model, resp);
-                    } else {
-                        model.trigger('sync', model, resp, options);
-                    }
-                };
-
-                options.error = Backbone.wrapError(options.error, model, options);
-                var xhr = (this.sync || Backbone.sync).call(this, 'delete', this, options);
-                if (!options.wait) triggerDestroy();
+                var xhr = this.sync('delete', this, options);
+                if (!options.wait) destroy();
                 return xhr;
             }
         })
