@@ -271,6 +271,17 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine("\t\treturn attrs;");
                 sb.AppendLine("\t},");
                 sb.Append(jsonb.ToString());
+                sb.AppendLine("\t\tif (!this.isNew()){");
+                sb.AppendLine("\t\t\tvar keys=[];");
+                sb.AppendLine("\t\t\tfor(var key in attrs){");
+                sb.AppendLine("\t\t\t\tkeys.push(key);");
+                sb.AppendLine("\t\t\t}");
+                sb.AppendLine("\t\t\tfor(var x=0;x<keys.length;x++){");
+                sb.AppendLine("\t\t\t\tif (_.indexOf(this._changedFields,keys[x])==-1){");
+                sb.AppendLine("\t\t\t\t\tdelete attrs[keys[x]];");
+                sb.AppendLine("\t\t\t\t}");
+                sb.AppendLine("\t\t\t}");
+                sb.AppendLine("\t\t}");
                 sb.AppendLine("\t\treturn attrs;");
                 sb.AppendLine("\t},");
                 if (getb.Length > 0)
@@ -305,6 +316,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\tinitialize : function() {");
             sb.AppendLine("\t\tif (this._revertReadonlyFields != undefined){");
             sb.AppendLine("\t\t\tthis.on(\"change\",this._revertReadonlyFields);");
+            sb.AppendLine("\t\t\tthis.on(\"sync\",function(model, resp, options){");
+            sb.AppendLine("\t\t\t\tmodel._changedFields=[];");
+            sb.AppendLine("\t\t\t});");
             sb.AppendLine("\t\t}");
             sb.AppendLine("\t},");
             _AppendDefaults(modelType,properties,sb);
