@@ -152,6 +152,61 @@
                 if (!options) { options = {}; }
                 options = _.extend(options, { async: false });
                 return this.destroy(options);
+            }, 
+            _save: function(key, val, options) {
+                var attrs, current, done;
+                if (key == null || _.isObject(key)) {
+                    attrs = key;
+                    options = val;
+                } else if (key != null) {
+                    (attrs = {})[key] = val;
+                }
+                options = options ? _.clone(options) : {};
+                if (options.wait) {
+                    if (attrs && !this._validate(attrs, options)) return false;
+                    current = _.clone(this.attributes);
+                }
+                var silentOptions = _.extend({}, options, { silent: true });
+                if (attrs && !this.set(attrs, options.wait ? silentOptions : options)) {
+                    return false;
+                }
+                if (!attrs && !this._validate(null, options)) return false;
+                var model = this;
+                var success = options.success;
+                options.success = function(resp, status, xhr) {
+                    done = true;
+                    var serverAttrs = model.parse(resp);
+                    if (options.wait) serverAttrs = _.extend(attrs || {}, serverAttrs);
+                    if (!model.set(serverAttrs, options)) return false;
+                    if (success) success(model, resp, options);
+                };
+                var method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
+                if (method == 'patch') options.attrs = attrs;
+                var xhr = this.sync(method, this, options);
+                if (!done && options.wait) {
+                    this.clear(silentOptions);
+                    this.set(current, silentOptions);
+                }
+                return xhr;
+            },
+            _destroy: function(options) {
+                options = options ? _.clone(options) : {};
+                var model = this;
+                var success = options.success;
+                var destroy = function() {
+                    model.trigger('destroy', model, model.collection, options);
+                };
+                options.success = function(resp) {
+                    if (options.wait || model.isNew()) destroy();
+                    if (success) success(model, resp, options);
+                };
+                if (this.isNew()) {
+                    options.success();
+                    return false;
+                }
+                var xhr = this.sync('delete', this, options);
+                if (!options.wait) destroy();
+                return xhr;
             }
         })
     })
