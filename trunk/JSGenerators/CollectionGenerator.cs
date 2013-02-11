@@ -41,12 +41,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                 }
             }
-            return "//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionGenerator\n" +
-                ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ",{Collection: Backbone.Collection.extend({\n"
-                + "\tmodel : " + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model,\n"
-                +"\tparse : function(response){return (response.Backbone == undefined ? response : response.response);},\n"
-                +"\turl : \"" + (urlRoot.StartsWith("/") ? "" : "/") + urlRoot + "\"\n"
-                +"})});\n";
+            return "//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionGenerator" +Environment.NewLine+
+                ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ",{Collection: Backbone.Collection.extend({"+Environment.NewLine
+                + "\tmodel : " + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model,"+Environment.NewLine
+                +"\tparse : function(response){return (response.Backbone == undefined ? response : response.response);},"+Environment.NewLine
+                +"\turl : \"" + (urlRoot.StartsWith("/") ? "" : "/") + urlRoot + "\""+Environment.NewLine
+                +"})});"+Environment.NewLine;
         }
 
         #endregion
