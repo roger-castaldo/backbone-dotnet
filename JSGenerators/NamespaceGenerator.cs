@@ -19,7 +19,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             string tmp = "";
             foreach (string str in ModelNamespace.GetFullNameForModel(modelType,host).Split('.'))
             {
-                ret += (tmp.Length == 0 ? "var " + str : tmp + "." + str) + " = " + (tmp.Length == 0 ? "" : tmp + ".") + str + " || {};\n";
+                ret += (tmp.Length == 0 ? "var " + str : tmp + "." + str) + " = " + (tmp.Length == 0 ? "" : tmp + ".") + str + " || {};"+Environment.NewLine;
                 tmp += (tmp.Length == 0 ? "" : ".") + str;
             }
             return ret;
