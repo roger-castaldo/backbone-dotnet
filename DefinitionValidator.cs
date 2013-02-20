@@ -373,7 +373,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     break;
                                 }
                             }
-                            if (!foundSelMethod)
+                            if (!foundSelMethod && (hasAdd||hasUpdate))
                             {
                                 if (!invalidModels.Contains(t))
                                     invalidModels.Add(t);
