@@ -25,7 +25,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.Append("\tattributes: {");
                 object[] atts = modelType.GetCustomAttributes(typeof(ModelCollectionViewAttribute), false);
                 for (int x = 0; x < atts.Length; x++)
-                    sb.Append("\t\t\"" + ((ModelViewAttribute)atts[x]).Name + "\" : '" + ((ModelViewAttribute)atts[x]).Value + "'" + (x < atts.Length - 1 ? "," : ""));
+                    sb.Append("\t\t\"" + ((ModelCollectionViewAttribute)atts[x]).Name + "\" : '" + ((ModelCollectionViewAttribute)atts[x]).Value + "'" + (x < atts.Length - 1 ? "," : ""));
                 sb.Append("\t},");
             }
         }
