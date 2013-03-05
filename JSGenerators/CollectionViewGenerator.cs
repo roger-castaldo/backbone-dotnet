@@ -20,10 +20,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         private void _AppendAttributes(Type modelType, StringBuilder sb)
         {
-            if (modelType.GetCustomAttributes(typeof(ModelViewAttribute), false).Length > 0)
+            if (modelType.GetCustomAttributes(typeof(ModelCollectionViewAttribute), false).Length > 0)
             {
                 sb.Append("\tattributes: {");
-                object[] atts = modelType.GetCustomAttributes(typeof(ModelViewAttribute), false);
+                object[] atts = modelType.GetCustomAttributes(typeof(ModelCollectionViewAttribute), false);
                 for (int x = 0; x < atts.Length; x++)
                     sb.Append("\t\t\"" + ((ModelViewAttribute)atts[x]).Name + "\" : '" + ((ModelViewAttribute)atts[x]).Value + "'" + (x < atts.Length - 1 ? "," : ""));
                 sb.Append("\t},");
