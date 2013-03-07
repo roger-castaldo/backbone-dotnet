@@ -64,14 +64,14 @@ Backbone = _.extend(Backbone, {
                                     if (this.attributes[attr].length > 0) {
                                         if (!(this.attributes[attr][0].isLoaded == undefined ? false : this.attributes[attr][0].isLoaded)) {
                                             for (var x = 0; x < this.attributes[attr].length; x++) {
-                                                this.attributes[attr][x].fetch();
+                                                this.attributes[attr][x].fetch({ async: false });
                                                 this.attributes[attr][x].isLoaded = true;
                                             }
                                         }
                                     }
                                 } else {
                                     if (!(this.attributes[attr].isLoaded == undefined ? false : this.attributes[attr].isLoaded)) {
-                                        this.attributes[attr].fetch();
+                                        this.attributes[attr].fetch({ async: false });
                                         this.attributes[attr].isLoaded = true;
                                     }
                                 }
