@@ -144,10 +144,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             if (add)
             {
                 StringBuilder jsonb = new StringBuilder();
+                string lazyLoads = "";
                 jsonb.AppendLine("\ttoJSON : function(){");
                 jsonb.AppendLine("\t\tvar attrs = {};");
-
-                StringBuilder getb = new StringBuilder();
 
                 sb.AppendLine("\tparse: function(response) {");
                 sb.AppendLine("\t\tvar attrs = {};");
@@ -185,6 +184,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                     {
                         bool isLazy = modelType.GetProperty(str).GetCustomAttributes(typeof(ModelPropertyLazyLoadExternalModel), false).Length > 0;
+                        if (isLazy)
+                            lazyLoads += ",'" + str + "'";
                         sb.AppendLine("\t\tif (response." + str + " != undefined){");
                         if (array)
                         {
@@ -192,10 +193,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("\t\t\tfor (x in response." + str + "){");
                             sb.AppendLine("\t\t\t\tattrs." + str + ".push(new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + "[x].id}));");
                             sb.AppendLine("\t\t\t\tattrs." + str + "[x].attributes=attrs." + str + "[x].parse(response." + str + "[x]);");
-                            if (isLazy)
-                                sb.AppendLine("\t\t\t\tattrs." + str + "[x].isLoaded=false;");
                             sb.AppendLine("\t\t\t}");
-
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
                             jsonb.AppendLine("\t\t\tif(this.attributes['" + str + "']!=null){");
@@ -206,30 +204,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             jsonb.AppendLine("\t\t\t}");
                             if (isReadOnly)
                                 jsonb.AppendLine("}");
-
-                            if (isLazy)
-                            {
-                                getb.AppendLine("\t\t" + (getb.Length > 0 ? "else " : "") + "if (attr=='" + str + "'){");
-                                getb.AppendLine("\t\t\tif (this.attributes[attr]!=null){");
-                                getb.AppendLine("\t\t\t\tif (this.attributes[attr].length>0){");
-                                getb.AppendLine("\t\t\t\t\tif (!this.attributes[attr][0].isLoaded){");
-                                getb.AppendLine("\t\t\t\t\t\tfor (var x=0;x<this.attributes[attr].length;x++){");
-                                getb.AppendLine("\t\t\t\t\t\t\tthis.attributes[attr][x].fetch({ async: false });");
-                                getb.AppendLine("\t\t\t\t\t\t\tthis.attributes[attr][x].isLoaded=true;");
-                                getb.AppendLine("\t\t\t\t\t\t}");
-                                getb.AppendLine("\t\t\t\t\t}");
-                                getb.AppendLine("\t\t\t\t}");
-                                getb.AppendLine("\t\t\t}");
-                                getb.AppendLine("\t\t}");
-                            }
                         }
                         else
                         {
                             sb.AppendLine("\t\t\tattrs." + str + " = new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + ".id});");
                             sb.AppendLine("\t\t\tattrs." + str + ".attributes=attrs." + str + ".parse(response." + str + ");");
-                            if (isLazy)
-                                sb.Append("\t\t\tattrs." + str + ".isLoaded=false;");
-
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
                             jsonb.AppendLine("\t\tif(this.attributes['" + str + "']!=null){");
@@ -237,19 +216,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             jsonb.AppendLine("\t\t}");
                             if (isReadOnly)
                                 jsonb.AppendLine("}");
-
-                            if (isLazy)
-                            {
-                                getb.AppendLine("\t\t" + (getb.Length > 0 ? "else " : "") + "if (attr=='" + str + "'){");
-                                getb.AppendLine("\t\t\tif (this.attributes[attr]!=null){");
-                                getb.AppendLine("\t\t\t\tif (!this.attributes[attr].isLoaded){");
-                                getb.AppendLine("\t\t\t\t\tthis.attributes[attr].fetch({ async: false });");
-                                getb.AppendLine("\t\t\t\t\tthis.attributes[attr].isLoaded=true;");
-                                getb.AppendLine("\t\t\t\t}");
-                                getb.AppendLine("\t\t\t}");
-                                getb.AppendLine("\t\t}");
-                            }
-                        }
+                        } 
                         sb.AppendLine("\t\t}");
                     }
                     else
@@ -271,25 +238,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine("\t\treturn attrs;");
                 sb.AppendLine("\t},");
                 sb.Append(jsonb.ToString());
-                sb.AppendLine("\t\tif (!this.isNew()){");
-                sb.AppendLine("\t\t\tvar keys=[];");
-                sb.AppendLine("\t\t\tfor(var key in attrs){");
-                sb.AppendLine("\t\t\t\tkeys.push(key);");
-                sb.AppendLine("\t\t\t}");
-                sb.AppendLine("\t\t\tfor(var x=0;x<keys.length;x++){");
-                sb.AppendLine("\t\t\t\tif (_.indexOf(this._changedFields,keys[x])==-1){");
-                sb.AppendLine("\t\t\t\t\tdelete attrs[keys[x]];");
-                sb.AppendLine("\t\t\t\t}");
-                sb.AppendLine("\t\t\t}");
-                sb.AppendLine("\t\t}");
                 sb.AppendLine("\t\treturn attrs;");
                 sb.AppendLine("\t},");
-                if (getb.Length > 0)
+                if (lazyLoads.Length > 0)
                 {
-                    sb.AppendLine("\tget : function(attr){");
-                    sb.Append(getb.ToString());
-                    sb.AppendLine("\t\treturn this.attributes[attr];");
-                    sb.AppendLine("\t},");
+                    sb.AppendLine("\tLazyLoadAttributes : [" + lazyLoads.Substring(1) + "],");
                 }
             }
             else
@@ -316,9 +269,6 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\tinitialize : function() {");
             sb.AppendLine("\t\tif (this._revertReadonlyFields != undefined){");
             sb.AppendLine("\t\t\tthis.on(\"change\",this._revertReadonlyFields);");
-            sb.AppendLine("\t\t\tthis.on(\"sync\",function(model, resp, options){");
-            sb.AppendLine("\t\t\t\tmodel._changedFields=[];");
-            sb.AppendLine("\t\t\t});");
             sb.AppendLine("\t\t}");
             sb.AppendLine("\t},");
             _AppendDefaults(modelType,properties,sb);
