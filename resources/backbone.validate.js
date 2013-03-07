@@ -62,25 +62,56 @@ Backbone = _.extend(Backbone, {
                             if (this.attributes[attr] != null) {
                                 if (this.attributes[attr] instanceof Array) {
                                     if (this.attributes[attr].length > 0) {
-                                        if (!(this.attributes[attr][0].isLoaded == undefined ? false : this.attributes[attr][0].isLoaded)) {
+                                        if (!(this.attributes[attr][0].isLoaded == undefined ? false : this.attributes[attr][0].isLoaded) && _.keys(this.attributes[attr][0].attributes).length == 1) {
                                             for (var x = 0; x < this.attributes[attr].length; x++) {
                                                 this.attributes[attr][x].fetch({ async: false });
                                                 this.attributes[attr][x].isLoaded = true;
+                                                this.attributes[attr][x]._previousAttributes = this.attributes[attr][x].attributes;
                                             }
                                         }
                                     }
                                 } else {
-                                    if (!(this.attributes[attr].isLoaded == undefined ? false : this.attributes[attr].isLoaded)) {
+                                    if (!(this.attributes[attr].isLoaded == undefined ? false : this.attributes[attr].isLoaded) && _.keys(this.attributes[attr].attributes).length == 1) {
                                         this.attributes[attr].fetch({ async: false });
                                         this.attributes[attr].isLoaded = true;
+                                        this.attributes[attr]._previousAttributes = this.attributes[attr].attributes;
                                     }
                                 }
+                                this._previousAttributes[attr] = this.attributes[attr];
                             }
                             x = this.LazyLoadAttributes.length;
                         }
                     }
                 }
                 return this.attributes[attr];
+            },
+            toJSON: function() {
+                var attrs = {};
+                var keys = _.keys(this.attributes);
+                for (x in keys) {
+                    var key = keys[x];
+                    if (!_.isEqual(this.attributes[key], this._previousAttributes[key])) {
+                        attrs[key] = this.attributes[key];
+                    }
+                }
+                return attrs;
+            },
+            hasChanged: function() {
+                var keys = _.keys(this.attributes);
+                for (x in keys) {
+                    var key = keys[x];
+                    if (!_.isEqual(this.attributes[key], this._previousAttributes[key])) {
+                        return true;
+                    }
+                }
+                var keys = _.keys(this._previousAttributes);
+                for (x in keys) {
+                    var key = keys[x];
+                    if (!_.isEqual(this.attributes[key], this._previousAttributes[key])) {
+                        return true;
+                    }
+                }
+                return false;
             },
             syncSave: function(attrs, options) {
                 if (!options) { options = {}; }
