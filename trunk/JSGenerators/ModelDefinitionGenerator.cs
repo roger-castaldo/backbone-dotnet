@@ -196,10 +196,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("\t\t\t}");
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
-                            jsonb.AppendLine("\t\t\tif(this.attributes['" + str + "']!=null){");
-                            jsonb.AppendLine("\t\t\t\tattrs." + str + " = [];");
-                            jsonb.AppendLine("\t\t\t\tfor(x in this.attributes['" + str + "']){");
-                            jsonb.AppendLine("\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].id});");
+                            jsonb.AppendLine("\t\t\tif(!_.isEqual(this.attributes['" + str + "'],this._previousAttributes['" + str + "'])){");
+                            jsonb.AppendLine("\t\t\t\tif(this.attributes['" + str + "']!=null){");
+                            jsonb.AppendLine("\t\t\t\t\tattrs." + str + " = [];");
+                            jsonb.AppendLine("\t\t\t\t\tfor(x in this.attributes['" + str + "']){");
+                            jsonb.AppendLine("\t\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].id});");
+                            jsonb.AppendLine("\t\t\t\t\t}");
                             jsonb.AppendLine("\t\t\t\t}");
                             jsonb.AppendLine("\t\t\t}");
                             if (isReadOnly)
@@ -211,8 +213,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("\t\t\tattrs." + str + ".attributes=attrs." + str + ".parse(response." + str + ");");
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
-                            jsonb.AppendLine("\t\tif(this.attributes['" + str + "']!=null){");
-                            jsonb.AppendLine("\t\t\tattrs." + str + " = {id : this.attributes['" + str + "'].id};");
+                            jsonb.AppendLine("\t\tif(!_.isEqual(this.attributes['" + str + "'],this._previousAttributes['" + str + "'])){");
+                            jsonb.AppendLine("\t\t\tif(this.attributes['" + str + "']!=null){");
+                            jsonb.AppendLine("\t\t\t\tattrs." + str + " = {id : this.attributes['" + str + "'].id};");
+                            jsonb.AppendLine("\t\t\t}");
                             jsonb.AppendLine("\t\t}");
                             if (isReadOnly)
                                 jsonb.AppendLine("}");
