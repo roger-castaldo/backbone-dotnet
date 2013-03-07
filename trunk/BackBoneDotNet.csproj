@@ -42,6 +42,7 @@
     <Compile Include="Attributes\EditButtonImagePath.cs" />
     <Compile Include="Attributes\Enums.cs" />
     <Compile Include="Attributes\ModelBlockJavascriptGeneration.cs" />
+    <Compile Include="Attributes\ModelCollectionViewAttribute.cs" />
     <Compile Include="Attributes\ModelDeleteMethod.cs" />
     <Compile Include="Attributes\ModelEditAddType.cs" />
     <Compile Include="Attributes\ModelErrorMessage.cs" />
