@@ -248,7 +248,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         sb.AppendLine("\tif (!(" + pars[x].Name + " instanceof Date)){");
                         sb.AppendLine("\t\t" + pars[x].Name + " = new Date(" + pars[x].Name + ");");
                         sb.AppendLine("\t}");
-                        sb.AppendLine("\t"+pars[x].Name + " = " + pars[x].Name + ".toUTCString();");
+                        sb.AppendLine("\t"+pars[x].Name + " = " + pars[x].Name + ".getTime();");
                         sb.AppendLine("}");
                     }
                     pNames[x] = "'+"+pars[x].Name+"+'";
