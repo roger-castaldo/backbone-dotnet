@@ -196,7 +196,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("\t\t\t}");
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
-                            jsonb.AppendLine("\t\t\tif(!_.isEqual(this.attributes['" + str + "'],this._previousAttributes['" + str + "'])){");
+                            jsonb.AppendLine("\t\t\tif(!_.isEqual(this.attributes['" + str + "'],this._previousAttributes['" + str + "'])||this.isNew()){");
                             jsonb.AppendLine("\t\t\t\tif(this.attributes['" + str + "']!=null){");
                             jsonb.AppendLine("\t\t\t\t\tattrs." + str + " = [];");
                             jsonb.AppendLine("\t\t\t\t\tfor(x in this.attributes['" + str + "']){");
@@ -213,7 +213,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.AppendLine("\t\t\tattrs." + str + ".attributes=attrs." + str + ".parse(response." + str + ");");
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
-                            jsonb.AppendLine("\t\tif(!_.isEqual(this.attributes['" + str + "'],this._previousAttributes['" + str + "'])){");
+                            jsonb.AppendLine("\t\tif(!_.isEqual(this.attributes['" + str + "'],this._previousAttributes['" + str + "'])||this.isNew()){");
                             jsonb.AppendLine("\t\t\tif(this.attributes['" + str + "']!=null){");
                             jsonb.AppendLine("\t\t\t\tattrs." + str + " = {id : this.attributes['" + str + "'].id};");
                             jsonb.AppendLine("\t\t\t}");
