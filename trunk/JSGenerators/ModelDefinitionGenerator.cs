@@ -158,7 +158,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
                 foreach (string str in properties)
                 {
-                    bool isReadOnly = modelType.GetProperty(str).GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length > 0;
+                    bool isReadOnly = modelType.GetProperty(str).GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length > 0
+                        || !modelType.GetProperty(str).CanWrite;
                     Type propType = modelType.GetProperty(str).PropertyType;
                     bool array = false;
                     if (propType.FullName.StartsWith("System.Nullable"))
