@@ -592,6 +592,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             Hashtable Backbone = new Hashtable();
             if (request.AcceptLanguageHeaderValue == null)
                 Backbone.Add("Language", "en");
+            else if (!request.AcceptLanguageHeaderValue.Contains(";"))
+                Backbone.Add("Language",request.AcceptLanguageHeaderValue.Split('-')[0]);
             else
                 Backbone.Add("Language", request.AcceptLanguageHeaderValue.Split(';')[0].Split(',')[1].Trim());
             Hashtable ht = request.AdditionalBackboneVariables;
