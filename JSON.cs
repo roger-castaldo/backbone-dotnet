@@ -372,7 +372,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
 
             if (_regDateTime.IsMatch(s))
-                return DateTime.ParseExact(s, "yyyy-MM-dd'T'HH:mm:ss.fff'Z'",null);
+                return DateTime.ParseExact(s, "yyyy-MM-dd'T'HH:mm:ss.fff'Z'",null,DateTimeStyles.AssumeUniversal);
             return s;
         }
 
@@ -675,7 +675,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
             else if (value is DateTime)
             {
-                SerializeString(((DateTime)value).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"), builder);
+                SerializeString(((DateTime)value).ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'"), builder);
             }
             else if (value is byte[])
             {
