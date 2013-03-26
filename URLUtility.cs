@@ -12,7 +12,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //DateTime format yyyymmddHHMMss
 
         private static Regex _regListPars = new Regex("\\{(\\d+)\\}", RegexOptions.Compiled | RegexOptions.ECMAScript);
-        private static readonly DateTime _UTC = new DateTime(1970, 1, 1, 00, 00, 00);
+        private static readonly DateTime _UTC = new DateTime(1970, 1, 1, 00, 00, 00,DateTimeKind.Utc);
 
         internal static string[] SplitUrl(string url)
         {
@@ -248,7 +248,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         sb.AppendLine("\tif (!(" + pars[x].Name + " instanceof Date)){");
                         sb.AppendLine("\t\t" + pars[x].Name + " = new Date(" + pars[x].Name + ");");
                         sb.AppendLine("\t}");
-                        sb.AppendLine("\t"+pars[x].Name + " = " + pars[x].Name + ".getTime();");
+                        sb.AppendLine("\t" + pars[x].Name + " = Date.UTC(" + pars[x].Name + ".getUTCFullYear(), " + pars[x].Name + ".getUTCMonth(), " + pars[x].Name + ".getUTCDate(),  " + pars[x].Name + ".getUTCHours(), " + pars[x].Name + ".getUTCMinutes(), " + pars[x].Name + ".getUTCSeconds());");
                         sb.AppendLine("}");
                     }
                     pNames[x] = "'+"+pars[x].Name+"+'";
