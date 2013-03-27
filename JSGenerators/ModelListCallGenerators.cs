@@ -35,7 +35,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.Append("pageStartIndex,pageSize");
                             }
                             sb.AppendLine("){");
-                            sb.AppendLine(URLUtility.CreateJavacriptUrlCode(mlm, mi, modelType));
+                            string urlCode = URLUtility.CreateJavacriptUrlCode(mlm, mi, modelType);
+                            sb.Append(urlCode);
                             if (mlm.Paged)
                             {
                                 sb.AppendLine("pageStartIndex = (pageStartIndex == undefined ? 0 : (pageStartIndex == null ? 0 : pageStartIndex));");
@@ -54,7 +55,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.AppendLine("\tMoveToPage : function(pageNumber){");
                                 sb.AppendLine("\t\tif (pageNumber>=0 && pageNumber<this.TotalPages){");
                                 sb.AppendLine("\t\t\tthis.currentIndex = pageNumber*this.currentPageSize;");
-                                sb.AppendLine("\t\t\tthis.url = this.url.substring(0,this.url.indexOf('?'))+'?PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;");
+                                if (mlm.Path.Contains("?"))
+                                    sb.AppendLine("\t\t\tthis.url = this.url.substring(0,this.url.indexOf('&PageStartIndex='))+'&PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;");
+                                else
+                                    sb.AppendLine("\t\t\tthis.url = this.url.substring(0,this.url.indexOf('?'))+'?PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;");
                                 sb.AppendLine("\t\t\tthis.fetch();");
                                 sb.AppendLine("\t\t}");
                                 sb.AppendLine("\t},");
@@ -72,6 +76,21 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.AppendLine("\t\t\tthis.MoveToPage(Math.floor(this.currentIndex/pageSize)-1);");
                                 sb.AppendLine("\t\t}");
                                 sb.AppendLine("\t},");
+                                if (mi.GetParameters().Length > 0)
+                                {
+                                    sb.Append("\tChangeParameters: function(");
+                                    for (int x = 0; x < mi.GetParameters().Length - 3; x++)
+                                    {
+                                        sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
+                                    }
+                                    sb.AppendLine("){");
+                                    sb.AppendLine(urlCode);
+                                    sb.AppendLine("url+='" + (mlm.Path.Contains("?") ? "&" : "?") + "PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;");
+                                    sb.AppendLine("\t\tthis.currentIndex=0;");
+                                    sb.AppendLine("\t\tthis.url=url;");
+                                    sb.AppendLine("\t\tthis.fetch();");
+                                    sb.AppendLine("},");
+                                }
                                 sb.AppendLine("\tmodel:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model");
                                 sb.AppendLine("});");
                             }
@@ -84,7 +103,22 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 sb.AppendLine("\t}else{");
                                 sb.AppendLine("\treturn response;");
                                 sb.AppendLine("\t}");
-                                sb.AppendLine("},model:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model});");
+                                sb.AppendLine("},");
+                                if (mi.GetParameters().Length > 0)
+                                {
+                                    sb.Append("\tChangeParameters: function(");
+                                    for (int x = 0; x < mi.GetParameters().Length; x++)
+                                    {
+                                        sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
+                                    }
+                                    sb.AppendLine("){");
+                                    sb.AppendLine(urlCode);
+                                    sb.AppendLine("\t\tthis.currentIndex=0;");
+                                    sb.AppendLine("\t\tthis.url=url;");
+                                    sb.AppendLine("\t\tthis.fetch();");
+                                    sb.AppendLine("},");
+                                }
+                                sb.AppendLine("model:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model});");
                             }
                             sb.AppendLine("ret = new ret();");
                             sb.AppendLine("return ret;");
