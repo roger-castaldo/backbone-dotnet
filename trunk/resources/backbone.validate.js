@@ -122,7 +122,9 @@ Backbone = _.extend(Backbone, {
                 if (!options) { options = {}; }
                 options = _.extend(options, { async: false });
                 return this.destroy(options);
-            }
+            },
+            _save: Backbone.Model.prototype.save,
+            _delete:Backbone.Model.prototype.delete
         })
     })
 });
