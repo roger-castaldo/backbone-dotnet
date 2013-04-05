@@ -127,7 +127,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 ret = "(";
                 foreach (string str in Enum.GetNames(ptype))
                     ret += str + "|";
-                ret = ret.Substring(0, ret.Length - 1) + ")";
+                ret = ret.Substring(0, ret.Length - 1) +(nullable ? "|NULL" : "")+ ")";
             }
             return ret;
         }
