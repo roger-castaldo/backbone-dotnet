@@ -645,6 +645,10 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 SerializeString((string)value, builder);
             }
+            else if (value is char)
+            {
+                SerializeString((value == null ? null : value.ToString()), builder);
+            }
             else if (value is Hashtable)
             {
                 SerializeObject((Hashtable)value, builder);
@@ -713,39 +717,20 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
             else
             {
-                builder.Append("{");
-                List<string> foundProperties = new List<string>();
-                bool first = true;
-                foreach (PropertyInfo pi in value.GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance))
+                if (value.GetType().IsGenericType && value.GetType().GetGenericTypeDefinition() == typeof(Nullable<>))
+                    SerializeValue(Convert.ChangeType(value, value.GetType().GetGenericArguments()[0]), builder);
+                else
                 {
-                    if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
+                    builder.Append("{");
+                    List<string> foundProperties = new List<string>();
+                    bool first = true;
+                    foreach (PropertyInfo pi in value.GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance))
                     {
-                        if (!foundProperties.Contains(pi.Name))
+                        if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
                         {
-                            if (!pi.PropertyType.FullName.Contains("+KeyCollection") && pi.GetGetMethod().GetParameters().Length == 0)
+                            if (!foundProperties.Contains(pi.Name))
                             {
-                                foundProperties.Add(pi.Name);
-                                if (!first)
-                                    builder.Append(", ");
-                                _SerializePropertyValue(pi, value,builder);
-                                first = false;
-                            }
-                        }
-                    }
-                }
-                foreach (Type t in value.GetType().GetInterfaces())
-                {
-                    if (t == typeof(IDictionary))
-                    {
-                        SerializeObject((IDictionary)value, builder);
-                    }
-                    else
-                    {
-                        foreach (PropertyInfo pi in t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic))
-                        {
-                            if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
-                            {
-                                if (!foundProperties.Contains(pi.Name))
+                                if (!pi.PropertyType.FullName.Contains("+KeyCollection") && pi.GetGetMethod().GetParameters().Length == 0)
                                 {
                                     foundProperties.Add(pi.Name);
                                     if (!first)
@@ -756,31 +741,55 @@ namespace Org.Reddragonit.BackBoneDotNet
                             }
                         }
                     }
-                }
-                if (value.GetType().BaseType != null)
-                {
-                    Type tmp = value.GetType();
-                    while ((tmp = tmp.BaseType) != null)
+                    foreach (Type t in value.GetType().GetInterfaces())
                     {
-                        if (tmp.FullName == "Org.Reddragonit.Dbpro.Structure.Table")
-                            break;
-                        foreach (PropertyInfo pi in tmp.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance))
+                        if (t == typeof(IDictionary))
                         {
-                            if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
+                            SerializeObject((IDictionary)value, builder);
+                        }
+                        else
+                        {
+                            foreach (PropertyInfo pi in t.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic))
                             {
-                                if (!foundProperties.Contains(pi.Name))
+                                if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
                                 {
-                                    foundProperties.Add(pi.Name);
-                                    if (!first)
-                                        builder.Append(", ");
-                                    _SerializePropertyValue(pi, value, builder);
-                                    first = false;
+                                    if (!foundProperties.Contains(pi.Name))
+                                    {
+                                        foundProperties.Add(pi.Name);
+                                        if (!first)
+                                            builder.Append(", ");
+                                        _SerializePropertyValue(pi, value, builder);
+                                        first = false;
+                                    }
                                 }
                             }
                         }
                     }
+                    if (value.GetType().BaseType != null)
+                    {
+                        Type tmp = value.GetType();
+                        while ((tmp = tmp.BaseType) != null)
+                        {
+                            if (tmp.FullName == "Org.Reddragonit.Dbpro.Structure.Table")
+                                break;
+                            foreach (PropertyInfo pi in tmp.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance))
+                            {
+                                if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
+                                {
+                                    if (!foundProperties.Contains(pi.Name))
+                                    {
+                                        foundProperties.Add(pi.Name);
+                                        if (!first)
+                                            builder.Append(", ");
+                                        _SerializePropertyValue(pi, value, builder);
+                                        first = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    builder.Append("}");
                 }
-                builder.Append("}");
             }
             return true;
         }
