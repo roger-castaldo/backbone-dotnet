@@ -223,12 +223,12 @@ namespace Org.Reddragonit.BackBoneDotNet
                         }
                         else
                         {
-                            if (foundLoadSelMethod)
-                            {
-                                if (!invalidModels.Contains(t))
-                                    invalidModels.Add(t);
-                                errors.Add(new MultipleSelectOptionValueMethodsException(t, mi));
-                            }
+                        //    if (foundLoadSelMethod)
+                        //    {
+                        //        if (!invalidModels.Contains(t))
+                        //            invalidModels.Add(t);
+                        //        errors.Add(new MultipleSelectOptionValueMethodsException(t, mi));
+                        //    }
                             foundLoadSelMethod = true;
                         }
                     }

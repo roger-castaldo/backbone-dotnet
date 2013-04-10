@@ -92,6 +92,20 @@ namespace Org.Reddragonit.BackBoneDotNet
             return ret+")$";
         }
 
+        internal static string GenerateRegexForSelectListQueryString(string path,MethodInfo mi)
+        {
+            Logger.Debug("Generating regular expression for select list method " + mi.Name+" in type "+mi.DeclaringType.FullName);
+            if (mi.GetParameters().Length == 0)
+                return "^(SELECT\t"+path+")$";
+            else
+            {
+                string ret = "^(SELECT\t"+path+"\\?";
+                foreach (ParameterInfo pi in mi.GetParameters())
+                    ret += pi.Name + "=" + _GetRegexStringForParameter(pi) + "&";
+                return ret.Substring(0,ret.Length-1)+")$";
+            }
+        }
+
         private static string _GetRegexStringForParameter(ParameterInfo parameterInfo)
         {
             string ret = ".+";
