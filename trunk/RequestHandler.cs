@@ -25,7 +25,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             public bool HandlesRequest(IHttpRequest request)
             {
                 Logger.Trace("Checking if url " + request.URL.AbsolutePath + " is handled in path " + _path);
-                return _reg.IsMatch(request.Method.ToUpper() + "\t" + request.URL.Host +request.URL.AbsolutePath+(_path.Contains("?") || _isPaged ? request.URL.Query : ""));
+                return _reg.IsMatch(request.Method.ToUpper() + "\t" + (_reg.ToString().StartsWith("^(SELECT\t") ? "" : request.URL.Host) +request.URL.AbsolutePath+(_path.Contains("?") || _isPaged ? request.URL.Query : ""));
             }
 
             public object HandleRequest(IHttpRequest request)
@@ -66,6 +66,31 @@ namespace Org.Reddragonit.BackBoneDotNet
                 _reg = new Regex(URLUtility.GenerateRegexForURL(mlm, method),RegexOptions.ECMAScript|RegexOptions.Compiled);
                 _method = method;
             }
+
+            public sModelListCall(MethodInfo method)
+            {
+                _isPaged = false;
+                _path = null;
+                _reg = null;
+                _method = method;
+                foreach (ModelRoute mr in method.DeclaringType.GetCustomAttributes(typeof(ModelRoute), false))
+                {
+                    if (mr.Host == "*")
+                    {
+                        _path = mr.Path;
+                        _reg = new Regex(URLUtility.GenerateRegexForSelectListQueryString(_path,method));
+                        if (method.GetParameters().Length > 0)
+                        {
+                            _path += "?";
+                            ParameterInfo[] pars = method.GetParameters();
+                            for (int x = 0; x < pars.Length; x++)
+                                _path += pars[x].Name + "={" + x.ToString() + "}&";
+                            _path = _path.Substring(0, _path.Length - 1);
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         //period interval between checks for cleaning up the cache (ms)
@@ -91,7 +116,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //houses all load calls available, key is the url
         private static Dictionary<string, MethodInfo> _Loads;
         //houses all the select list calls, key is the url
-        private static Dictionary<string, MethodInfo> _SelectLists;
+        private static Dictionary<string, List<sModelListCall>> _SelectLists;
         //houses all update methods, key is model type
         private static Dictionary<Type, MethodInfo> _UpdateMethods;
         //houses all delete methods, key is model type
@@ -167,7 +192,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 _invalidModels = new List<Type>();
             _LoadAlls = new Dictionary<string, MethodInfo>();
             _Loads = new Dictionary<string, MethodInfo>();
-            _SelectLists = new Dictionary<string, MethodInfo>();
+            _SelectLists = new Dictionary<string, List<sModelListCall>>();
             _CachedJScript = new Dictionary<string, CachedItemContainer>();
             _TypeMaps = new Dictionary<string, Type>();
             _cacheTimer = new Timer(new TimerCallback(_CleanJSCache), null, 0, _CACHE_TIMER_PERIOD);
@@ -219,7 +244,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             bool hasDelete = false;
             MethodInfo LoadAll = null;
             MethodInfo Load = null;
-            MethodInfo SelectList = null;
+            List<sModelListCall> SelectList = new List<sModelListCall>();
             foreach (MethodInfo mi in t.GetMethods(Constants.LOAD_METHOD_FLAGS))
             {
                 if (mi.GetCustomAttributes(typeof(ModelLoadAllMethod), false).Length > 0)
@@ -235,7 +260,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 else if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
                 {
                     Logger.Trace("Found select list method for type " + t.FullName);
-                    SelectList = mi;
+                    SelectList.Add(new sModelListCall(mi));
                 }
                 else if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
                 {
@@ -473,9 +498,21 @@ namespace Org.Reddragonit.BackBoneDotNet
                     case "SELECT":
                         Logger.Trace("Handling Select List request");
                         if (_SelectLists.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
-                            ret = _SelectLists[request.URL.Host + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                        {
+                            foreach (sModelListCall mlc in _SelectLists[request.URL.Host + request.URL.AbsolutePath])
+                            {
+                                if (mlc.HandlesRequest(request))
+                                    ret = mlc.HandlesRequest(request);
+                            }
+                        }
                         else if (_SelectLists.ContainsKey("*" + request.URL.AbsolutePath))
-                            ret = _SelectLists["*" + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                        {
+                            foreach (sModelListCall mlc in _SelectLists["*" + request.URL.AbsolutePath])
+                            {
+                                if (mlc.HandlesRequest(request))
+                                    ret = mlc.HandleRequest(request);
+                            }
+                        }
                         break;
                     case "PUT":
                         Logger.Trace("Handling Put request");
