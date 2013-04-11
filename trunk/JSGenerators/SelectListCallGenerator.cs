@@ -76,7 +76,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 code.AppendLine("\tpars." + pars[y].Name + " = Date.UTC(pars." + pars[y].Name + ".getUTCFullYear(), pars." + pars[y].Name + ".getUTCMonth(), pars." + pars[y].Name + ".getUTCDate(), pars." + pars[y].Name + ".getUTCHours(), pars." + pars[y].Name + ".getUTCMinutes(), pars." + pars[y].Name + ".getUTCSeconds());");
                                 code.AppendLine("}");
                             }
-                            code.AppendLine("\t\turl+='" + pars[y].Name + "='+pars." + pars[y].Name + ".toString();");
+                            code.AppendLine("\t\turl+='"+(y==0 ? "" : "&") + pars[y].Name + "='+pars." + pars[y].Name + ".toString();");
                         }
                         sb.AppendLine("){");
                         sb.Append(code.ToString());
