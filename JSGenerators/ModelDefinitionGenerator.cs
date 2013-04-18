@@ -190,18 +190,30 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         sb.AppendLine("\t\tif (response." + str + " != undefined){");
                         if (array)
                         {
-                            sb.AppendLine("\t\t\tattrs." + str + " = [];");
-                            sb.AppendLine("\t\t\tfor (x in response." + str + "){");
-                            sb.AppendLine("\t\t\t\tattrs." + str + ".push(new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + "[x].id}));");
-                            sb.AppendLine("\t\t\t\tattrs." + str + "[x].attributes=attrs." + str + "[x].parse(response." + str + "[x]);");
+                            sb.AppendLine("\t\t\tif(" + ModelNamespace.GetFullNameForModel(propType, host) + ".Collection!=undefined){");
+                            sb.AppendLine("\t\t\t\tattrs." + str + " = new "+ModelNamespace.GetFullNameForModel(propType,host)+".Collection();");
+                            sb.AppendLine("\t\t\t\tfor (x in response." + str + "){");
+                            sb.AppendLine("\t\t\t\t\tattrs." + str + ".add(new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + "[x].id}));");
+                            sb.AppendLine("\t\t\t\t\tattrs." + str + ".at(x).attributes=attrs." + str + ".at(x).parse(response." + str + "[x]);");
+                            sb.AppendLine("\t\t\t\t}");
+                            sb.AppendLine("\t\t\t}else{");
+                            sb.AppendLine("\t\t\t\tattrs." + str + "=[];");
+                            sb.AppendLine("\t\t\t\tfor (x in response." + str + "){");
+                            sb.AppendLine("\t\t\t\t\tattrs." + str + ".push(new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + "[x].id}));");
+                            sb.AppendLine("\t\t\t\t\tattrs." + str + "[x].attributes=attrs." + str + "[x].parse(response." + str + "[x]);");
+                            sb.AppendLine("\t\t\t\t}");
                             sb.AppendLine("\t\t\t}");
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
                             jsonb.AppendLine("\t\t\tif(!_.isEqual(this.attributes['" + str + "'],this._previousAttributes['" + str + "'])||this.isNew()){");
                             jsonb.AppendLine("\t\t\t\tif(this.attributes['" + str + "']!=null){");
                             jsonb.AppendLine("\t\t\t\t\tattrs." + str + " = [];");
-                            jsonb.AppendLine("\t\t\t\t\tfor(x in this.attributes['" + str + "']){");
-                            jsonb.AppendLine("\t\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].id});");
+                            jsonb.AppendLine("\t\t\t\t\tfor(var x=0;x<this.attributes['" + str + "'].length;x++){");
+                            jsonb.AppendLine("\t\t\t\t\t\tif(this.attributes['" + str + "'].at!=undefined){");
+                            jsonb.AppendLine("\t\t\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'].at(x).id});");
+                            jsonb.AppendLine("\t\t\t\t\t\t}else{");
+                            jsonb.AppendLine("\t\t\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].id});");
+                            jsonb.AppendLine("\t\t\t\t\t\t}");
                             jsonb.AppendLine("\t\t\t\t\t}");
                             jsonb.AppendLine("\t\t\t\t}");
                             jsonb.AppendLine("\t\t\t}");
