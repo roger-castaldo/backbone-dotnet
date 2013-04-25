@@ -691,6 +691,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                     }
                 }
                 tmp.CopyTo(ret);
+                if (expectedType.FullName.StartsWith("System.Collections.Generic.List"))
+                    return expectedType.GetConstructor(new Type[] { ret.GetType() }).Invoke(new object[] { ret });
                 return ret;
             }
             else if (expectedType.FullName.StartsWith("System.Collections.Generic.Dictionary"))
