@@ -192,7 +192,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         {
                             sb.AppendLine("\t\t\tif(" + ModelNamespace.GetFullNameForModel(propType, host) + ".Collection!=undefined){");
                             sb.AppendLine("\t\t\t\tattrs." + str + " = new "+ModelNamespace.GetFullNameForModel(propType,host)+".Collection();");
-                            sb.AppendLine("\t\t\t\tfor (x in response." + str + "){");
+                            sb.AppendLine("\t\t\t\tfor (var x=0;x<response." + str + ".length;x++){");
                             sb.AppendLine("\t\t\t\t\tattrs." + str + ".add(new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + "[x].id}));");
                             sb.AppendLine("\t\t\t\t\tattrs." + str + ".at(x).attributes=attrs." + str + ".at(x).parse(response." + str + "[x]);");
                             sb.AppendLine("\t\t\t\t}");
