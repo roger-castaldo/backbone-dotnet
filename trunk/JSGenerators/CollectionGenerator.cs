@@ -42,7 +42,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }
             return "//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionGenerator" +Environment.NewLine+
-                ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ",{Collection: Backbone.Collection.extend({"+Environment.NewLine
+                ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ",{Collection: Backbone.Collection.extend({"+Environment.NewLine
                 + "\tmodel : " + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model,"+Environment.NewLine
                 +"\tparse : function(response){return (response.Backbone == undefined ? response : response.response);},"+Environment.NewLine
                 +"\turl : \"" + (urlRoot.StartsWith("/") ? "" : "/") + urlRoot + "\""+Environment.NewLine

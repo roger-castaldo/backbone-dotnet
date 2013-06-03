@@ -404,7 +404,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             _LocateButtonImages(modelType, host, out editImage, out deleteImage,out edDef,out delDef);
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator");
-            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ",{View : Backbone.View.extend({");
+            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ",{View : Backbone.View.extend({");
             sb.AppendLine("\tinitialize : function(){");
             sb.AppendLine("\t\tthis.model.on('change',this.render,this);");
             sb.AppendLine("\t},");

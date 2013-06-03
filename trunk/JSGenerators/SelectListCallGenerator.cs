@@ -47,7 +47,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             if (methods.Count > 0)
             {
-                sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ",{SelectList : function(pars){");
+                sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ",{SelectList : function(pars){");
                 for (int x = 0; x < methods.Count; x++)
                 {
                     sb.Append("\t"+(x == 0 ? "" : "else ") + "if(");
