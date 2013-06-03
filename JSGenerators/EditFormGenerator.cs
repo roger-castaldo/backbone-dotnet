@@ -272,7 +272,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.EditAddFormGenerator");
-            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ",{editModel : function(view){");
+            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ",{editModel : function(view){");
 
             ModelEditAddTypes meat = ModelEditAddTypes.dialog;
             if (modelType.GetCustomAttributes(typeof(ModelEditAddType), false).Length > 0)

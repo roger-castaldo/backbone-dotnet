@@ -282,7 +282,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ModelDefinitionGenerator");
-            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ", {Model : Backbone.Model.extend({");
+            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ", {Model : Backbone.Model.extend({");
             sb.AppendLine("\tinitialize : function() {");
             sb.AppendLine("\t\tif (this._revertReadonlyFields != undefined){");
             sb.AppendLine("\t\t\tthis.on(\"change\",this._revertReadonlyFields);");
