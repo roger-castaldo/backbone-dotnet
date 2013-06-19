@@ -199,9 +199,9 @@ namespace Org.Reddragonit.BackBoneDotNet
             if (t.GetCustomAttributes(typeof(ModelBlockInheritance), false).Length > 0)
                 return true;
             else if (t.BaseType == null)
-                return true;
+                return false;
             else if (!new List<Type>(t.BaseType.GetInterfaces()).Contains(typeof(IModel)))
-                return true;
+                return false;
             return IsBlockedModel(t.BaseType);
         }
     }
