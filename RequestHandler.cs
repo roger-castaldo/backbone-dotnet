@@ -204,7 +204,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             _RPC_SELECT = new RequestPathChecker();
             foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
             {
-                if (!_invalidModels.Contains(t))
+                if (!_invalidModels.Contains(t) && !Utility.IsBlockedModel(t))
                 {
                     Logger.Trace("Adding URL path checks for type " + t.FullName);
                     AppendURLRegex(t);

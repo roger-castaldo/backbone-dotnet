@@ -62,337 +62,340 @@ namespace Org.Reddragonit.BackBoneDotNet
             List<Type> models = Utility.LocateTypeInstances(typeof(IModel));
             foreach (Type t in models)
             {
-                if (t.GetCustomAttributes(typeof(ModelRoute), false).Length == 0)
+                if (!Utility.IsBlockedModel(t))
                 {
-                    invalidModels.Add(t);
-                    errors.Add(new NoRouteException(t));
-                }
-                bool hasAdd = false;
-                bool hasUpdate = false;
-                bool hasDelete = false;
-                foreach (MethodInfo mi in t.GetMethods(Constants.STORE_DATA_METHOD_FLAGS))
-                {
-                    if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
-                    {
-                        if (hasAdd)
-                        {
-                            if (!invalidModels.Contains(t))
-                                invalidModels.Add(t);
-                            errors.Add(new DuplicateModelSaveMethodException(t, mi));
-                        }
-                        else
-                        {
-                            hasAdd = true;
-                            if (!_IsValidDataActionMethod(mi))
-                            {
-                                if (!invalidModels.Contains(t))
-                                    invalidModels.Add(t);
-                                errors.Add(new InvalidModelSaveMethodException(t, mi));
-                            }
-                        }
-                    }
-                    else if (mi.GetCustomAttributes(typeof(ModelDeleteMethod), false).Length > 0)
-                    {
-                        if (hasDelete)
-                        {
-                            if (!invalidModels.Contains(t))
-                                invalidModels.Add(t);
-                            errors.Add(new DuplicateModelDeleteMethodException(t, mi));
-                        }
-                        else
-                        {
-                            hasDelete = true;
-                            if (!_IsValidDataActionMethod(mi))
-                            {
-                                if (!invalidModels.Contains(t))
-                                    invalidModels.Add(t);
-                                errors.Add(new InvalidModelDeleteMethodException(t, mi));
-                            }
-                        }
-                    }
-                    else if (mi.GetCustomAttributes(typeof(ModelUpdateMethod), false).Length > 0)
-                    {
-                        if (hasUpdate)
-                        {
-                            if (!invalidModels.Contains(t))
-                                invalidModels.Add(t);
-                            errors.Add(new DuplicateModelUpdateMethodException(t, mi));
-                        }
-                        else
-                        {
-                            hasUpdate = true;
-                            if (!_IsValidDataActionMethod(mi))
-                            {
-                                if (!invalidModels.Contains(t))
-                                    invalidModels.Add(t);
-                                errors.Add(new InvalidModelUpdateMethodException(t, mi));
-                            }
-                        }
-                    }
-                }
-                if (hasAdd)
-                {
-                    if (t.GetConstructor(Type.EmptyTypes) == null)
+                    if (t.GetCustomAttributes(typeof(ModelRoute), false).Length == 0)
                     {
                         invalidModels.Add(t);
-                        errors.Add(new NoEmptyConstructorException(t));
+                        errors.Add(new NoRouteException(t));
                     }
-                }
-                List<string> curAttributes = new List<string>();
-                foreach (ModelViewAttribute mva in t.GetCustomAttributes(typeof(ModelViewAttribute), false))
-                {
-                    if (curAttributes.Contains(mva.Name))
+                    bool hasAdd = false;
+                    bool hasUpdate = false;
+                    bool hasDelete = false;
+                    foreach (MethodInfo mi in t.GetMethods(Constants.STORE_DATA_METHOD_FLAGS))
                     {
-                        invalidModels.Add(t);
-                        errors.Add(new RepeatedAttributeTagName(t, mva.Name));
-                    }
-                    else
-                        curAttributes.Add(mva.Name);
-                    if (mva.Name.ToUpper() == "CLASS")
-                    {
-                        invalidModels.Add(t);
-                        errors.Add(new InvalidAttributeTagName(t));
-                    }
-                }
-                foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))
-                {
-                    Regex reg = new Regex("^("+(mr.Host == "*" ? ".+" : mr.Host) + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path)+")$", RegexOptions.ECMAScript | RegexOptions.Compiled);
-                    foreach (sPathTypePair p in paths)
-                    {
-                        if (reg.IsMatch(p.Path) && (p.ModelType.FullName != t.FullName))
+                        if (mi.GetCustomAttributes(typeof(ModelSaveMethod), false).Length > 0)
                         {
-                            if (!invalidModels.Contains(t))
-                                invalidModels.Add(t);
-                            errors.Add(new DuplicateRouteException(p.Path, p.ModelType, mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path), t));
-                        }
-                    }
-                    paths.Add(new sPathTypePair(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path), t));
-                }
-                bool found = false;
-                bool foundLoadSelMethod = false;
-                foreach (MethodInfo mi in t.GetMethods(Constants.LOAD_METHOD_FLAGS))
-                {
-                    if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
-                    {
-                        if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
-                        {
-                            if (!invalidModels.Contains(t))
-                                invalidModels.Add(t);
-                            errors.Add(new InvalidModelListMethodReturnException(t, mi));
-                        }
-                        if (mi.ReturnType != t)
-                        {
-                            if (!mi.ReturnType.IsAssignableFrom(t))
+                            if (hasAdd)
                             {
                                 if (!invalidModels.Contains(t))
                                     invalidModels.Add(t);
-                                errors.Add(new InvalidLoadMethodReturnType(t, mi.Name));
+                                errors.Add(new DuplicateModelSaveMethodException(t, mi));
                             }
-                        }
-                        if (mi.ReturnType== t)
-                        {
-                            if (mi.GetParameters().Length == 1)
+                            else
                             {
-                                if (mi.GetParameters()[0].ParameterType == typeof(string))
+                                hasAdd = true;
+                                if (!_IsValidDataActionMethod(mi))
                                 {
-                                    if (found)
-                                    {
-                                        if (!invalidModels.Contains(t))
-                                            invalidModels.Add(t);
-                                        errors.Add(new DuplicateLoadMethodException(t, mi.Name));
-                                    }
-                                    found = true;
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new InvalidModelSaveMethodException(t, mi));
+                                }
+                            }
+                        }
+                        else if (mi.GetCustomAttributes(typeof(ModelDeleteMethod), false).Length > 0)
+                        {
+                            if (hasDelete)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new DuplicateModelDeleteMethodException(t, mi));
+                            }
+                            else
+                            {
+                                hasDelete = true;
+                                if (!_IsValidDataActionMethod(mi))
+                                {
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new InvalidModelDeleteMethodException(t, mi));
+                                }
+                            }
+                        }
+                        else if (mi.GetCustomAttributes(typeof(ModelUpdateMethod), false).Length > 0)
+                        {
+                            if (hasUpdate)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new DuplicateModelUpdateMethodException(t, mi));
+                            }
+                            else
+                            {
+                                hasUpdate = true;
+                                if (!_IsValidDataActionMethod(mi))
+                                {
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new InvalidModelUpdateMethodException(t, mi));
                                 }
                             }
                         }
                     }
-                    if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
+                    if (hasAdd)
                     {
-                        if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
+                        if (t.GetConstructor(Type.EmptyTypes) == null)
                         {
-                            if (!invalidModels.Contains(t))
-                                invalidModels.Add(t);
-                            errors.Add(new InvalidModelListMethodReturnException(t, mi));
-                        }
-                        if (mi.ReturnType.FullName != typeof(sModelSelectOptionValue[]).FullName
-                            && mi.ReturnType.FullName != typeof(List<sModelSelectOptionValue>).FullName)
-                        {
-                            if (!invalidModels.Contains(t))
-                                invalidModels.Add(t);
-                            errors.Add(new InvalidModelSelectOptionValueReturnException(t, mi));
-                        }
-                        else
-                        {
-                        //    if (foundLoadSelMethod)
-                        //    {
-                        //        if (!invalidModels.Contains(t))
-                        //            invalidModels.Add(t);
-                        //        errors.Add(new MultipleSelectOptionValueMethodsException(t, mi));
-                        //    }
-                            foundLoadSelMethod = true;
+                            invalidModels.Add(t);
+                            errors.Add(new NoEmptyConstructorException(t));
                         }
                     }
-                    if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
+                    List<string> curAttributes = new List<string>();
+                    foreach (ModelViewAttribute mva in t.GetCustomAttributes(typeof(ModelViewAttribute), false))
                     {
-                        Type rtype = mi.ReturnType;
-                        if (rtype.FullName.StartsWith("System.Nullable"))
+                        if (curAttributes.Contains(mva.Name))
                         {
-                            if (rtype.IsGenericType)
-                                rtype = rtype.GetGenericArguments()[0];
-                            else
-                                rtype = rtype.GetElementType();
+                            invalidModels.Add(t);
+                            errors.Add(new RepeatedAttributeTagName(t, mva.Name));
                         }
-                        if (rtype.IsArray)
-                            rtype = rtype.GetElementType();
-                        else if (rtype.IsGenericType)
+                        else
+                            curAttributes.Add(mva.Name);
+                        if (mva.Name.ToUpper() == "CLASS")
                         {
-                            if (rtype.GetGenericTypeDefinition() == typeof(List<>))
-                                rtype = rtype.GetGenericArguments()[0];
+                            invalidModels.Add(t);
+                            errors.Add(new InvalidAttributeTagName(t));
                         }
-                        if (rtype != t)
+                    }
+                    foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))
+                    {
+                        Regex reg = new Regex("^(" + (mr.Host == "*" ? ".+" : mr.Host) + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + ")$", RegexOptions.ECMAScript | RegexOptions.Compiled);
+                        foreach (sPathTypePair p in paths)
                         {
-                            if (!invalidModels.Contains(t))
-                                invalidModels.Add(t);
-                            errors.Add(new InvalidModelListMethodReturnException(t, mi));
-                        }
-                        bool isPaged = false;
-                        foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
-                        {
-                            if (mlm.Paged)
-                            {
-                                isPaged = true;
-                                break;
-                            }
-                        }
-                        foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
-                        {
-                            MatchCollection mc = _regListPars.Matches(mlm.Path);
-                            if (isPaged && !mlm.Paged)
+                            if (reg.IsMatch(p.Path) && (p.ModelType.FullName != t.FullName))
                             {
                                 if (!invalidModels.Contains(t))
                                     invalidModels.Add(t);
-                                errors.Add(new InvalidModelListNotAllPagedException(t, mi, mlm.Path));
+                                errors.Add(new DuplicateRouteException(p.Path, p.ModelType, mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path), t));
                             }
-                            if (mc.Count != mi.GetParameters().Length-(isPaged ? 3 : 0))
+                        }
+                        paths.Add(new sPathTypePair(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path), t));
+                    }
+                    bool found = false;
+                    bool foundLoadSelMethod = false;
+                    foreach (MethodInfo mi in t.GetMethods(Constants.LOAD_METHOD_FLAGS))
+                    {
+                        if (mi.GetCustomAttributes(typeof(ModelLoadMethod), false).Length > 0)
+                        {
+                            if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
                             {
                                 if (!invalidModels.Contains(t))
                                     invalidModels.Add(t);
-                                errors.Add(new InvalidModelListParameterCountException(t, mi,mlm.Path));
+                                errors.Add(new InvalidModelListMethodReturnException(t, mi));
                             }
-                        }
-                        ParameterInfo[] pars = mi.GetParameters();
-                        for(int x=0;x<pars.Length;x++)
-                        {
-                            ParameterInfo pi = pars[x];
-                            if (pi.ParameterType.IsGenericType)
+                            if (mi.ReturnType != t)
                             {
-                                if (pi.ParameterType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                                if (!mi.ReturnType.IsAssignableFrom(t))
                                 {
-                                    if (pi.ParameterType.GetGenericArguments()[0].IsGenericType || pi.ParameterType.GetGenericArguments()[0].IsArray)
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new InvalidLoadMethodReturnType(t, mi.Name));
+                                }
+                            }
+                            if (mi.ReturnType == t)
+                            {
+                                if (mi.GetParameters().Length == 1)
+                                {
+                                    if (mi.GetParameters()[0].ParameterType == typeof(string))
+                                    {
+                                        if (found)
+                                        {
+                                            if (!invalidModels.Contains(t))
+                                                invalidModels.Add(t);
+                                            errors.Add(new DuplicateLoadMethodException(t, mi.Name));
+                                        }
+                                        found = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
+                        {
+                            if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelListMethodReturnException(t, mi));
+                            }
+                            if (mi.ReturnType.FullName != typeof(sModelSelectOptionValue[]).FullName
+                                && mi.ReturnType.FullName != typeof(List<sModelSelectOptionValue>).FullName)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelSelectOptionValueReturnException(t, mi));
+                            }
+                            else
+                            {
+                                //    if (foundLoadSelMethod)
+                                //    {
+                                //        if (!invalidModels.Contains(t))
+                                //            invalidModels.Add(t);
+                                //        errors.Add(new MultipleSelectOptionValueMethodsException(t, mi));
+                                //    }
+                                foundLoadSelMethod = true;
+                            }
+                        }
+                        if (mi.GetCustomAttributes(typeof(ModelListMethod), false).Length > 0)
+                        {
+                            Type rtype = mi.ReturnType;
+                            if (rtype.FullName.StartsWith("System.Nullable"))
+                            {
+                                if (rtype.IsGenericType)
+                                    rtype = rtype.GetGenericArguments()[0];
+                                else
+                                    rtype = rtype.GetElementType();
+                            }
+                            if (rtype.IsArray)
+                                rtype = rtype.GetElementType();
+                            else if (rtype.IsGenericType)
+                            {
+                                if (rtype.GetGenericTypeDefinition() == typeof(List<>))
+                                    rtype = rtype.GetGenericArguments()[0];
+                            }
+                            if (rtype != t)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelListMethodReturnException(t, mi));
+                            }
+                            bool isPaged = false;
+                            foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
+                            {
+                                if (mlm.Paged)
+                                {
+                                    isPaged = true;
+                                    break;
+                                }
+                            }
+                            foreach (ModelListMethod mlm in mi.GetCustomAttributes(typeof(ModelListMethod), false))
+                            {
+                                MatchCollection mc = _regListPars.Matches(mlm.Path);
+                                if (isPaged && !mlm.Paged)
+                                {
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new InvalidModelListNotAllPagedException(t, mi, mlm.Path));
+                                }
+                                if (mc.Count != mi.GetParameters().Length - (isPaged ? 3 : 0))
+                                {
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new InvalidModelListParameterCountException(t, mi, mlm.Path));
+                                }
+                            }
+                            ParameterInfo[] pars = mi.GetParameters();
+                            for (int x = 0; x < pars.Length; x++)
+                            {
+                                ParameterInfo pi = pars[x];
+                                if (pi.ParameterType.IsGenericType)
+                                {
+                                    if (pi.ParameterType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                                    {
+                                        if (pi.ParameterType.GetGenericArguments()[0].IsGenericType || pi.ParameterType.GetGenericArguments()[0].IsArray)
+                                        {
+                                            if (!invalidModels.Contains(t))
+                                                invalidModels.Add(t);
+                                            errors.Add(new InvalidModelListParameterTypeException(t, mi, pi));
+                                        }
+                                    }
+                                    else
                                     {
                                         if (!invalidModels.Contains(t))
                                             invalidModels.Add(t);
                                         errors.Add(new InvalidModelListParameterTypeException(t, mi, pi));
                                     }
                                 }
-                                else
+                                else if (pi.ParameterType.IsArray)
                                 {
                                     if (!invalidModels.Contains(t))
                                         invalidModels.Add(t);
                                     errors.Add(new InvalidModelListParameterTypeException(t, mi, pi));
                                 }
-                            }
-                            else if (pi.ParameterType.IsArray)
-                            {
-                                if (!invalidModels.Contains(t))
-                                    invalidModels.Add(t);
-                                errors.Add(new InvalidModelListParameterTypeException(t, mi, pi));
-                            }
-                            if (pi.IsOut && (!isPaged || x!=pars.Length-1))
-                            {
-                                if (!invalidModels.Contains(t))
-                                    invalidModels.Add(t);
-                                errors.Add(new InvalidModelListParameterOutException(t, mi, pi));
-                            }
-                            if (isPaged && x >= pars.Length - 3)
-                            {
-                                Type ptype = pi.ParameterType;
-                                if (pi.IsOut)
-                                    ptype = ptype.GetElementType();
-                                if (ptype != typeof(int)
-                                    && ptype != typeof(long)
-                                    && ptype != typeof(short)
-                                    && ptype != typeof(uint)
-                                    && ptype != typeof(ulong)
-                                    && ptype != typeof(ushort))
+                                if (pi.IsOut && (!isPaged || x != pars.Length - 1))
                                 {
                                     if (!invalidModels.Contains(t))
                                         invalidModels.Add(t);
-                                    errors.Add(new InvalidModelListPageParameterTypeException(t, mi, pi));
+                                    errors.Add(new InvalidModelListParameterOutException(t, mi, pi));
                                 }
-                            }
-                            if (isPaged && x == pars.Length - 1)
-                            {
-                                if (!pi.IsOut)
+                                if (isPaged && x >= pars.Length - 3)
                                 {
-                                    if (!invalidModels.Contains(t))
-                                        invalidModels.Add(t);
-                                    errors.Add(new InvalidModelListPageTotalPagesNotOutException(t, mi, pi));
+                                    Type ptype = pi.ParameterType;
+                                    if (pi.IsOut)
+                                        ptype = ptype.GetElementType();
+                                    if (ptype != typeof(int)
+                                        && ptype != typeof(long)
+                                        && ptype != typeof(short)
+                                        && ptype != typeof(uint)
+                                        && ptype != typeof(ulong)
+                                        && ptype != typeof(ushort))
+                                    {
+                                        if (!invalidModels.Contains(t))
+                                            invalidModels.Add(t);
+                                        errors.Add(new InvalidModelListPageParameterTypeException(t, mi, pi));
+                                    }
+                                }
+                                if (isPaged && x == pars.Length - 1)
+                                {
+                                    if (!pi.IsOut)
+                                    {
+                                        if (!invalidModels.Contains(t))
+                                            invalidModels.Add(t);
+                                        errors.Add(new InvalidModelListPageTotalPagesNotOutException(t, mi, pi));
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                {
-                    if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
+                    foreach (PropertyInfo pi in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                     {
-                        Type rtype = pi.PropertyType;
-                        if (rtype.FullName.StartsWith("System.Nullable"))
+                        if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
                         {
-                            if (rtype.IsGenericType)
-                                rtype = rtype.GetGenericArguments()[0];
-                            else
-                                rtype = rtype.GetElementType();
-                        }
-                        if (rtype.IsArray)
-                            rtype = rtype.GetElementType();
-                        else if (rtype.IsGenericType)
-                        {
-                            if (rtype.GetGenericTypeDefinition() == typeof(List<>))
-                                rtype = rtype.GetGenericArguments()[0];
-                        }
-                        if (new List<Type>(rtype.GetInterfaces()).Contains(typeof(IModel)))
-                        {
-                            bool foundSelMethod = false;
-                            foreach (MethodInfo mi in rtype.GetMethods(Constants.LOAD_METHOD_FLAGS))
+                            Type rtype = pi.PropertyType;
+                            if (rtype.FullName.StartsWith("System.Nullable"))
                             {
-                                if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
-                                {
-                                    foundSelMethod = true;
-                                    break;
-                                }
+                                if (rtype.IsGenericType)
+                                    rtype = rtype.GetGenericArguments()[0];
+                                else
+                                    rtype = rtype.GetElementType();
                             }
-                            if (!foundSelMethod && (hasAdd||hasUpdate))
+                            if (rtype.IsArray)
+                                rtype = rtype.GetElementType();
+                            else if (rtype.IsGenericType)
                             {
-                                if (!invalidModels.Contains(t))
-                                    invalidModels.Add(t);
-                                errors.Add(new NoModelSelectMethodException(t, pi));
+                                if (rtype.GetGenericTypeDefinition() == typeof(List<>))
+                                    rtype = rtype.GetGenericArguments()[0];
+                            }
+                            if (new List<Type>(rtype.GetInterfaces()).Contains(typeof(IModel)))
+                            {
+                                bool foundSelMethod = false;
+                                foreach (MethodInfo mi in rtype.GetMethods(Constants.LOAD_METHOD_FLAGS))
+                                {
+                                    if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
+                                    {
+                                        foundSelMethod = true;
+                                        break;
+                                    }
+                                }
+                                if (!foundSelMethod && (hasAdd || hasUpdate))
+                                {
+                                    if (!invalidModels.Contains(t))
+                                        invalidModels.Add(t);
+                                    errors.Add(new NoModelSelectMethodException(t, pi));
+                                }
                             }
                         }
                     }
-                }
-                if (t.GetProperty("id").GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length > 0)
-                {
-                    if (!invalidModels.Contains(t))
-                        invalidModels.Add(t);
-                    errors.Add(new ModelIDBlockedException(t));
-                }
-                if (!found)
-                {
-                    if (!invalidModels.Contains(t))
-                        invalidModels.Add(t);
-                    errors.Add(new NoLoadMethodException(t));
+                    if (t.GetProperty("id").GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length > 0)
+                    {
+                        if (!invalidModels.Contains(t))
+                            invalidModels.Add(t);
+                        errors.Add(new ModelIDBlockedException(t));
+                    }
+                    if (!found)
+                    {
+                        if (!invalidModels.Contains(t))
+                            invalidModels.Add(t);
+                        errors.Add(new NoLoadMethodException(t));
+                    }
                 }
             }
             return errors;

@@ -4,6 +4,8 @@ using System.Text;
 using System.Threading;
 using System.Reflection;
 using System.IO;
+using Org.Reddragonit.BackBoneDotNet.Attributes;
+using Org.Reddragonit.BackBoneDotNet.Interfaces;
 
 namespace Org.Reddragonit.BackBoneDotNet
 {
@@ -190,6 +192,17 @@ namespace Org.Reddragonit.BackBoneDotNet
                 tr.Close();
             }
             return ret;
+        }
+
+        internal static bool IsBlockedModel(Type t)
+        {
+            if (t.GetCustomAttributes(typeof(ModelBlockInheritance), false).Length > 0)
+                return true;
+            else if (t.BaseType == null)
+                return true;
+            else if (!new List<Type>(t.BaseType.GetInterfaces()).Contains(typeof(IModel)))
+                return true;
+            return IsBlockedModel(t.BaseType);
         }
     }
 }
