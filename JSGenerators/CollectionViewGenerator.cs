@@ -63,6 +63,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine("\t\tthis.collection.on('reset',this.render,this);");
             sb.AppendLine("\t\tthis.collection.on('add',this.render,this);");
             sb.AppendLine("\t\tthis.collection.on('remove',this.render,this);");
+            sb.AppendLine("\t\tthis.collection.on('sync', this.render, this);");
             sb.AppendLine("\t},");
 
             sb.AppendLine("\trender : function(){");
