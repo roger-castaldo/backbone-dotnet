@@ -92,12 +92,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         if (array)
                         {
                             string tsets = "";
-                            string tcode = _RecurAddRenderModelPropertyCode(prop, PropType,host, "this.model.get('" + prop + "')[x].get('{0}')", out tsets, true);
+                            string tcode = _RecurAddRenderModelPropertyCode(prop, PropType,host, "this.model.get('" + prop + "').at(x).get('{0}')", out tsets, true);
                             if (tsets != "")
                                 sb.Append(tsets);
                             sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
                             sb.AppendLine("\t\tif(this.model.get('" + prop + "')!=null){");
-                            sb.AppendLine("\t\t\tfor(x in this.model.get('" + prop + "')){");
+                            sb.AppendLine("\t\t\tfor(var x=0;x<this.model.get('" + prop + "').length;x++){");
                             sb.AppendLine("\t\t\t\tars" + arIndex.ToString() + "+=" + string.Format(tcode, prop) + ";");
                             sb.AppendLine("\t\t\t}");
                             sb.AppendLine("\t\t}");
@@ -265,12 +265,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (array)
                             {
                                 string tsets = "";
-                                string tcode = _RecurAddRenderModelPropertyCode(pi.Name, ptype,host, string.Format(modelstring, pi.Name) + "[x].get('{0}')", out tsets,true);
+                                string tcode = _RecurAddRenderModelPropertyCode(pi.Name, ptype,host, string.Format(modelstring, pi.Name) + ".at(x).get('{0}')", out tsets,true);
                                 if (tsets != "")
                                     sb.Append(tsets);
                                 sb.AppendLine("\t\tvar ars" + prop + arIndex.ToString() + " = '';");
                                 sb.AppendLine("\t\tif(" + string.Format(modelstring, pi.Name) + "!=null){");
-                                sb.AppendLine("\t\t\tfor(x in " + string.Format(modelstring, pi.Name) + "){");
+                                sb.AppendLine("\t\t\tfor(var x=0;x<" + string.Format(modelstring, pi.Name) + ").length;x++){");
                                 sb.AppendLine("\t\t\t\tars" + prop + arIndex.ToString() + " += '<span class=\"" + className + " " + pi.Name + " els\">'+" + tcode + "+'</span>'");
                                 sb.AppendLine("\t\t\t}");
                                 sb.AppendLine("\t\t}");
