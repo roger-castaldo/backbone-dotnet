@@ -392,9 +392,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 {
                     Logger.Trace("Sending modified backbone javascript response through backbone handler");
                     request.SetResponseStatus(200);
-                    request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.underscore-min.js"));
-                    request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone.min.js"));
-                    request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone.validate.js"));
+                    request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone_combined.min.js"));
                     request.SendResponse();
                 }
                 else
