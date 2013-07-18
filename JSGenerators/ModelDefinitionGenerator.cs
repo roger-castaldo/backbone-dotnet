@@ -22,14 +22,16 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 object obj = modelType.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
                 if (obj != null)
                 {
+                    StringBuilder sbProps = new StringBuilder();
                     foreach (string propName in properties)
                     {
                         if (propName != "id")
                         {
                             object pobj = modelType.GetProperty(propName).GetValue(obj, new object[0]);
-                            sb.AppendLine("\t\t" + propName + ": " + (pobj == null ? "null" : JSON.JsonEncode(pobj)) + (properties.IndexOf(propName) == properties.Count - 1 ? "" : ","));
+                            sbProps.AppendLine("\t\t" + propName + ": " + (pobj == null ? "null" : JSON.JsonEncode(pobj)) + (properties.IndexOf(propName) == properties.Count - 1 ? "" : ","));
                         }
                     }
+                    sb.Append(sbProps.ToString().TrimEnd(",\r\n".ToCharArray()));
                 }
                 sb.AppendLine("\t},");
             }
