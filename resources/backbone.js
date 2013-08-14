@@ -614,6 +614,88 @@
             return xhr;
         },
 
+        //added in to handle backend blocking
+        _save: function(key, val, options) {
+            var attrs, method, xhr, attributes = this.attributes;
+
+            // Handle both `"key", value` and `{key: value}` -style arguments.
+            if (key == null || typeof key === 'object') {
+                attrs = key;
+                options = val;
+            } else {
+                (attrs = {})[key] = val;
+            }
+
+            // If we're not waiting and attributes exist, save acts as `set(attr).save(null, opts)`.
+            if (attrs && (!options || !options.wait) && !this.set(attrs, options)) return false;
+
+            options = _.extend({ validate: true }, options);
+
+            // Do not persist invalid models.
+            if (!this._validate(attrs, options)) return false;
+
+            // Set temporary attributes if `{wait: true}`.
+            if (attrs && options.wait) {
+                this.attributes = _.extend({}, attributes, attrs);
+            }
+
+            // After a successful server-side save, the client is (optionally)
+            // updated with the server-side state.
+            if (options.parse === void 0) options.parse = true;
+            var model = this;
+            var success = options.success;
+            options.success = function(resp) {
+                // Ensure attributes are restored during synchronous saves.
+                model.attributes = attributes;
+                var serverAttrs = model.parse(resp, options);
+                if (options.wait) serverAttrs = _.extend(attrs || {}, serverAttrs);
+                if (_.isObject(serverAttrs) && !model.set(serverAttrs, options)) {
+                    return false;
+                }
+                if (success) success(model, resp, options);
+                model.trigger('sync', model, resp, options);
+            };
+            wrapError(this, options);
+
+            method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
+            if (method === 'patch') options.attrs = attrs;
+            xhr = this.sync(method, this, options);
+
+            // Restore attributes.
+            if (attrs && options.wait) this.attributes = attributes;
+
+            return xhr;
+        },
+
+        // Destroy this model on the server if it was already persisted.
+        // Optimistically removes the model from its collection, if it has one.
+        // If `wait: true` is passed, waits for the server to respond before removal.
+        _destroy: function(options) {
+            options = options ? _.clone(options) : {};
+            var model = this;
+            var success = options.success;
+
+            var destroy = function() {
+                model.trigger('destroy', model, model.collection, options);
+            };
+
+            options.success = function(resp) {
+                if (options.wait || model.isNew()) destroy();
+                if (success) success(model, resp, options);
+                if (!model.isNew()) model.trigger('sync', model, resp, options);
+            };
+
+            if (this.isNew()) {
+                options.success();
+                return false;
+            }
+            wrapError(this, options);
+
+            var xhr = this.sync('delete', this, options);
+            if (!options.wait) destroy();
+            return xhr;
+        },
+
         //added in sync Save function to specify synchronous communication
         syncSave: function(attrs, options) {
             if (!options) { options = {}; }
