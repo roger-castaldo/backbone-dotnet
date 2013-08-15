@@ -21,5 +21,13 @@ namespace Org.Reddragonit.BackBoneDotNet.Interfaces
         void SetResponseStatus(int statusNumber);
         string AcceptLanguageHeaderValue { get; }
         Hashtable AdditionalBackboneVariables { get; }
+        bool IsLoadAllowed(Type model,string id, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsLoadAllAllowed(Type model, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsListAllowed(Type model, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsSelectAllowed(Type model, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsUpdateAllowed(IModel model, Hashtable parameters, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsSaveAllowed(Type model, Hashtable parameters, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsDeleteAllowed(Type model, string id, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsJsURLAllowed(string url, out int HttpStatusCode, out string HttpStatusMessage);
     }
 }

@@ -20,6 +20,10 @@ namespace Org.Reddragonit.BackBoneDotNet
             private string _path;
             private Regex _reg;
             private MethodInfo _method;
+            public Type ModelType{
+                get{return _method.DeclaringType;}
+            }
+
             private bool _isPaged;
 
             public bool HandlesRequest(IHttpRequest request)
@@ -371,82 +375,88 @@ namespace Org.Reddragonit.BackBoneDotNet
         public static void HandleRequest(IHttpRequest request)
         {
             Logger.Debug("Handling backbone request for path " + request.URL.ToString());
+            int status=-1;
+            string message=null;
             if (request.URL.AbsolutePath.EndsWith(".js") && request.Method.ToUpper() == "GET")
             {
-                request.SetResponseContentType("text/javascript");
-                if (request.URL.AbsolutePath == (_jqueryURL == null ? "" : _jqueryURL))
+                if (request.IsJsURLAllowed(request.URL.AbsolutePath, out status, out message))
                 {
-                    Logger.Trace("Sending jquery javascript response through backbone handler");
-                    request.SetResponseStatus(200);
-                    request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.jquery.min.js"));
-                    request.SendResponse();
-                }
-                else if (request.URL.AbsolutePath == (_jsonURL == null ? "" : _jsonURL))
-                {
-                    Logger.Trace("Sending json javascript response through backbone handler");
-                    request.SetResponseStatus(200);
-                    request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.json2.min.js"));
-                    request.SendResponse();
-                }
-                else if (request.URL.AbsolutePath == (_backboneURL == null ? "" : _backboneURL))
-                {
-                    Logger.Trace("Sending modified backbone javascript response through backbone handler");
-                    request.SetResponseStatus(200);
-                    request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone_combined.min.js"));
-                    request.SendResponse();
-                }
-                else
-                {
-                    bool found = false;
-                    lock (_CachedJScript)
+                    message = null;
+                    request.SetResponseContentType("text/javascript");
+                    if (request.URL.AbsolutePath == (_jqueryURL == null ? "" : _jqueryURL))
                     {
-                        if (_CachedJScript.ContainsKey(request.URL.Host+request.URL.AbsolutePath))
-                        {
-                            Logger.Trace("Sending cached javascript response for path " + request.URL.Host + request.URL.AbsolutePath);
-                            found = true;
-                            request.SetResponseStatus(200);
-                            request.WriteContent((string)_CachedJScript[request.URL.Host+request.URL.AbsolutePath].Value);
-                            request.SendResponse();
-                        }
+                        Logger.Trace("Sending jquery javascript response through backbone handler");
+                        request.SetResponseStatus(200);
+                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.jquery.min.js"));
+                        request.SendResponse();
                     }
-                    if (!found)
+                    else if (request.URL.AbsolutePath == (_jsonURL == null ? "" : _jsonURL))
                     {
-                        Logger.Trace("Buidling model javascript for path " + request.URL.Host + request.URL.AbsolutePath);
-                        StringBuilder sb = new StringBuilder();
-                        foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
+                        Logger.Trace("Sending json javascript response through backbone handler");
+                        request.SetResponseStatus(200);
+                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.json2.min.js"));
+                        request.SendResponse();
+                    }
+                    else if (request.URL.AbsolutePath == (_backboneURL == null ? "" : _backboneURL))
+                    {
+                        Logger.Trace("Sending modified backbone javascript response through backbone handler");
+                        request.SetResponseStatus(200);
+                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone_combined.min.js"));
+                        request.SendResponse();
+                    }
+                    else
+                    {
+                        bool found = false;
+                        lock (_CachedJScript)
                         {
-                            foreach (ModelJSFilePath mj in t.GetCustomAttributes(typeof(ModelJSFilePath), false))
+                            if (_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
                             {
-                                if ((mj.Host == "*" || mj.Host == request.URL.Host) && mj.Path == request.URL.AbsolutePath)
+                                Logger.Trace("Sending cached javascript response for path " + request.URL.Host + request.URL.AbsolutePath);
+                                found = true;
+                                request.SetResponseStatus(200);
+                                request.WriteContent((string)_CachedJScript[request.URL.Host + request.URL.AbsolutePath].Value);
+                                request.SendResponse();
+                            }
+                        }
+                        if (!found)
+                        {
+                            Logger.Trace("Buidling model javascript for path " + request.URL.Host + request.URL.AbsolutePath);
+                            StringBuilder sb = new StringBuilder();
+                            foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
+                            {
+                                foreach (ModelJSFilePath mj in t.GetCustomAttributes(typeof(ModelJSFilePath), false))
                                 {
-                                    Logger.Trace("Appending model " + t.FullName + " to path " + request.URL.Host + request.URL.AbsolutePath);
-                                    sb.Append(_GenerateModelJSFile(t, request.URL.Host));
+                                    if ((mj.Host == "*" || mj.Host == request.URL.Host) && mj.Path == request.URL.AbsolutePath)
+                                    {
+                                        Logger.Trace("Appending model " + t.FullName + " to path " + request.URL.Host + request.URL.AbsolutePath);
+                                        sb.Append(_GenerateModelJSFile(t, request.URL.Host));
+                                    }
                                 }
                             }
-                        }
-                        request.SetResponseStatus(200);
-                        if (request.URL.AbsolutePath.EndsWith(".min.js") || Settings.Default.CompressAllJS)
-                        {
-                            Logger.Trace("Compressing javascript for path "+request.URL.Host+request.URL.AbsolutePath);
-                            string comp = JSMinifier.Minify(sb.ToString());
-                            Logger.Trace("Caching compressed javascript for path " + request.URL.Host + request.URL.AbsolutePath);
-                            request.WriteContent(comp);
-                            lock (_CachedJScript)
+                            request.SetResponseStatus(200);
+                            if (request.URL.AbsolutePath.EndsWith(".min.js") || Settings.Default.CompressAllJS)
                             {
-                                if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
-                                    _CachedJScript.Add(request.URL.Host + request.URL.AbsolutePath, new CachedItemContainer(comp));
+                                Logger.Trace("Compressing javascript for path " + request.URL.Host + request.URL.AbsolutePath);
+                                string comp = JSMinifier.Minify(sb.ToString());
+                                Logger.Trace("Caching compressed javascript for path " + request.URL.Host + request.URL.AbsolutePath);
+                                request.WriteContent(comp);
+                                lock (_CachedJScript)
+                                {
+                                    if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
+                                        _CachedJScript.Add(request.URL.Host + request.URL.AbsolutePath, new CachedItemContainer(comp));
+                                }
                             }
-                        }
-                        else
-                        {
-                            request.WriteContent(sb.ToString());
-                            lock (_CachedJScript)
+                            else
                             {
-                                if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
-                                    _CachedJScript.Add(request.URL.Host + request.URL.AbsolutePath, new CachedItemContainer(sb.ToString()));
+                                request.WriteContent(sb.ToString());
+                                lock (_CachedJScript)
+                                {
+                                    if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
+                                        _CachedJScript.Add(request.URL.Host + request.URL.AbsolutePath, new CachedItemContainer(sb.ToString()));
+                                }
                             }
+                            request.SendResponse();
                         }
-                        request.SendResponse();
                     }
                 }
             }
@@ -464,7 +474,11 @@ namespace Org.Reddragonit.BackBoneDotNet
                             {
                                 if (mlc.HandlesRequest(request))
                                 {
-                                    ret = mlc.HandleRequest(request);
+                                    if (request.IsListAllowed(mlc.ModelType, out status, out message))
+                                    {
+                                        message = null;
+                                        ret = mlc.HandleRequest(request);
+                                    }
                                     break;
                                 }
                             }
@@ -474,22 +488,38 @@ namespace Org.Reddragonit.BackBoneDotNet
                             if (_LoadAlls.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
                             {
                                 Logger.Trace("Handling Load All request");
-                                ret = _LoadAlls[request.URL.Host + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                                if (request.IsLoadAllAllowed(_LoadAlls[request.URL.Host + request.URL.AbsolutePath].DeclaringType, out status, out message))
+                                {
+                                    message = null;
+                                    ret = _LoadAlls[request.URL.Host + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                                }
                             }
                             else if (_LoadAlls.ContainsKey("*" + request.URL.AbsolutePath))
                             {
                                 Logger.Trace("Handling Load All request");
-                                ret = _LoadAlls["*" + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                                if (request.IsLoadAllAllowed(_LoadAlls["*" + request.URL.AbsolutePath].DeclaringType, out status, out message))
+                                {
+                                    message = null;
+                                    ret = _LoadAlls["*" + request.URL.AbsolutePath].Invoke(null, new object[0]);
+                                }
                             }
                             else if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             {
                                 Logger.Trace("Handling Load request");
-                                ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                                if (request.IsLoadAllowed(_Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].DeclaringType, Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)), out status, out message))
+                                {
+                                    message = null;
+                                    ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                                }
                             }
                             else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             {
                                 Logger.Trace("Handling Load request");
-                                ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                                if (request.IsLoadAllowed(_Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].DeclaringType, Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)), out status, out message))
+                                {
+                                    message = null;
+                                    ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                                }
                             }
                         }
                         break;
@@ -500,7 +530,13 @@ namespace Org.Reddragonit.BackBoneDotNet
                             foreach (sModelListCall mlc in _SelectLists[request.URL.Host + request.URL.AbsolutePath])
                             {
                                 if (mlc.HandlesRequest(request))
-                                    ret = mlc.HandlesRequest(request);
+                                {
+                                    if (request.IsSelectAllowed(mlc.ModelType, out status, out message))
+                                    {
+                                        message = null;
+                                        ret = mlc.HandlesRequest(request);
+                                    }
+                                }
                             }
                         }
                         else if (_SelectLists.ContainsKey("*" + request.URL.AbsolutePath))
@@ -508,61 +544,101 @@ namespace Org.Reddragonit.BackBoneDotNet
                             foreach (sModelListCall mlc in _SelectLists["*" + request.URL.AbsolutePath])
                             {
                                 if (mlc.HandlesRequest(request))
-                                    ret = mlc.HandleRequest(request);
+                                {
+                                    if (request.IsSelectAllowed(mlc.ModelType, out status, out message))
+                                    {
+                                        message = null;
+                                        ret = mlc.HandleRequest(request);
+                                    }
+                                }
                             }
                         }
                         break;
                     case "PUT":
                         Logger.Trace("Handling Put request");
                         if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
-                            ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                        {
+                            if (request.IsLoadAllowed(_Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].DeclaringType, Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)), out status, out message))
+                            {
+                                message = null;
+                                ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                            }
+                        }
                         else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
-                            ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                        {
+                            if (request.IsLoadAllowed(_Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].DeclaringType, Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)), out status, out message))
+                            {
+                                message = null;
+                                ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                            }
+                        }
                         if (ret != null)
                         {
                             Hashtable ht = (Hashtable)JSON.JsonDecode(request.ParameterContent);
-                            Hashtable IModelTypes = new Hashtable();
-                            foreach (string str in ht.Keys)
+                            if (request.IsUpdateAllowed((IModel)ret, ht, out status, out message))
                             {
-                                if (str != "id")
+                                message = null;
+                                Hashtable IModelTypes = new Hashtable();
+                                foreach (string str in ht.Keys)
                                 {
-                                    if (ret.GetType().GetProperty(str).GetCustomAttributes(typeof(ReadOnlyModelProperty), true).Length == 0)
+                                    if (str != "id")
                                     {
-                                        Type propType = ret.GetType().GetProperty(str).PropertyType;
-                                        if (propType.IsArray)
-                                            propType = propType.GetElementType();
-                                        else if (propType.IsGenericType)
+                                        if (ret.GetType().GetProperty(str).GetCustomAttributes(typeof(ReadOnlyModelProperty), true).Length == 0)
                                         {
-                                            if (propType.GetGenericTypeDefinition() == typeof(List<>))
-                                                propType = propType.GetGenericArguments()[0];
+                                            Type propType = ret.GetType().GetProperty(str).PropertyType;
+                                            if (propType.IsArray)
+                                                propType = propType.GetElementType();
+                                            else if (propType.IsGenericType)
+                                            {
+                                                if (propType.GetGenericTypeDefinition() == typeof(List<>))
+                                                    propType = propType.GetGenericArguments()[0];
+                                            }
+                                            var obj = _ConvertObjectToType(ht[str], ret.GetType().GetProperty(str).PropertyType);
+                                            if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
+                                                IModelTypes.Add(str, obj);
+                                            ret.GetType().GetProperty(str).SetValue(ret, obj, new object[0]);
                                         }
-                                        var obj = _ConvertObjectToType(ht[str], ret.GetType().GetProperty(str).PropertyType);
-                                        if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
-                                            IModelTypes.Add(str, obj);
-                                        ret.GetType().GetProperty(str).SetValue(ret, obj, new object[0]);
                                     }
                                 }
+                                if (_UpdateMethods.ContainsKey(ret.GetType()))
+                                    ret = _UpdateMethods[ret.GetType()].Invoke(ret, new object[0]);
+                                else
+                                    ret = false;
+                                if ((bool)ret && IModelTypes.Count > 0)
+                                    ret = IModelTypes;
+                                else if (!(bool)ret)
+                                    ret = null;
                             }
-                            if (_UpdateMethods.ContainsKey(ret.GetType()))
-                                ret = _UpdateMethods[ret.GetType()].Invoke(ret, new object[0]);
-                            else
-                                ret = false;
-                            if ((bool)ret && IModelTypes.Count > 0)
-                                ret = IModelTypes;
-                            else if (!(bool)ret)
-                                ret = null;
                         }
                         break;
                     case "DELETE":
                         Logger.Trace("Handling Delete request");
                         if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
-                            ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                        {
+                            if (request.IsLoadAllowed(_Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].DeclaringType, Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)), out status, out message))
+                            {
+                                message = null;
+                                ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                            }
+                        }
                         else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
-                            ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1) });
+                        {
+                            if (request.IsLoadAllowed(_Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].DeclaringType, Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)), out status, out message))
+                            {
+                                message = null;
+                                ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
+                            }
+                        }
                         if (ret != null)
                         {
                             if (_DeleteMethods.ContainsKey(ret.GetType()))
-                                ret = _DeleteMethods[ret.GetType()].Invoke(ret, new object[0]);
+                            {
+                                if (request.IsDeleteAllowed(ret.GetType(), ((IModel)ret).id, out status, out message))
+                                {
+                                    message = null;
+                                    ret = _DeleteMethods[ret.GetType()].Invoke(ret, new object[0]);
+                                }
+                            }
                             else
                                 ret = null;
                         }
@@ -576,29 +652,33 @@ namespace Org.Reddragonit.BackBoneDotNet
                             t = _TypeMaps["*"+request.URL.AbsolutePath];
                         if (t != null)
                         {
-                            IModel mod = (IModel)t.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
                             Hashtable mht = (Hashtable)JSON.JsonDecode(request.ParameterContent);
-                            foreach (string str in mht.Keys)
+                            if (request.IsSaveAllowed(t, mht, out status, out message))
                             {
-                                if (str != "id")
+                                message = null;
+                                IModel mod = (IModel)t.GetConstructor(Type.EmptyTypes).Invoke(new object[0]);
+                                foreach (string str in mht.Keys)
                                 {
-                                    PropertyInfo pi = t.GetProperty(str);
-                                    if (pi.CanWrite)
-                                        t.GetProperty(str).SetValue(mod, _ConvertObjectToType(mht[str], t.GetProperty(str).PropertyType), new object[0]);
+                                    if (str != "id")
+                                    {
+                                        PropertyInfo pi = t.GetProperty(str);
+                                        if (pi.CanWrite)
+                                            t.GetProperty(str).SetValue(mod, _ConvertObjectToType(mht[str], t.GetProperty(str).PropertyType), new object[0]);
+                                    }
                                 }
-                            }
-                            if (_SaveMethods.ContainsKey(t))
-                            {
-                                if ((bool)_SaveMethods[t].Invoke(mod, new object[0]))
+                                if (_SaveMethods.ContainsKey(t))
                                 {
-                                    ret = new Hashtable();
-                                    ((Hashtable)ret).Add("id", mod.id);
+                                    if ((bool)_SaveMethods[t].Invoke(mod, new object[0]))
+                                    {
+                                        ret = new Hashtable();
+                                        ((Hashtable)ret).Add("id", mod.id);
+                                    }
+                                    else
+                                        ret = null;
                                 }
                                 else
                                     ret = null;
                             }
-                            else
-                                ret = null;
                         }
                         break;
                 }
@@ -612,8 +692,13 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
                 else
                 {
-                    Logger.Trace("Handling of request failed, sending 404 response");
-                    request.SetResponseStatus(404);
+                    if (message!=null){
+                        request.SetResponseStatus(status);
+                        request.WriteContent(message);
+                    }else{
+                        Logger.Trace("Handling of request failed, sending 404 response");
+                        request.SetResponseStatus(404);
+                    }
                     request.SendResponse();
                 }
             }
