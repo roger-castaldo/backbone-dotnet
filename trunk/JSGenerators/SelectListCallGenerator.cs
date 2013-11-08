@@ -83,22 +83,23 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                     sb.AppendLine("}");
                 }
-                sb.AppendLine("\telse{");
-                sb.AppendLine("\t\treturn null;");
-                sb.AppendLine("\t}");
-                sb.AppendLine("\tvar ret=$.ajax(");
-                sb.AppendLine("\t\t'" + urlRoot + "'+url,{");
-                sb.AppendLine("\t\t\tasync:false,");
-                sb.AppendLine("\t\t\tcache:false,");
-                sb.AppendLine("\t\t\ttype : 'SELECT'");
-                sb.AppendLine("}).responseText;");
-                sb.AppendLine("\tvar response = JSON.parse(ret);");
-                sb.AppendLine("\tif(response.Backbone!=undefined){");
-                sb.AppendLine("\t\t_.extend(Backbone,response.Backbone);");
-                sb.AppendLine("\t\tresponse=response.response;");
-                sb.AppendLine("\t}");
-                sb.AppendLine("return response;");
-                sb.AppendLine("}});");
+                sb.AppendLine(
+@"  else{
+        return null;
+    }
+    var ret=$.ajax(
+        '" + urlRoot + @"'+url,{
+            async:false,
+            cache:false,
+            type : 'SELECT'
+}).responseText;
+    var response = JSON.parse(ret);
+    if(response.Backbone!=undefined){
+        _.extend(Backbone,response.Backbone);
+        response=response.response;
+    }
+return response;
+}});");
                     
             }
             return sb.ToString();

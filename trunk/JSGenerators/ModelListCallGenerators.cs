@@ -39,43 +39,44 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.Append(urlCode);
                             if (mlm.Paged)
                             {
-                                sb.AppendLine("pageStartIndex = (pageStartIndex == undefined ? 0 : (pageStartIndex == null ? 0 : pageStartIndex));");
-                                sb.AppendLine("pageSize = (pageSize == undefined ? 0 : (pageSize == null ? 0 : pageSize));");
-                                sb.AppendLine("var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" : "?")+"PageStartIndex='+pageStartIndex+'&PageSize='+pageSize,");
-                                sb.AppendLine("\tcurrentIndex : pageStartIndex*pageSize,");
-                                sb.AppendLine("\tcurrentPageSize : pageSize,");
-                                sb.AppendLine("\tparse : function(response){");
-                                sb.AppendLine("\t\tif(response.Backbone!=undefined){");
-                                sb.AppendLine("\t\t\t_.extend(Backbone,response.Backbone);");
-                                sb.AppendLine("\t\t}");
-                                sb.AppendLine("\t\tresponse = response.response;");
-                                sb.AppendLine("\t\tthis.TotalPages = response.Pager.TotalPages;");
-                                sb.AppendLine("\t\treturn response.response;");
-                                sb.AppendLine("\t},");
-                                sb.AppendLine("\tMoveToPage : function(pageNumber){");
-                                sb.AppendLine("\t\tif (pageNumber>=0 && pageNumber<this.TotalPages){");
-                                sb.AppendLine("\t\t\tthis.currentIndex = pageNumber*this.currentPageSize;");
-                                if (mlm.Path.Contains("?"))
-                                    sb.AppendLine("\t\t\tthis.url = this.url.substring(0,this.url.indexOf('&PageStartIndex='))+'&PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;");
-                                else
-                                    sb.AppendLine("\t\t\tthis.url = this.url.substring(0,this.url.indexOf('?'))+'?PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;");
-                                sb.AppendLine("\t\t\tthis.fetch();");
-                                sb.AppendLine("\t\t}");
-                                sb.AppendLine("\t},");
-                                sb.AppendLine("\tChangePageSize : function(pageSize){");
-                                sb.AppendLine("\t\tthis.currentPageSize = pageSize;");
-                                sb.AppendLine("\t\tthis.MoveToPage(Math.floor(this.currentIndex/pageSize));");
-                                sb.AppendLine("\t},");
-                                sb.AppendLine("\tMoveToNextPage : function(){");
-                                sb.AppendLine("\t\tif(Math.floor(this.currentIndex/pageSize)+1<this.TotalPages){");
-                                sb.AppendLine("\t\t\tthis.MoveToPage(Math.floor(this.currentIndex/pageSize)+1);");
-                                sb.AppendLine("\t\t}");
-                                sb.AppendLine("\t},");
-                                sb.AppendLine("\tMoveToPreviousPage : function(){");
-                                sb.AppendLine("\t\tif(Math.floor(this.currentIndex/pageSize)-1>=0){");
-                                sb.AppendLine("\t\t\tthis.MoveToPage(Math.floor(this.currentIndex/pageSize)-1);");
-                                sb.AppendLine("\t\t}");
-                                sb.AppendLine("\t},");
+                                sb.AppendLine(
+@"pageStartIndex = (pageStartIndex == undefined ? 0 : (pageStartIndex == null ? 0 : pageStartIndex));
+pageSize = (pageSize == undefined ? 0 : (pageSize == null ? 0 : pageSize));
+var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" : "?")+@"PageStartIndex='+pageStartIndex+'&PageSize='+pageSize,
+    currentIndex : pageStartIndex*pageSize,
+    currentPageSize : pageSize,
+    parse : function(response){
+        if(response.Backbone!=undefined){
+            _.extend(Backbone,response.Backbone);
+        }
+        response = response.response;
+        this.TotalPages = response.Pager.TotalPages;
+        return response.response;
+    },
+    MoveToPage : function(pageNumber){
+        if (pageNumber>=0 && pageNumber<this.TotalPages){
+            this.currentIndex = pageNumber*this.currentPageSize;
+"+
+                                                                   (mlm.Path.Contains("?") ? 
+                                                                   "\t\t\tthis.url = this.url.substring(0,this.url.indexOf('&PageStartIndex='))+'&PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;" : 
+                                                                   "\t\t\tthis.url = this.url.substring(0,this.url.indexOf('?'))+'?PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;") +
+@"          this.fetch();
+        }
+    },
+    ChangePageSize : function(pageSize){
+        this.currentPageSize = pageSize;
+        this.MoveToPage(Math.floor(this.currentIndex/pageSize));
+    },
+    MoveToNextPage : function(){
+        if(Math.floor(this.currentIndex/pageSize)+1<this.TotalPages){
+            this.MoveToPage(Math.floor(this.currentIndex/pageSize)+1);
+        }
+    },
+    MoveToPreviousPage : function(){
+        if(Math.floor(this.currentIndex/pageSize)-1>=0){
+            this.MoveToPage(Math.floor(this.currentIndex/pageSize)-1);
+        }
+    },");
                                 if (mi.GetParameters().Length > 0)
                                 {
                                     sb.Append("\tChangeParameters: function(");
@@ -83,27 +84,28 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                     {
                                         sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
                                     }
-                                    sb.AppendLine("){");
-                                    sb.AppendLine(urlCode);
+                                    sb.AppendLine("){"+urlCode);
                                     sb.AppendLine("url+='" + (mlm.Path.Contains("?") ? "&" : "?") + "PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;");
-                                    sb.AppendLine("\t\tthis.currentIndex=0;");
-                                    sb.AppendLine("\t\tthis.url=url;");
-                                    sb.AppendLine("\t\tthis.fetch();");
-                                    sb.AppendLine("},");
+                                    sb.AppendLine(
+@"      this.currentIndex=0;
+        this.url=url;
+        this.fetch();
+},");
                                 }
                                 sb.AppendLine("\tmodel:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model");
                                 sb.AppendLine("});");
                             }
                             else
                             {
-                                sb.AppendLine("var ret = Backbone.Collection.extend({url:url,parse : function(response){");
-                                sb.AppendLine("\tif(response.Backbone!=undefined){");
-                                sb.AppendLine("\t\t_.extend(Backbone,response.Backbone);");
-                                sb.AppendLine("\t\treturn response.response;");
-                                sb.AppendLine("\t}else{");
-                                sb.AppendLine("\treturn response;");
-                                sb.AppendLine("\t}");
-                                sb.AppendLine("},");
+                                sb.AppendLine(
+@"var ret = Backbone.Collection.extend({url:url,parse : function(response){
+    if(response.Backbone!=undefined){
+        _.extend(Backbone,response.Backbone);
+        return response.response;
+    }else{
+        return response;
+    }
+},");
                                 if (mi.GetParameters().Length > 0)
                                 {
                                     sb.Append("\tChangeParameters: function(");
@@ -111,12 +113,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                     {
                                         sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
                                     }
-                                    sb.AppendLine("){");
-                                    sb.AppendLine(urlCode);
-                                    sb.AppendLine("\t\tthis.currentIndex=0;");
-                                    sb.AppendLine("\t\tthis.url=url;");
-                                    sb.AppendLine("\t\tthis.fetch();");
-                                    sb.AppendLine("},");
+                                    sb.AppendLine("){"+urlCode);
+                                    sb.AppendLine(
+@"      this.currentIndex=0;
+        this.url=url;
+        this.fetch();
+},");
                                 }
                                 sb.AppendLine("model:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model});");
                             }

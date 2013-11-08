@@ -67,8 +67,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             StringBuilder sb = new StringBuilder();
             if (msgs.Count > 0)
             {
-                sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ErrorMessageGenerator");
-                sb.AppendLine("_.extend(true,Backbone.ErrorMessages,{");
+                sb.AppendLine(
+@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ErrorMessageGenerator
+_.extend(true,Backbone.ErrorMessages,{");
                 _RecurWrite(sb, msgs,"\t");
                 sb.AppendLine("});");
             }

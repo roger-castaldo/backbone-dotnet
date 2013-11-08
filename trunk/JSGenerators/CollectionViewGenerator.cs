@@ -40,8 +40,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     return "";
             }
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionViewGenerator");
-            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ", {CollectionView : Backbone.View.extend({");
+            sb.AppendFormat(
+@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionViewGenerator
+{0} = _.extend(true,{0}, {{CollectionView : Backbone.View.extend({{
+",
+            ModelNamespace.GetFullNameForModel(modelType, host));
             
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
@@ -59,51 +62,55 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             _AppendClassName(modelType,host, sb);
             _AppendAttributes(modelType, sb);
 
-            sb.AppendLine("\tinitialize : function(){");
-            sb.AppendLine("\t\tthis.collection.on('reset',this.render,this);");
-            sb.AppendLine("\t\tthis.collection.on('sync', this.render, this);");
-            sb.AppendLine("\t\tthis.collection.on('add', this.render, this);");
-            sb.AppendLine("\t\tthis.collection.on('remove', this.render, this);");
-            sb.AppendLine("\t},");
-
-            sb.AppendLine("\trender : function(){");
-            sb.AppendLine("\t\tvar el = this.$el;");
-            sb.AppendLine("\t\tel.html('');");
+            sb.AppendLine(
+@"  initialize : function(){
+        this.collection.on('reset',this.render,this);
+        this.collection.on('sync', this.render, this);
+        this.collection.on('add', this.render, this);
+        this.collection.on('remove', this.render, this);
+    },
+    render : function(){
+        var el = this.$el;
+        el.html('');");
             if (tag.ToLower() == "tr")
             {
-                sb.AppendLine("\t\tvar thead = $('<thead class=\"'+this.className+' header\"></thead>');");
-                sb.AppendLine("\t\tel.append(thead);");
-                sb.AppendLine("\t\tthead.append('<tr></tr>');");
-                sb.AppendLine("\t\tthead = $(thead.children()[0]);");
+                sb.AppendLine(
+@"      var thead = $('<thead class=""'+this.className+' header""></thead>');
+        el.append(thead);
+        thead.append('<tr></tr>');
+        thead = $(thead.children()[0]);");
                 foreach (string str in properties)
                 {
                     if (str != "id" && !viewIgnoreProperties.Contains(str))
                         sb.AppendLine("\t\tthead.append('<th className=\"'+this.className+' " + str + "\">" + str + "</th>');");
                 }
-                sb.AppendLine("\t\tel.append('<tbody></tbody>');");
-                sb.AppendLine("\t\tel = $(el.children()[1]);");
+                sb.AppendLine(
+@"      el.append('<tbody></tbody>')
+        el = $(el.children()[1]);");
             }
-            sb.AppendLine("\t\tif(this.collection.length==0){");
-            sb.AppendLine("\t\t\tthis.trigger('render',this);");
-            sb.AppendLine("\t\t}else{");
-            sb.AppendLine("\t\t\tvar alt=false;");
-            sb.AppendLine("\t\t\tfor(var x=0;x<this.collection.length;x++){");
-            sb.AppendLine("\t\t\t\tvar vw = new " + ModelNamespace.GetFullNameForModel(modelType, host) + ".View({model:this.collection.at(x)});");
-            sb.AppendLine("\t\t\t\tif (alt){");
-            sb.AppendLine("\t\t\t\t\tvw.$el.attr('class',vw.$el.attr('class')+' Alt');");
-            sb.AppendLine("\t\t\t\t}");
-            sb.AppendLine("\t\t\t\talt=!alt;");
-            sb.AppendLine("\t\t\t\tif(x+1==this.collection.length){");
-            sb.AppendLine("\t\t\t\t\tvw.on('render',function(){this.col.trigger('item_render',this.view);this.col.trigger('render',this.col);},{col:this,view:vw});");
-            sb.AppendLine("\t\t\t\t}else{");
-            sb.AppendLine("\t\t\t\t\tvw.on('render',function(){this.col.trigger('item_render',this.view);},{col:this,view:vw});");
-            sb.AppendLine("\t\t\t\t}");
-            sb.AppendLine("\t\t\t\tel.append(vw.$el);");
-            sb.AppendLine("\t\t\t\tvw.render();");
-            sb.AppendLine("\t\t\t}");
-            sb.AppendLine("\t\t}");
-            sb.AppendLine("\t}");
-            sb.AppendLine("})});");
+            sb.AppendFormat(
+@"      if(this.collection.length==0){{
+            this.trigger('render',this);
+        }}else{{
+            var alt=false;
+            for(var x=0;x<this.collection.length;x++){{
+                    var vw = new {0}.View({{model:this.collection.at(x)}});
+                    if (alt){{
+                        vw.$el.addClass('Alt');
+                    }}
+                    alt=!alt;
+                    if(x+1==this.collection.length){{
+                        vw.on('render',function(){{this.col.trigger('item_render',this.view);this.col.trigger('render',this.col);}},{{col:this,view:vw}});
+                    }}else{{
+                        vw.on('render',function(){{this.col.trigger('item_render',this.view);}},{{col:this,view:vw}});
+                    }}
+                    el.append(vw.$el);
+                    vw.render();
+            }}
+        }}
+    }}
+}})}});",
+                ModelNamespace.GetFullNameForModel(modelType, host));
             return sb.ToString();
         }
 

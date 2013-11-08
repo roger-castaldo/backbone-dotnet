@@ -18,7 +18,7 @@ namespace Org.Reddragonit.BackBoneDotNet
 	/// <summary>
 	/// Description of JSMinifier.
 	/// </summary>
-	public class JSMinifier
+	internal class JSMinifier
 	{
         internal static string StripComments(string originalString)
         {

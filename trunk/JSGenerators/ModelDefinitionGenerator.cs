@@ -63,9 +63,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine("\t_revertReadonlyFields : function(){");
                 foreach (string str in readOnlyProperties)
                 {
-                    sb.AppendLine("\t\tif (this.changedAttributes."+str+" != this.previousAttributes."+str+"){");
-                    sb.AppendLine("\t\t\tthis.set({"+str+":this.previousAttributes."+str+"});");
-                    sb.AppendLine("\t\t}");
+                    sb.AppendFormat(
+@"      if (this.changedAttributes.{0} != this.previousAttributes.{0}){{
+            this.set({{{0}:this.previousAttributes.{0}}});
+        }}",str);
                 }
                 sb.AppendLine("\t},");
             }
@@ -85,30 +86,34 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             if (add)
             {
-                sb.AppendLine("\tvalidate : function(attrs) {");
-                sb.AppendLine("\t\tvar atts = this.attributes;");
-                sb.AppendLine("\t\t_.extend(atts,attrs);");
-                sb.AppendLine("\t\tvar errors = new Array();");
+                sb.AppendLine(
+@"  validate : function(attrs) {
+        var atts = this.attributes;
+        _.extend(atts,attrs);
+        var errors = new Array();");
                 foreach (string str in properties)
                 {
                     if (modelType.GetProperty(str).GetCustomAttributes(typeof(ModelRequiredField), false).Length > 0)
                     {
                         ModelRequiredField mrf = (ModelRequiredField)modelType.GetProperty(str).GetCustomAttributes(typeof(ModelRequiredField), false)[0];
-                        sb.AppendLine("\t\tif (atts." + str + "==null || atts." + str + "==undefined){");
-                        sb.AppendLine("\t\t\terrors.push({field:'" + str + "',error:Backbone.TranslateValidationError('" + mrf.ErrorMessageName + "')});");
-                        sb.AppendLine("\t\t}");
+                        sb.AppendFormat(
+@"      if (atts.{0}==null || atts.{0}==undefined){{
+            errors.push({{field:'{0}',error:Backbone.TranslateValidationError('{1}')}});
+        }}",str,mrf.ErrorMessageName);
                     }
                     else if (modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false).Length > 0)
                     {
                         ModelFieldValidationRegex mfvr = (ModelFieldValidationRegex)modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false)[0];
-                        sb.AppendLine("\t\tif (!new RegExp('"+mfvr.Regex.Replace("'","\'")+"').test((atts." + str + "==null || atts." + str + "==undefined ? '' : atts."+str+"))){");
-                        sb.AppendLine("\t\t\terrors.push({field:'" + str + "',error:Backbone.TranslateValidationError('" + mfvr.ErrorMessageName + "')});");
-                        sb.AppendLine("\t\t}");
+                        sb.AppendFormat(
+@"      if (!new RegExp('{0}').test((atts.{1}==null || atts.{1}==undefined ? '' : atts.{1}))){{
+            errors.push({field:'{1}',error:Backbone.TranslateValidationError('{2}')}});
+        }}", mfvr.Regex.Replace("'", "\'"),str,mfvr.ErrorMessageName);
                     }
                 }
-                sb.AppendLine("\t\tthis.errors = errors;");
-                sb.AppendLine("\t\tif (errors.length>0){return errors;}");
-                sb.AppendLine("},");
+                sb.AppendLine(
+@"      this.errors = errors;
+        if (errors.length>0){return errors;}
+},");
             }
         }
 
@@ -147,16 +152,18 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             {
                 StringBuilder jsonb = new StringBuilder();
                 string lazyLoads = "";
-                jsonb.AppendLine("\ttoJSON : function(){");
-                jsonb.AppendLine("\t\tvar attrs = {};");
+                jsonb.AppendLine(
+@"  toJSON : function(){
+        var attrs = {};");
 
-                sb.AppendLine("\tparse: function(response) {");
-                sb.AppendLine("\t\tvar attrs = {};");
-                sb.AppendLine("\t\tif(response.Backbone!=undefined){");
-                sb.AppendLine("\t\t\t_.extend(Backbone,response.Backbone);");
-                sb.AppendLine("\t\t\tresponse=response.response;");
-                sb.AppendLine("\t\t}");
-                sb.AppendLine("\t\tif (response!=true){");
+                sb.AppendLine(
+@"  parse: function(response) {
+        var attrs = {};
+        if(response.Backbone!=undefined){
+            _.extend(Backbone,response.Backbone);
+            response=response.response;
+        }
+        if (response!=true){");
 
                 foreach (string str in properties)
                 {
@@ -192,47 +199,53 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         sb.AppendLine("\t\tif (response." + str + " != undefined){");
                         if (array)
                         {
-                            sb.AppendLine("\t\t\tif(" + ModelNamespace.GetFullNameForModel(propType, host) + ".Collection!=undefined){");
-                            sb.AppendLine("\t\t\t\tattrs." + str + " = new "+ModelNamespace.GetFullNameForModel(propType,host)+".Collection();");
-                            sb.AppendLine("\t\t\t\tfor (var x=0;x<response." + str + ".length;x++){");
-                            sb.AppendLine("\t\t\t\t\tattrs." + str + ".add(new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + "[x].id}));");
-                            sb.AppendLine("\t\t\t\t\tattrs." + str + ".at(x).attributes=attrs." + str + ".at(x).parse(response." + str + "[x]);");
-                            sb.AppendLine("\t\t\t\t}");
-                            sb.AppendLine("\t\t\t}else{");
-                            sb.AppendLine("\t\t\t\tattrs." + str + "=[];");
-                            sb.AppendLine("\t\t\t\tfor (var x=0;x<response." + str + ".length;x++){");
-                            sb.AppendLine("\t\t\t\t\tattrs." + str + ".push(new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + "[x].id}));");
-                            sb.AppendLine("\t\t\t\t\tattrs." + str + "[x].attributes=attrs." + str + "[x].parse(response." + str + "[x]);");
-                            sb.AppendLine("\t\t\t\t}");
-                            sb.AppendLine("\t\t\t}");
+                            sb.AppendFormat(
+@"          if({0}.Collection!=undefined){{
+                attrs.{1} = new {0}.Collection();
+                for (var x=0;x<response.{1}.length;x++){{
+                    attrs.{1}.add(new {0}.Model({{'id':response.{1}[x].id}}));
+                    attrs.{1}.at(x).attributes=attrs.{1}.at(x).parse(response.{1}[x]);
+                }}
+            }}else{{
+                attrs.{1}=[];
+                for (var x=0;x<response.{1}.length;x++){{
+                    attrs.{1}.push(new {0}.Model({{'id':response.{1}[x].id}}));
+                    attrs.{1}[x].attributes=attrs.{1}[x].parse(response.{1}[x]);
+                }}
+            }}",
+                                ModelNamespace.GetFullNameForModel(propType, host),
+                                str);
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
-                            jsonb.AppendLine("\t\t\tif(!_.isEqual(this.attributes['" + str + "'],this._previousAttributes['" + str + "'])||this.isNew()){");
-                            jsonb.AppendLine("\t\t\t\tif(this.attributes['" + str + "']!=null){");
-                            jsonb.AppendLine("\t\t\t\t\tattrs." + str + " = [];");
-                            jsonb.AppendLine("\t\t\t\t\tfor(var x=0;x<this.attributes['" + str + "'].length;x++){");
-                            jsonb.AppendLine("\t\t\t\t\t\tif(this.attributes['" + str + "'].at!=undefined){");
-                            jsonb.AppendLine("\t\t\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'].at(x).id});");
-                            jsonb.AppendLine("\t\t\t\t\t\t}else{");
-                            jsonb.AppendLine("\t\t\t\t\t\t\tattrs." + str + ".push({id:this.attributes['" + str + "'][x].id});");
-                            jsonb.AppendLine("\t\t\t\t\t\t}");
-                            jsonb.AppendLine("\t\t\t\t\t}");
-                            jsonb.AppendLine("\t\t\t\t}");
-                            jsonb.AppendLine("\t\t\t}");
+                            jsonb.AppendFormat(
+@"           if(!_.isEqual(this.attributes['{0}'],this._previousAttributes['{0}'])||this.isNew()){{
+                if(this.attributes['{0}']!=null){{
+                    attrs.{0} = [];
+                    for(var x=0;x<this.attributes['{0}'].length;x++){{
+                        if(this.attributes['{0}'].at!=undefined){{
+                            attrs.{0}.push({{id:this.attributes['{0}'].at(x).id}});
+                        }}else{{
+                            attrs.{0}.push({{id:this.attributes['{0}'][x].id}});
+                        }}
+                    }}
+                }}
+            }}",str);
                             if (isReadOnly)
                                 jsonb.AppendLine("}");
                         }
                         else
                         {
-                            sb.AppendLine("\t\t\tattrs." + str + " = new " + ModelNamespace.GetFullNameForModel(propType, host) + ".Model({'id':response." + str + ".id});");
-                            sb.AppendLine("\t\t\tattrs." + str + ".attributes=attrs." + str + ".parse(response." + str + ");");
+                            sb.AppendFormat(
+@"          attrs.{0} = new {1}.Model({{'id':response.{0}.id}});
+            attrs.{0}.attributes=attrs.{0}.parse(response.{0});", str, ModelNamespace.GetFullNameForModel(propType, host));
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
-                            jsonb.AppendLine("\t\tif(!_.isEqual(this.attributes['" + str + "'],this._previousAttributes['" + str + "'])||this.isNew()){");
-                            jsonb.AppendLine("\t\t\tif(this.attributes['" + str + "']!=null){");
-                            jsonb.AppendLine("\t\t\t\tattrs." + str + " = {id : this.attributes['" + str + "'].id};");
-                            jsonb.AppendLine("\t\t\t}");
-                            jsonb.AppendLine("\t\t}");
+                            jsonb.AppendFormat(
+@"      if(!_.isEqual(this.attributes['{0}'],this._previousAttributes['{0}'])||this.isNew()){{
+            if(this.attributes['{0}']!=null){{
+                attrs.{0} = {{id : this.attributes['{0}'].id}};
+            }}
+        }}",str);
                             if (isReadOnly)
                                 jsonb.AppendLine("}");
                         } 
@@ -253,12 +266,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             jsonb.AppendLine("}");
                     }
                 }
-                sb.AppendLine("\t\t}");
-                sb.AppendLine("\t\treturn attrs;");
-                sb.AppendLine("\t},");
-                sb.Append(jsonb.ToString());
-                sb.AppendLine("\t\treturn attrs;");
-                sb.AppendLine("\t},");
+                sb.AppendFormat(
+@"      }}
+        return attrs;
+    }},{0}
+        return attrs;
+    }},", jsonb.ToString());
                 if (lazyLoads.Length > 0)
                 {
                     sb.AppendLine("\tLazyLoadAttributes : [" + lazyLoads.Substring(1) + "],");
@@ -266,15 +279,16 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             else
             {
-                sb.AppendLine("\tparse: function(response) {");
-                sb.AppendLine("\t\tvar attrs = {};");
-                sb.AppendLine("\t\tif(response.Backbone!=undefined){");
-                sb.AppendLine("\t\t\t_.extend(Backbone,response.Backbone);");
-                sb.AppendLine("\t\t\tresponse=response.response;");
-                sb.AppendLine("\t\t}");
-                sb.AppendLine("\t\tattrs = response;");
-                sb.AppendLine("\t\treturn attrs;");
-                sb.AppendLine("\t},");
+                sb.AppendLine(
+@"  parse: function(response) {
+        var attrs = {};
+        if(response.Backbone!=undefined){
+            _.extend(Backbone,response.Backbone);
+            response=response.response;
+        }
+        attrs = response;
+        return attrs;
+    },");
             }
         }
 
@@ -283,13 +297,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ModelDefinitionGenerator");
-            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ", {Model : Backbone.Model.extend({");
-            sb.AppendLine("\tinitialize : function() {");
-            sb.AppendLine("\t\tif (this._revertReadonlyFields != undefined){");
-            sb.AppendLine("\t\t\tthis.on(\"change\",this._revertReadonlyFields);");
-            sb.AppendLine("\t\t}");
-            sb.AppendLine("\t},");
+            sb.AppendFormat(
+@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ModelDefinitionGenerator
+{0} = _.extend(true,{0}, {{Model : Backbone.Model.extend({{
+    initialize : function() {{
+        if (this._revertReadonlyFields != undefined){{
+            this.on(""change"",this._revertReadonlyFields);
+        }}
+    }},",
+                ModelNamespace.GetFullNameForModel(modelType, host));
             _AppendDefaults(modelType,properties,sb);
             if (!hasDelete)
                 _AppendBlockDestroy(sb);
