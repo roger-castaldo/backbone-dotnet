@@ -95,12 +95,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             string tcode = _RecurAddRenderModelPropertyCode(prop, PropType,host, "this.model.get('" + prop + "').at(x).get('{0}')", out tsets, true);
                             if (tsets != "")
                                 sb.Append(tsets);
-                            sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
-                            sb.AppendLine("\t\tif(this.model.get('" + prop + "')!=null){");
-                            sb.AppendLine("\t\t\tfor(var x=0;x<this.model.get('" + prop + "').length;x++){");
-                            sb.AppendLine("\t\t\t\tars" + arIndex.ToString() + "+=" + string.Format(tcode, prop) + ";");
-                            sb.AppendLine("\t\t\t}");
-                            sb.AppendLine("\t\t}");
+                            sb.AppendFormat(
+@"      var ars{0} = '';
+        if(this.model.get('{1}')!=null){{
+            for(var x=0;x<this.model.get('{1}').length;x++){{
+                ars{0}+={2};
+            }}
+        }}", arIndex, prop, string.Format(tcode, prop));
                             sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                             arIndex++;
                         }
@@ -117,14 +118,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         if (array)
                         {
-                            sb.AppendLine("\t\tvar ars" + arIndex.ToString() + " = '';");
-                            sb.AppendLine("\t\tif(this.model.get('" + prop + "')!=null){");
-                            sb.AppendLine("\t\t\tfor(x in this.model.get('" + prop + "')){");
-                            sb.AppendLine("\t\t\t\tif(this.model.get('" + prop + "')[x]!=null){");
-                            sb.AppendLine("\t\t\t\t\tars" + arIndex.ToString() + "+='<span class=\"'+this.className+' " + prop + " els\">'+this.model.get('" + prop + "')[x]+'</span>';");
-                            sb.AppendLine("\t\t\t\t}");
-                            sb.AppendLine("\t\t\t}");
-                            sb.AppendLine("\t\t}");
+                            sb.AppendFormat(
+@"      var ars{0} = '';
+        if(this.model.get('{1}')!=null){{
+            for(x in this.model.get('{1}')){{
+                if(this.model.get('{1}')[x]!=null){{
+                    ars{0}+='<span class=""'+this.className+' {1} els"">'+this.model.get('{1}')[x]+'</span>';
+                }}
+            }}
+        }}",arIndex,prop);
                             sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                             arIndex++;
                         }
@@ -196,11 +198,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         break;
                 }
             }
-            sb.AppendLine(");");
-            sb.AppendLine("\t\t$(this.el).attr('name',this.model.id);");
-            sb.AppendLine("\t\tthis.trigger('render',this);");
-            sb.AppendLine("\t\treturn this;");
-            sb.AppendLine("\t}"+(hasUpdate || hasDelete ? "," : ""));
+            sb.AppendLine(
+@");
+        $(this.el).attr('name',this.model.id);
+        this.trigger('render',this);
+        return this;
+    }"+(hasUpdate || hasDelete ? "," : ""));
             if ((hasUpdate&&hasUpdateFunction) || hasDelete)
             {
                 sb.AppendLine("\tevents : {");
@@ -217,9 +220,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
                 if (hasDelete)
                 {
-                    sb.AppendLine("\tdeleteModel : function(){");
-                    sb.AppendLine("\t\tthis.model.destroy();");
-                    sb.AppendLine("\t}");
+                    sb.AppendLine(
+@"  deleteModel : function(){
+        this.model.destroy();
+    }");
                 }
             }
         }
@@ -403,11 +407,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             DeleteButtonDefinition delDef;
             _LocateButtonImages(modelType, host, out editImage, out deleteImage,out edDef,out delDef);
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator");
-            sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ",{View : Backbone.View.extend({");
-            sb.AppendLine("\tinitialize : function(){");
-            sb.AppendLine("\t\tthis.model.on('change',this.render,this);");
-            sb.AppendLine("\t},");
+            sb.AppendFormat(
+@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator
+{0} = _.extend(true,{0},{{View : Backbone.View.extend({{
+    initialize : function(){{
+        this.model.on('change',this.render,this);
+    }},",ModelNamespace.GetFullNameForModel(modelType, host));
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
                 tag = ((ModelViewTag)modelType.GetCustomAttributes(typeof(ModelViewTag), false)[0]).TagName;
