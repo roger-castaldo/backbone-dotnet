@@ -106,7 +106,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         ModelFieldValidationRegex mfvr = (ModelFieldValidationRegex)modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false)[0];
                         sb.AppendFormat(
 @"      if (!new RegExp('{0}').test((atts.{1}==null || atts.{1}==undefined ? '' : atts.{1}))){{
-            errors.push({field:'{1}',error:Backbone.TranslateValidationError('{2}')}});
+            errors.push({{field:'{1}',error:Backbone.TranslateValidationError('{2}')}});
         }}", mfvr.Regex.Replace("'", "\'"),str,mfvr.ErrorMessageName);
                     }
                 }
