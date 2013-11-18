@@ -258,7 +258,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         $(frm.find('{0}.{1}')[0]).append(inp);",tstring,propName);
                         }else
                             sb.AppendLine("\t\t$(frm.find('" + tstring + "." + propName + "')[0]).html(inp);");
-                    }
+                    }else
+                        sb.AppendFormat(
+@"      $(frm.find('{0}:last')[0]).before($('<{0} class=""'+view.className+' {0}""><span class=""'+view.className+' FieldTitle"">{1}</span><br/></{0}>'));
+        $(frm.find('{0}.{1}')[0]).append(this.model.get('{1}'));", tstring, propName);
                 }
             }
 
