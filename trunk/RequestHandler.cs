@@ -860,7 +860,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             new CollectionViewGenerator(),
             new SelectListCallGenerator(),
             new EditFormGenerator(),
-            new ModelListCallGenerators()
+            new ModelListCallGenerators(),
+            new RouterGenerator()
         };
 
         //called to generate Javascript for the given model.  It uses all the specified IJSGenerators above

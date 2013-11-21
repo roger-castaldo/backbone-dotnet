@@ -36,6 +36,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\BackboneHashRoute.cs" />
     <Compile Include="Attributes\DeleteButtonDefinition.cs" />
     <Compile Include="Attributes\DeleteButtonImagePath.cs" />
     <Compile Include="Attributes\EditButtonDefinition.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="JSGenerators\ModelDefinitionGenerator.cs" />
     <Compile Include="JSGenerators\ModelListCallGenerators.cs" />
     <Compile Include="JSGenerators\NamespaceGenerator.cs" />
+    <Compile Include="JSGenerators\RouterGenerator.cs" />
     <Compile Include="JSGenerators\SelectListCallGenerator.cs" />
     <Compile Include="JSGenerators\ViewGenerator.cs" />
     <Compile Include="JSMinifier.cs" />
