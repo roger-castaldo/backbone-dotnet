@@ -57,6 +57,16 @@ Backbone.Model: _.extend(Backbone.Model, {
                                         }
                                     }
                                 }
+                            }else if (this.attributes[attr] instanceof Array){
+                                if (this.attributes[attr].length > 0) {
+                                    if (!(this.attributes[attr][0].isLoaded == undefined ? false : this.attributes[attr][0].isLoaded) && _.keys(this.attributes[attr][0].attributes).length == 1) {
+                                        for (var x = 0; x < this.attributes[attr].length; x++) {
+                                            this.attributes[attr][x].fetch({ async: false });
+                                            this.attributes[attr][x].isLoaded = true;
+                                            this.attributes[attr][x]._previousAttributes = this.attributes[attr][x].attributes;
+                                        }
+                                    }
+                                }
                             } else {
                                 if (!(this.attributes[attr].isLoaded == undefined ? false : this.attributes[attr].isLoaded) && _.keys(this.attributes[attr].attributes).length == 1) {
                                     this.attributes[attr].fetch({ async: false });
