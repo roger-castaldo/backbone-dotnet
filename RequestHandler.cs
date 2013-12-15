@@ -249,6 +249,15 @@ namespace Org.Reddragonit.BackBoneDotNet
             MethodInfo LoadAll = null;
             MethodInfo Load = null;
             List<sModelListCall> SelectList = new List<sModelListCall>();
+            List<string> exposedMethods = new List<string>();
+            foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
+                {
+                    if (!exposedMethods.Contains(mi.Name))
+                        exposedMethods.Add(mi.Name);
+                }
+            }
             foreach (MethodInfo mi in t.GetMethods(Constants.LOAD_METHOD_FLAGS))
             {
                 if (mi.GetCustomAttributes(typeof(ModelLoadAllMethod), false).Length > 0)
@@ -317,6 +326,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                     _SelectLists.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), SelectList);
                 }
                 _RPC_URL.AddMethod("GET", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
+                foreach (string str in exposedMethods)
+                    _RPC_URL.AddMethod("METHOD", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}/"+str);
                 if (hasUpdate)
                     _RPC_URL.AddMethod("PUT", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
                 if (hasDelete)
@@ -678,6 +689,105 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 }
                                 else
                                     ret = null;
+                            }
+                        }
+                        break;
+                    case "METHOD":
+                        string url = request.URL.AbsolutePath;
+                        string method = url.Substring(url.LastIndexOf("/")+1);
+                        url = url.Substring(0,url.Length-method.Length-1);
+                        string id = url.Substring(url.LastIndexOf("/")+1);
+                        url = url.Substring(0,url.Length-id.Length-1);
+                        id = Uri.UnescapeDataString(id);
+                        if (_Loads.ContainsKey(request.URL.Host + url))
+                        {
+                            if (request.IsLoadAllowed(_Loads[request.URL.Host + url].DeclaringType, id, out status, out message))
+                            {
+                                message = null;
+                                ret = _Loads[request.URL.Host + url].Invoke(null, new object[] { id });
+                            }
+                        }
+                        else if (_Loads.ContainsKey("*" + url))
+                        {
+                            if (request.IsLoadAllowed(_Loads["*" + url].DeclaringType, id, out status, out message))
+                            {
+                                message = null;
+                                ret = _Loads["*" + url].Invoke(null, new object[] { id });
+                            }
+                        }
+                        if (ret != null)
+                        {
+                            Hashtable pars = (Hashtable)JSON.JsonDecode(request.ParameterContent);
+                            object[] opars = null;
+                            MethodInfo mi = null;
+                            if (pars == null || pars.Count == 0)
+                            {
+                                mi = ret.GetType().GetMethod(method, Type.EmptyTypes);
+                                opars = new object[0];
+                            }
+                            else
+                            {
+                                opars = new object[pars.Count];
+                                foreach (MethodInfo m in ret.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public))
+                                {
+                                    if (m.Name == method)
+                                    {
+                                        if (m.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
+                                        {
+                                            if (m.GetParameters().Length == pars.Count)
+                                            {
+                                                bool isMethod = true;
+                                                int index = 0;
+                                                foreach (ParameterInfo pi in m.GetParameters())
+                                                {
+                                                    if (pars.ContainsKey(pi.Name))
+                                                        opars[index] = _ConvertObjectToType(pars[pi.Name], pi.ParameterType);
+                                                    else
+                                                    {
+                                                        isMethod = false;
+                                                        break;
+                                                    }
+                                                    index++;
+                                                }
+                                                if (isMethod)
+                                                {
+                                                    mi = m;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (mi == null)
+                            {
+                                message = "Unable to locate requested method to invoke";
+                                status = 404;
+                                ret = null;
+                            }
+                            else if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length == 0)
+                            {
+                                message = "Unable to locate requested method to invoke";
+                                status = 404;
+                                ret = null;
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    if (mi.ReturnType == typeof(void))
+                                    {
+                                        mi.Invoke(ret, opars);
+                                        ret = new object();
+                                    }
+                                    else
+                                        ret = mi.Invoke(ret, opars);
+                                }
+                                catch (Exception ex)
+                                {
+                                    message = ex.Message;
+                                    status = 500;
+                                }
                             }
                         }
                         break;

@@ -214,4 +214,12 @@ namespace Org.Reddragonit.BackBoneDotNet
         { }
     }
 
+    //thrown when an ExposedMethod will have the same javascript signature as another for a model
+    public class DuplicateMethodSignatureException : Exception
+    {
+        public DuplicateMethodSignatureException(Type t, MethodInfo mi)
+            : base(string.Format("The IModel type {0} is not valid because the method {1} has a javascript signature identical to a previously detected method of the same same.",
+            t.FullName,
+            mi.Name)) { }
+    }
 }
