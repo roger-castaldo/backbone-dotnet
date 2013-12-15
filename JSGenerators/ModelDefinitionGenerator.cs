@@ -292,44 +292,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-        private void _AppendExposedMethods(Type modelType, string urlRoot, StringBuilder sb)
+        private void _AppendExposedMethods(Type modelType, string urlRoot,string host, StringBuilder sb)
         {
             foreach (MethodInfo mi in modelType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
-                {
-                    sb.Append(string.Format("\t{0}:function(", mi.Name));
-                    ParameterInfo[] pars = mi.GetParameters();
-                    for (int x = 0; x < pars.Length; x++)
-                        sb.Append(string.Format("'{0}':{0}",pars[x].Name) + (x + 1 == pars.Length ? "" : ","));
-                    sb.Append("){var function_data = JSON.stringify({");
-                    for (int x = 0; x < pars.Length; x++)
-                        sb.Append(pars[x].Name + (x + 1 == pars.Length ? "" : ","));
-                    sb.AppendLine(string.Format(@"}});
-        {2}$.ajax({{
-            type:'METHOD',
-            url:'{0}/'+this.id+'/{1}',
-            processData:false,
-            data:escape(function_data),
-            content_type:""application/json; charset=utf-8"",
-            dataType:'json',
-            async:false,
-            cache:false
-        }}){3};
-        {4}
-    }},",new object[]{
-            urlRoot,
-            mi.Name,
-            (mi.ReturnType == typeof(void) ? "" : "var ret = "),
-            (mi.ReturnType == typeof(void) ? "" : ".responseText"),
-            (mi.ReturnType == typeof(void) ? "" : @"var response = JSON.parse(ret);
-    if(response.Backbone!=undefined){
-        _.extend(Backbone,response.Backbone);
-        response=response.response;
-    }
-return response;")
-        }));
-                }
+                    StaticExposedMethodGenerator.AppendMethodCall(urlRoot,host, mi, ref sb);
             }
         }
 
@@ -379,7 +347,7 @@ return response;")
                     }
                 }
             }
-            _AppendExposedMethods(modelType, urlRoot, sb);
+            _AppendExposedMethods(modelType, urlRoot,host, sb);
             sb.AppendLine("\turlRoot : \"" + urlRoot + "\"})});");
             return sb.ToString();
         }

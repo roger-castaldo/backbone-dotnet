@@ -119,6 +119,8 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static Dictionary<string, MethodInfo> _LoadAlls;
         //houses all load calls available, key is the url
         private static Dictionary<string, MethodInfo> _Loads;
+        //houses all the static ExposedMethod calls available, key is the url
+        private static Dictionary<string, List<MethodInfo>> _ExposedMethods;
         //houses all the select list calls, key is the url
         private static Dictionary<string, List<sModelListCall>> _SelectLists;
         //houses all update methods, key is model type
@@ -196,6 +198,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 _invalidModels = new List<Type>();
             _LoadAlls = new Dictionary<string, MethodInfo>();
             _Loads = new Dictionary<string, MethodInfo>();
+            _ExposedMethods = new Dictionary<string, List<MethodInfo>>();
             _SelectLists = new Dictionary<string, List<sModelListCall>>();
             _CachedJScript = new Dictionary<string, CachedItemContainer>();
             _TypeMaps = new Dictionary<string, Type>();
@@ -250,12 +253,27 @@ namespace Org.Reddragonit.BackBoneDotNet
             MethodInfo Load = null;
             List<sModelListCall> SelectList = new List<sModelListCall>();
             List<string> exposedMethods = new List<string>();
+            Dictionary<string, List<MethodInfo>> staticExposedMethods = new Dictionary<string, List<MethodInfo>>();
             foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
                 {
                     if (!exposedMethods.Contains(mi.Name))
                         exposedMethods.Add(mi.Name);
+                }
+            }
+            foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            {
+                if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
+                {
+                    List<MethodInfo> tmp = new List<MethodInfo>();
+                    tmp.Add(mi);
+                    if (staticExposedMethods.ContainsKey(mi.Name))
+                    {
+                        tmp.AddRange(staticExposedMethods[mi.Name]);
+                        staticExposedMethods.Remove(mi.Name);
+                    }
+                    staticExposedMethods.Add(mi.Name, tmp);
                 }
             }
             foreach (MethodInfo mi in t.GetMethods(Constants.LOAD_METHOD_FLAGS))
@@ -328,6 +346,11 @@ namespace Org.Reddragonit.BackBoneDotNet
                 _RPC_URL.AddMethod("GET", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
                 foreach (string str in exposedMethods)
                     _RPC_URL.AddMethod("METHOD", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}/"+str);
+                foreach (string str in staticExposedMethods.Keys)
+                {
+                    _RPC_URL.AddMethod("SMETHOD", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + str);
+                    _ExposedMethods.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/') + "/" + str, staticExposedMethods[str]);
+                }
                 if (hasUpdate)
                     _RPC_URL.AddMethod("PUT", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
                 if (hasDelete)
@@ -693,68 +716,103 @@ namespace Org.Reddragonit.BackBoneDotNet
                         }
                         break;
                     case "METHOD":
+                    case "SMETHOD":
+                        Hashtable pars = (Hashtable)JSON.JsonDecode(request.ParameterContent);
                         string url = request.URL.AbsolutePath;
                         string method = url.Substring(url.LastIndexOf("/")+1);
                         url = url.Substring(0,url.Length-method.Length-1);
-                        string id = url.Substring(url.LastIndexOf("/")+1);
-                        url = url.Substring(0,url.Length-id.Length-1);
-                        id = Uri.UnescapeDataString(id);
-                        if (_Loads.ContainsKey(request.URL.Host + url))
+                        List<MethodInfo> methods = new List<MethodInfo>();
+                        if (request.Method.ToUpper() == "METHOD")
                         {
-                            if (request.IsLoadAllowed(_Loads[request.URL.Host + url].DeclaringType, id, out status, out message))
+                            string id = url.Substring(url.LastIndexOf("/") + 1);
+                            url = url.Substring(0, url.Length - id.Length - 1);
+                            id = Uri.UnescapeDataString(id);
+                            if (_Loads.ContainsKey(request.URL.Host + url))
                             {
-                                message = null;
-                                ret = _Loads[request.URL.Host + url].Invoke(null, new object[] { id });
+                                if (request.IsLoadAllowed(_Loads[request.URL.Host + url].DeclaringType, id, out status, out message))
+                                {
+                                    message = null;
+                                    ret = _Loads[request.URL.Host + url].Invoke(null, new object[] { id });
+                                }
+                            }
+                            else if (_Loads.ContainsKey("*" + url))
+                            {
+                                if (request.IsLoadAllowed(_Loads["*" + url].DeclaringType, id, out status, out message))
+                                {
+                                    message = null;
+                                    ret = _Loads["*" + url].Invoke(null, new object[] { id });
+                                }
+                            }
+                            if (ret != null)
+                            {
+                                if (request.IsExposedMethodAllowed((IModel)ret, method, pars, out status, out message))
+                                {
+                                    foreach (MethodInfo m in ret.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public))
+                                    {
+                                        if (m.Name == method)
+                                        {
+                                            if (m.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
+                                                methods.Add(m);
+                                        }
+                                    }
+                                }
+                                else
+                                    ret = null;
                             }
                         }
-                        else if (_Loads.ContainsKey("*" + url))
+                        else
                         {
-                            if (request.IsLoadAllowed(_Loads["*" + url].DeclaringType, id, out status, out message))
+                            ret = null;
+                            if (_ExposedMethods.ContainsKey(request.URL.Host + url + "/" + method))
+                                methods.AddRange(_ExposedMethods[request.URL.Host + url + "/" + method]);
+                            else if (_ExposedMethods.ContainsKey("*" + url + "/" + method))
+                                methods.AddRange(_ExposedMethods["*" + url + "/" + method]);
+                            if (methods.Count > 0)
                             {
-                                message = null;
-                                ret = _Loads["*" + url].Invoke(null, new object[] { id });
+                                if (!request.IsStaticExpostMethodAllowed(methods[0].DeclaringType, method, pars, out status, out message))
+                                    methods.Clear();
                             }
                         }
-                        if (ret != null)
+                        if (methods.Count>0)
                         {
-                            Hashtable pars = (Hashtable)JSON.JsonDecode(request.ParameterContent);
                             object[] opars = null;
                             MethodInfo mi = null;
                             if (pars == null || pars.Count == 0)
                             {
-                                mi = ret.GetType().GetMethod(method, Type.EmptyTypes);
+                                foreach (MethodInfo m in methods)
+                                {
+                                    if (m.GetParameters().Length == 0)
+                                    {
+                                        mi = m;
+                                        break;
+                                    }
+                                }
                                 opars = new object[0];
                             }
                             else
                             {
                                 opars = new object[pars.Count];
-                                foreach (MethodInfo m in ret.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public))
+                                foreach (MethodInfo m in methods)
                                 {
-                                    if (m.Name == method)
+                                    if (m.GetParameters().Length == pars.Count)
                                     {
-                                        if (m.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
+                                        bool isMethod = true;
+                                        int index = 0;
+                                        foreach (ParameterInfo pi in m.GetParameters())
                                         {
-                                            if (m.GetParameters().Length == pars.Count)
+                                            if (pars.ContainsKey(pi.Name))
+                                                opars[index] = _ConvertObjectToType(pars[pi.Name], pi.ParameterType);
+                                            else
                                             {
-                                                bool isMethod = true;
-                                                int index = 0;
-                                                foreach (ParameterInfo pi in m.GetParameters())
-                                                {
-                                                    if (pars.ContainsKey(pi.Name))
-                                                        opars[index] = _ConvertObjectToType(pars[pi.Name], pi.ParameterType);
-                                                    else
-                                                    {
-                                                        isMethod = false;
-                                                        break;
-                                                    }
-                                                    index++;
-                                                }
-                                                if (isMethod)
-                                                {
-                                                    mi = m;
-                                                    break;
-                                                }
+                                                isMethod = false;
+                                                break;
                                             }
+                                            index++;
+                                        }
+                                        if (isMethod)
+                                        {
+                                            mi = m;
+                                            break;
                                         }
                                     }
                                 }
@@ -971,7 +1029,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             new SelectListCallGenerator(),
             new EditFormGenerator(),
             new ModelListCallGenerators(),
-            new RouterGenerator()
+            new RouterGenerator(),
+            new StaticExposedMethodGenerator()
         };
 
         //called to generate Javascript for the given model.  It uses all the specified IJSGenerators above

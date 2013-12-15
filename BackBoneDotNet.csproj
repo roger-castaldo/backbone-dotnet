@@ -84,6 +84,7 @@
     <Compile Include="JSGenerators\NamespaceGenerator.cs" />
     <Compile Include="JSGenerators\RouterGenerator.cs" />
     <Compile Include="JSGenerators\SelectListCallGenerator.cs" />
+    <Compile Include="JSGenerators\StaticExposedMethodGenerator.cs" />
     <Compile Include="JSGenerators\ViewGenerator.cs" />
     <Compile Include="JSMinifier.cs" />
     <Compile Include="JSON.cs" />
