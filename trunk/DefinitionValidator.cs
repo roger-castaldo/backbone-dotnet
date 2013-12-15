@@ -53,6 +53,7 @@ namespace Org.Reddragonit.BackBoneDotNet
          * 10. Check View Attributes to make sure class it not used (use ModelViewClass instead.
          * 11.  Check View Attributes and make sure all names are unique
          * 12.  Check to make sure all paged select lists have proper parameters
+         * 13.  Check to make sure all exposed methods are valid (if have same name, have different parameter count)
          */
         internal static List<Exception> Validate(out List<Type> invalidModels)
         {
@@ -395,6 +396,21 @@ namespace Org.Reddragonit.BackBoneDotNet
                         if (!invalidModels.Contains(t))
                             invalidModels.Add(t);
                         errors.Add(new NoLoadMethodException(t));
+                    }
+                    List<string> methods = new List<string>();
+                    foreach (MethodInfo mi in t.GetMethods(BindingFlags.Public|BindingFlags.Instance))
+                    {
+                        if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
+                        {
+                            if (methods.Contains(mi.Name + "." + mi.GetParameters().Length.ToString()))
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new DuplicateMethodSignatureException(t, mi));
+                            }
+                            else
+                                methods.Add(mi.Name + "." + mi.GetParameters().Length.ToString());
+                        }
                     }
                 }
             }
