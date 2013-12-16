@@ -115,6 +115,10 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static RequestPathChecker _RPC_SELECT;
         //flag used to indicate if the handler is running
         private static bool _running;
+        public static bool Running
+        {
+            get { return _running; }
+        }
         //houses all load all calls available, key is the url
         private static Dictionary<string, MethodInfo> _LoadAlls;
         //houses all load calls available, key is the url
@@ -171,6 +175,9 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
         }
 
+        private static List<Type> _loadedTypes;
+        private static StartTypes _startType;
+
         /*
          * This function will start the request handler, it does this by first validating 
          * all located models, and will react according to the starttype specified.
@@ -182,20 +189,8 @@ namespace Org.Reddragonit.BackBoneDotNet
         {
             Logger.Setup(logWriter);
             Logger.Debug("Starting up BackBone request handler");
-            List<Exception> errors = DefinitionValidator.Validate(out _invalidModels);
-            if (errors.Count > 0)
-            {
-                Logger.Error("Backbone validation errors:");
-                foreach (Exception e in errors)
-                    Logger.LogError(e);
-                Logger.Error("Invalid IModels:");
-                foreach (Type t in _invalidModels)
-                    Logger.Error(t.FullName);
-            }
-            if (startType == StartTypes.ThrowInvalidExceptions && errors.Count > 0)
-                throw new ModelValidationException(errors);
-            if (startType==StartTypes.DisableInvalidModels)
-                _invalidModels = new List<Type>();
+            _startType = startType;
+            _loadedTypes = new List<Type>();
             _LoadAlls = new Dictionary<string, MethodInfo>();
             _Loads = new Dictionary<string, MethodInfo>();
             _ExposedMethods = new Dictionary<string, List<MethodInfo>>();
@@ -209,14 +204,6 @@ namespace Org.Reddragonit.BackBoneDotNet
             _UpdateMethods = new Dictionary<Type, MethodInfo>();
             _RPC_URL = new RequestPathChecker();
             _RPC_SELECT = new RequestPathChecker();
-            foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
-            {
-                if (!_invalidModels.Contains(t) && !Utility.IsBlockedModel(t))
-                {
-                    Logger.Trace("Adding URL path checks for type " + t.FullName);
-                    AppendURLRegex(t);
-                }
-            }
             _jqueryURL = jqueryURL;
             _jsonURL = jsonURL;
             _backboneURL = backboneURL;
@@ -236,6 +223,37 @@ namespace Org.Reddragonit.BackBoneDotNet
                 _RPC_URL.AddMethod("GET", "*", _backboneURL);
             }
             Logger.Debug("Backbone request handler successfully started");
+            AssemblyAdded();
+        }
+
+        //called when a new assembly has been loaded in the case of dynamic loading, in order 
+        //to rescan for all new model types and add them accordingly.
+        public static void AssemblyAdded()
+        {
+            _running = false;
+            List<Exception> errors = DefinitionValidator.Validate(out _invalidModels);
+            if (errors.Count > 0)
+            {
+                Logger.Error("Backbone validation errors:");
+                foreach (Exception e in errors)
+                    Logger.LogError(e);
+                Logger.Error("Invalid IModels:");
+                foreach (Type t in _invalidModels)
+                    Logger.Error(t.FullName);
+            }
+            if (_startType == StartTypes.ThrowInvalidExceptions && errors.Count > 0)
+                throw new ModelValidationException(errors);
+            if (_startType == StartTypes.DisableInvalidModels)
+                _invalidModels = new List<Type>();
+            foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
+            {
+                if (!_invalidModels.Contains(t) && !Utility.IsBlockedModel(t) && !_loadedTypes.Contains(t))
+                {
+                    Logger.Trace("Adding URL path checks for type " + t.FullName);
+                    AppendURLRegex(t);
+                    _loadedTypes.Add(t);
+                }
+            }
             _running = true;
         }
 
@@ -381,6 +399,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             _Loads = null;
             _SelectLists = null;
             _TypeMaps = null;
+            _loadedTypes = null;
         }
 
         //uses the compiled regular expression to determin if this handler handles the given url and request method
