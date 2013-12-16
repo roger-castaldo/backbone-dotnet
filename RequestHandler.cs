@@ -769,7 +769,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 methods.AddRange(_ExposedMethods["*" + url + "/" + method]);
                             if (methods.Count > 0)
                             {
-                                if (!request.IsStaticExpostMethodAllowed(methods[0].DeclaringType, method, pars, out status, out message))
+                                if (!request.IsStaticExposedMethodAllowed(methods[0].DeclaringType, method, pars, out status, out message))
                                     methods.Clear();
                             }
                         }
