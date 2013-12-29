@@ -929,6 +929,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                 return obj.ToString();
             if (expectedType.IsEnum)
                 return Enum.Parse(expectedType, obj.ToString());
+            if (expectedType.Equals(typeof(Version)))
+                return new Version(obj.ToString());
             try
             {
                 object ret = Convert.ChangeType(obj, expectedType);

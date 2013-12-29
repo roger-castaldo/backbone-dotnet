@@ -689,6 +689,10 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 SerializeString(value.ToString(), builder);
             }
+            else if (value is Version)
+            {
+                SerializeString(value.ToString(), builder);
+            }
             else if (value.GetType().IsArray || (value is IEnumerable))
             {
                 builder.Append("[");
