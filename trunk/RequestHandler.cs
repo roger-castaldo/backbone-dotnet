@@ -230,6 +230,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //to rescan for all new model types and add them accordingly.
         public static void AssemblyAdded()
         {
+            Utility.ClearCaches();
             _running = false;
             List<Exception> errors = DefinitionValidator.Validate(out _invalidModels);
             if (errors.Count > 0)

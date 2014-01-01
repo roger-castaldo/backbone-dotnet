@@ -204,5 +204,17 @@ namespace Org.Reddragonit.BackBoneDotNet
                 return false;
             return IsBlockedModel(t.BaseType);
         }
+
+        internal static void ClearCaches()
+        {
+            lock (_INSTANCES_CACHE)
+            {
+                _INSTANCES_CACHE.Clear();
+            }
+            lock (_TYPE_CACHE)
+            {
+                _TYPE_CACHE.Clear();
+            }
+        }
     }
 }
