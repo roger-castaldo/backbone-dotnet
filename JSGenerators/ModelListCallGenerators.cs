@@ -41,7 +41,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             {
                                 sb.AppendLine(
 @"pageStartIndex = (pageStartIndex == undefined ? 0 : (pageStartIndex == null ? 0 : pageStartIndex));
-pageSize = (pageSize == undefined ? 0 : (pageSize == null ? 0 : pageSize));
+pageSize = (pageSize == undefined ? 10 : (pageSize == null ? 10 : pageSize));
 var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" : "?")+@"PageStartIndex='+pageStartIndex+'&PageSize='+pageSize,
     currentIndex : pageStartIndex*pageSize,
     currentPageSize : pageSize,
