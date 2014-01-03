@@ -201,9 +201,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine(
 @");
         $(this.el).attr('name',this.model.id);
+        this.trigger('pre_render_complete',this);
         this.trigger('render',this);
         return this;
-    }"+(hasUpdate || hasDelete ? "," : ""));
+    }" + (hasUpdate || hasDelete ? "," : ""));
             if ((hasUpdate&&hasUpdateFunction) || hasDelete)
             {
                 sb.AppendLine("\tevents : {");
@@ -410,8 +411,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendFormat(
 @"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator
 {0} = _.extend(true,{0},{{View : Backbone.View.extend({{
+    AdditionalRenderCalls:[],
     initialize : function(){{
         this.model.on('change',this.render,this);
+        for(var x=0;x<this.AdditionalRenderCalls.length;x++){{
+            this.model.on('pre_render_complete',this.AdditionalRenderCalls[x],this);
+        }}
     }},",ModelNamespace.GetFullNameForModel(modelType, host));
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
