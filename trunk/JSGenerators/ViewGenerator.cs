@@ -415,7 +415,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     initialize : function(){{
         this.model.on('change',this.render,this);
         for(var x=0;x<this.AdditionalRenderCalls.length;x++){{
-            this.model.on('pre_render_complete',this.AdditionalRenderCalls[x],this);
+            this.on('pre_render_complete',this.AdditionalRenderCalls[x],this);
         }}
     }},",ModelNamespace.GetFullNameForModel(modelType, host));
             string tag = "div";
