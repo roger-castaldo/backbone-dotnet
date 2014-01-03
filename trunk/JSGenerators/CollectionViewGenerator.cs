@@ -63,11 +63,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             _AppendAttributes(modelType, sb);
 
             sb.AppendLine(
-@"  initialize : function(){
+@"  AdditionalRenderCalls: [],
+    initialize : function(){
         this.collection.on('reset',this.render,this);
         this.collection.on('sync', this.render, this);
         this.collection.on('add', this.render, this);
         this.collection.on('remove', this.render, this);
+        for(var x=0;x<this.AdditionalRenderCalls.length;x++){
+            this.on('pre_render_complete',this.AdditionalRenderCalls[x],this);
+        }
     },
     render : function(){
         var el = this.$el;
@@ -90,6 +94,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             sb.AppendFormat(
 @"      if(this.collection.length==0){{
+            this.trigger('pre_render_complete',this);
             this.trigger('render',this);
         }}else{{
             var alt=false;
@@ -100,7 +105,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }}
                     alt=!alt;
                     if(x+1==this.collection.length){{
-                        vw.on('render',function(){{this.col.trigger('item_render',this.view);this.col.trigger('render',this.col);}},{{col:this,view:vw}});
+                        vw.on('render',function(){{this.col.trigger('item_render',this.view);this.col.trigger('pre_render_complete',this.col);this.col.trigger('render',this.col);}},{{col:this,view:vw}});
                     }}else{{
                         vw.on('render',function(){{this.col.trigger('item_render',this.view);}},{{col:this,view:vw}});
                     }}
