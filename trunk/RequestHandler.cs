@@ -371,7 +371,10 @@ namespace Org.Reddragonit.BackBoneDotNet
                     _ExposedMethods.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/') + "/" + str, staticExposedMethods[str]);
                 }
                 if (hasUpdate)
+                {
                     _RPC_URL.AddMethod("PUT", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
+                    _RPC_URL.AddMethod("PATCH", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
+                }
                 if (hasDelete)
                     _RPC_URL.AddMethod("DELETE", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path) + (mr.Path.EndsWith("/") ? "" : "/") + "{0}");
             }
@@ -609,6 +612,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         }
                         break;
                     case "PUT":
+                    case "PATCH":
                         Logger.Trace("Handling Put request");
                         if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                         {
