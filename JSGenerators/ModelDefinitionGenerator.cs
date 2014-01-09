@@ -69,6 +69,29 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         }}",str);
                 }
                 sb.AppendLine("\t},");
+                sb.AppendLine(@"_save : function (key, val, options) {
+        if (key == null || typeof key === 'object') {
+            attrs = key;
+            options = val;
+        } else {
+            (attrs = {})[key] = val;
+        }
+        if (!this.isNew()){");
+                foreach (string str in readOnlyProperties)
+                    sb.AppendLine(string.Format(@"if (attrs.{0}!=undefined){{delete attrs.{0};}}", str));
+        sb.AppendLine(@"}
+        options = _.extend({ validate: true }, options);
+        this._baseSave(attrs, _.extend({}, {
+            originalOptions: _.clone(options),
+            originalSuccess: options.success,
+            success: function (model, response, options) {
+                model._origAttributes = _.clone(model.attributes);
+                if (options.originalSuccess != undefined) {
+                    options.originalSuccess(model, response, options.originalOptions);
+                }
+            }
+        }));
+    },");
             }
         }
 
@@ -142,7 +165,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     add = true;
                     break;
                 }
-                else if (modelType.GetProperty(str).GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length > 0)
+                else if (readOnlyProperties.Contains(str))
                 {
                     add = true;
                     break;
@@ -294,6 +317,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             response=response.response;
         }
         attrs = response;
+        this._origAttributes = attrs;
         return attrs;
     },");
             }

@@ -1088,6 +1088,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                     {
                         if (pi.GetCustomAttributes(typeof(ReadOnlyModelProperty), false).Length > 0)
                             readOnlyProperties.Add(pi.Name);
+                        else if (!pi.CanWrite)
+                            readOnlyProperties.Add(pi.Name);
                         if (pi.GetCustomAttributes(typeof(ViewIgnoreField), false).Length > 0)
                             viewIgnoreProperties.Add(pi.Name);
                         properties.Add(pi.Name);
