@@ -154,7 +154,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 string lazyLoads = "";
                 jsonb.AppendLine(
 @"  toJSON : function(){
-        var attrs = {};");
+        var attrs = {};
+        this._origAttributes = (this._origAttributes==undefined ? {} : this._origAttributes);");
 
                 sb.AppendLine(
 @"  parse: function(response) {
@@ -241,7 +242,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
                             jsonb.AppendFormat(
-@"      if(!_.isEqual(this.attributes['{0}'],this._previousAttributes['{0}'])||this.isNew()){{
+@"      if(!_.isEqual(this.attributes['{0}'],this._origAttributes['{0}'])||this.isNew()){{
             if(this.attributes['{0}']!=null){{
                 attrs.{0} = {{id : this.attributes['{0}'].id}};
             }}
@@ -261,13 +262,19 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         sb.AppendLine("\t\t}");
                         if (isReadOnly)
                             jsonb.AppendLine("if (this.isNew()){");
-                        jsonb.AppendLine("\t\tattrs." + str + " = this.attributes['" + str + "'];");
+                        jsonb.AppendFormat(
+@"      if(!_.isEqual(this.attributes['{0}'],this._origAttributes['{0}'])||this.isNew()){{
+            if(this.attributes['{0}']!=null){{
+                attrs.{0} = this.attributes['{0}'];
+            }}
+        }}", str);
                         if (isReadOnly)
                             jsonb.AppendLine("}");
                     }
                 }
                 sb.AppendFormat(
-@"      }}
+@"          this._origAttributes = _.clone(attrs);
+        }}
         return attrs;
     }},{0}
         return attrs;

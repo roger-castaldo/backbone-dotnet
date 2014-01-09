@@ -134,7 +134,7 @@
     <None Include="resources\underscore.js" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="resources\underscore_changes.js" />
+    <None Include="resources\underscore_changes.js" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -146,6 +146,8 @@
   -->
   <PropertyGroup>
     <PreBuildEvent>C:\jsmin.exe &lt; "$(ProjectDir)\resources\underscore.js" &gt; "$(ProjectDir)\resources\backbone_combined.min.js"
-C:\jsmin.exe &lt; "$(ProjectDir)\resources\backbone.js" &gt;&gt; "$(ProjectDir)\resources\backbone_combined.min.js"</PreBuildEvent>
+C:\jsmin.exe &lt; "$(ProjectDir)\resources\underscore_changes.js" &gt;&gt; "$(ProjectDir)\resources\backbone_combined.min.js"
+C:\jsmin.exe &lt; "$(ProjectDir)\resources\backbone.js" &gt;&gt; "$(ProjectDir)\resources\backbone_combined.min.js"
+C:\jsmin.exe &lt; "$(ProjectDir)\resources\backbone_changes.js" &gt;&gt; "$(ProjectDir)\resources\backbone_combined.min.js"</PreBuildEvent>
   </PropertyGroup>
 </Project>
