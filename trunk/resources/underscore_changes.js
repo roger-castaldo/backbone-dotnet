@@ -19,3 +19,33 @@
     });
     return obj;
 };
+_.deepClone = function (obj) {
+    if (!_.isObject(obj)) return obj;
+    var ret;
+    if (_.isArray(obj)) {
+        ret = [];
+        for (var x = 0; x < obj.length; x++) {
+            ret[x] = _.deepClone(obj[x]);
+        }
+    } else {
+        switch (toString.call(obj)) {
+            case '[object String]':
+            case '[object Date]':
+            case '[object Function]':
+            case '[object RegExp]':
+                ret = obj;
+                break;
+            default:
+                if (obj.clone != undefined) {
+                    ret = obj.clone();
+                } else {
+                    ret = {};
+                    for (var k in obj) {
+                        ret[k] = _.deepClone(obj[k]);
+                    }
+                }
+                break;
+        }
+    }
+    return ret;
+};
