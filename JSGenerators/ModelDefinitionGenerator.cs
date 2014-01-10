@@ -183,6 +183,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine(
 @"  parse: function(response) {
         var attrs = {};
+        this._origAttributes = (this._origAttributes==undefined ? {} : this._origAttributes);
         if(response.Backbone!=undefined){
             _.extend(Backbone,response.Backbone);
             response=response.response;
@@ -242,7 +243,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
                             jsonb.AppendFormat(
-@"           if(!_.isEqual(this.attributes['{0}'],this._previousAttributes['{0}'])||this.isNew()){{
+@"           if(!_.isEqual(this.attributes['{0}'],this._origAttributes['{0}'])||this.isNew()){{
                 if(this.attributes['{0}']!=null){{
                     attrs.{0} = [];
                     for(var x=0;x<this.attributes['{0}'].length;x++){{
@@ -279,9 +280,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         sb.AppendLine("\t\tif (response." + str + " != undefined){");
                         if (propType == typeof(DateTime))
-                            sb.AppendLine("\t\tattrs." + str + " = new Date(response." + str + ");");
+                            sb.AppendLine(string.Format("\t\tattrs.{0} = new Date(response.{0});", str));
                         else
-                            sb.AppendLine("\t\tattrs." + str + " = response." + str + ";");
+                            sb.AppendLine(string.Format("\t\tattrs.{0} = response.{0};",str));
                         sb.AppendLine("\t\t}");
                         if (isReadOnly)
                             jsonb.AppendLine("if (this.isNew()){");
@@ -296,7 +297,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                 }
                 sb.AppendFormat(
-@"          this._origAttributes = _.clone(attrs);
+@"          this._origAttributes = _.deepClone(attrs);    
         }}
         return attrs;
     }},{0}
@@ -317,7 +318,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             response=response.response;
         }
         attrs = response;
-        this._origAttributes = attrs;
+        if (attrs!=true){
+            this._origAttributes = _.deepClone(attrs);
+        }
         return attrs;
     },");
             }
