@@ -411,13 +411,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendFormat(
 @"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator
 {0} = _.extend(true,{0},{{View : Backbone.View.extend({{
-    AdditionalRenderCalls:[],
-    initialize : function(){{
-        this.model.on('change',this.render,this);
-        for(var x=0;x<this.AdditionalRenderCalls.length;x++){{
-            this.on('pre_render_complete',this.AdditionalRenderCalls[x],this);
-        }}
-    }},",ModelNamespace.GetFullNameForModel(modelType, host));
+    ",ModelNamespace.GetFullNameForModel(modelType, host));
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
                 tag = ((ModelViewTag)modelType.GetCustomAttributes(typeof(ModelViewTag), false)[0]).TagName;

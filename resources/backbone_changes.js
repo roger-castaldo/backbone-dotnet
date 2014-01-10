@@ -125,5 +125,24 @@
             (changed || (changed = {}))[attr] = val;
         }
         return changed;
-    }
+    };
+    Backbone.View.prototype.AdditionalRenderCalls = [];
+    Backbone.View.prototype.initialize = function (options) {
+        if (this.model != undefined) {
+            if (this.model.on != undefined) {
+                this.model.on('change', this.render, this);
+            }
+        } else if (this.collection != undefined) {
+            if (this.collection.on != undefined) {
+                this.collection.on('reset', this.render, this);
+                this.collection.on('sync', this.render, this);
+                this.collection.on('add', this.render, this);
+                this.collection.on('remove', this.render, this);
+            }
+        }
+        _.extend(this, _.omit(options, _.keys(this)));
+        for (var x = 0; x < this.AdditionalRenderCalls.length; x++) {
+            this.on('pre_render_complete', this.AdditionalRenderCalls[x], this);
+        }
+    };
 }).call(this);

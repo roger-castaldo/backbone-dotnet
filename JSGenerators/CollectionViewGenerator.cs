@@ -63,17 +63,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             _AppendAttributes(modelType, sb);
 
             sb.AppendLine(
-@"  AdditionalRenderCalls: [],
-    initialize : function(){
-        this.collection.on('reset',this.render,this);
-        this.collection.on('sync', this.render, this);
-        this.collection.on('add', this.render, this);
-        this.collection.on('remove', this.render, this);
-        for(var x=0;x<this.AdditionalRenderCalls.length;x++){
-            this.on('pre_render_complete',this.AdditionalRenderCalls[x],this);
-        }
-    },
-    render : function(){
+@"  render : function(){
         var el = this.$el;
         el.html('');");
             if (tag.ToLower() == "tr")
