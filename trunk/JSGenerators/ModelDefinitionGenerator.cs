@@ -235,16 +235,16 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 jsonb.AppendLine("if (this.isNew()){");
                             jsonb.AppendFormat(
 @"           if(!_.isEqual(this.attributes['{0}'],this._origAttributes['{0}'])||this.isNew()){{
-                if(this.attributes['{0}']!=null){{
                     attrs.{0} = [];
-                    for(var x=0;x<this.attributes['{0}'].length;x++){{
-                        if(this.attributes['{0}'].at!=undefined){{
-                            attrs.{0}.push({{id:this.attributes['{0}'].at(x).id}});
-                        }}else{{
-                            attrs.{0}.push({{id:this.attributes['{0}'][x].id}});
+                    if (this.attributes['{0}']!=null){{
+                        for(var x=0;x<this.attributes['{0}'].length;x++){{
+                            if(this.attributes['{0}'].at!=undefined){{
+                                attrs.{0}.push({{id:this.attributes['{0}'].at(x).id}});
+                            }}else{{
+                                attrs.{0}.push({{id:this.attributes['{0}'][x].id}});
+                            }}
                         }}
                     }}
-                }}
             }}",str);
                             if (isReadOnly)
                                 jsonb.AppendLine("}");
@@ -258,8 +258,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 jsonb.AppendLine("if (this.isNew()){");
                             jsonb.AppendFormat(
 @"      if(!_.isEqual(this.attributes['{0}'],this._origAttributes['{0}'])||this.isNew()){{
-            if(this.attributes['{0}']!=null){{
+            if (this.attributes['{0}']!=null){{
                 attrs.{0} = {{id : this.attributes['{0}'].id}};
+            }}else{{
+                attrs.{0} = null;
             }}
         }}",str);
                             if (isReadOnly)
@@ -279,9 +281,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             jsonb.AppendLine("if (this.isNew()){");
                         jsonb.AppendFormat(
 @"      if(!_.isEqual(this.attributes['{0}'],this._origAttributes['{0}'])||this.isNew()){{
-            if(this.attributes['{0}']!=null){{
                 attrs.{0} = this.attributes['{0}'];
-            }}
         }}", str);
                         if (isReadOnly)
                             jsonb.AppendLine("}");
