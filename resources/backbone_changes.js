@@ -94,9 +94,12 @@
         options = _.extend(options, { async: false });
         return this.destroy(options);
     };
-    eval('Backbone.Model.prototype._baseSave = ' + Backbone.Model.prototype.save.toString());
+    eval('Backbone.Model.prototype._origSave = ' + Backbone.Model.prototype.save.toString());
     eval('Backbone.Model.prototype._destroy = ' + Backbone.Model.prototype.destroy.toString());
     Backbone.Model.prototype._save = function (key, val, options) {
+        Backbone.Model.prototype._baseSave(key, val, options);
+    };
+    Backbone.Model.prototype._baseSave = function (key, val, options) {
         if (key == null || typeof key === 'object') {
             attrs = key;
             options = val;
@@ -104,16 +107,23 @@
             (attrs = {})[key] = val;
         }
         options = _.extend({ validate: true }, options);
-        this._baseSave(attrs, _.extend({}, {
-            originalOptions: _.clone(options),
+        var newOptions = _.extend(_.deepClone(options), {
+            originalOptions: options,
             originalSuccess: options.success,
+            originalError:options.error,
             success: function (model, response, options) {
-                model._origAttributes = _.clone(model.attributes);
+                model._origAttributes = _.deepClone(model.attributes);
                 if (options.originalSuccess != undefined) {
                     options.originalSuccess(model, response, options.originalOptions);
                 }
+            },
+            error: function (model, xhr, options) {
+                if (options.originalError != undefined) {
+                    options.originalError(model, xhr, options.originalOptions);
+                }
             }
-        }));
+        });
+        this._origSave(attrs,newOptions);
     };
     Backbone.Model.prototype.save = function (key, val, options) { this._save(key, val, options); };
     Backbone.Model.prototype.changedAttributes = function (diff) {
@@ -138,6 +148,7 @@
                 this.collection.on('sync', this.render, this);
                 this.collection.on('add', this.render, this);
                 this.collection.on('remove', this.render, this);
+                this.collection.on('sort', this.render, this);
             }
         }
         _.extend(this, _.omit(options, _.keys(this)));
