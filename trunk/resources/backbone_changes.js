@@ -82,6 +82,25 @@
         }
         return this.attributes[attr];
     };
+    eval('Backbone.Model.prototype._set = ' + Backbone.Model.prototype.set.toString());
+    Backbone.Model.prototype.set = function (key, val, options) {
+        if (key == null) return this;
+
+        // Handle both `"key", value` and `{key: value}` -style arguments.
+        if (typeof key === 'object') {
+            attrs = key;
+            options = val;
+        } else {
+            (attrs = {})[key] = val;
+        }
+        this._changedFields = (this._changedFields == undefined ? [] : this._changedFields);
+        for (var k in attrs) {
+            if (!_.isEqual(this.attributes[k], attrs[k]) && this._changedFields.indexOf(k) < 0) {
+                this._changedFields.push(k);
+            }
+        }
+        return this._set(attrs, options);
+    };
     //added in sync Save function to specify synchronous communication
     Backbone.Model.prototype.syncSave = function (attrs, options) {
         if (!options) { options = {}; }
@@ -107,12 +126,18 @@
             (attrs = {})[key] = val;
         }
         options = _.extend({ validate: true }, options);
+        this._changedFields = (this._changedFields == undefined ? [] : this._changedFields);
+        for (var k in attrs) {
+            if (!_.isEqual(this.attributes[k], attrs[k]) && this._changedFields.indexOf(k) < 0) {
+                this._changedFields.push(k);
+            }
+        }
         var newOptions = _.extend(_.deepClone(options), {
             originalOptions: options,
             originalSuccess: options.success,
             originalError:options.error,
             success: function (model, response, options) {
-                model._origAttributes = _.deepClone(model.attributes);
+                model._changedFields = [];
                 if (options.originalSuccess != undefined) {
                     options.originalSuccess(model, response, options.originalOptions);
                 }

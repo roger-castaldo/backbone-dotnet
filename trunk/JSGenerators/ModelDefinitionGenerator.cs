@@ -169,7 +169,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 jsonb.AppendLine(
 @"  toJSON : function(){
         var attrs = {};
-        this._origAttributes = (this._origAttributes==undefined ? {} : this._origAttributes);");
+        this._changedFields = (this._changedFields == undefined ? [] : this._changedFields);");
 
                 sb.AppendLine(
 @"  parse: function(response) {
@@ -234,7 +234,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
                             jsonb.AppendFormat(
-@"           if(!_.isEqual(this.attributes['{0}'],this._origAttributes['{0}'])||this.isNew()){{
+@"           if(this._changedFields.indexOf('{0}')>=0||this.isNew()){{
                     attrs.{0} = [];
                     if (this.attributes['{0}']!=null){{
                         for(var x=0;x<this.attributes['{0}'].length;x++){{
@@ -257,7 +257,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (isReadOnly)
                                 jsonb.AppendLine("if (this.isNew()){");
                             jsonb.AppendFormat(
-@"      if(!_.isEqual(this.attributes['{0}'],this._origAttributes['{0}'])||this.isNew()){{
+@"      if(this._changedFields.indexOf('{0}')>=0||this.isNew()){{
             if (this.attributes['{0}']!=null){{
                 attrs.{0} = {{id : this.attributes['{0}'].id}};
             }}else{{
@@ -280,23 +280,19 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         if (isReadOnly)
                             jsonb.AppendLine("if (this.isNew()){");
                         jsonb.AppendFormat(
-@"      if(!_.isEqual(this.attributes['{0}'],this._origAttributes['{0}'])||this.isNew()){{
+@"      if(this._changedFields.indexOf('{0}')>=0||this.isNew()){{
                 attrs.{0} = this.attributes['{0}'];
         }}", str);
                         if (isReadOnly)
                             jsonb.AppendLine("}");
                     }
                 }
-                string readOnlys = "";
-                foreach (string s in readOnlyProperties)
-                    readOnlys += ",'"+s+"'";
                 sb.AppendFormat(
-@"          this._origAttributes = _.deepClone(attrs,[{1}]);    
-        }}
+@"      }}
         return attrs;
     }},{0}
         return attrs;
-    }},", jsonb.ToString(),(readOnlys.Length>0 ? readOnlys.Substring(1) : ""));
+    }},", jsonb.ToString());
                 if (lazyLoads.Length > 0)
                 {
                     sb.AppendLine("\tLazyLoadAttributes : [" + lazyLoads.Substring(1) + "],");
@@ -306,16 +302,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             {
                 sb.AppendLine(
 @"  parse: function(response) {
-        var attrs = {};
         if(response.Backbone!=undefined){
             _.extend(Backbone,response.Backbone);
             response=response.response;
         }
-        attrs = response;
-        if (attrs!=true){
-            this._origAttributes = _.deepClone(attrs);
-        }
-        return attrs;
+        return response;
     },");
             }
         }
