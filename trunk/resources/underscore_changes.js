@@ -19,7 +19,8 @@
     });
     return obj;
 };
-_.deepClone = function (obj) {
+_.deepClone = function (obj, ignoreKeys) {
+    ignoreKeys = (ignoreKeys == undefined ? [] : ignoreKeys);
     if (!_.isObject(obj)) return obj;
     var ret;
     if (_.isArray(obj)) {
@@ -41,7 +42,9 @@ _.deepClone = function (obj) {
                 } else {
                     ret = {};
                     for (var k in obj) {
-                        ret[k] = _.deepClone(obj[k]);
+                        if (ignoreKeys.indexOf(k) < 0) {
+                            ret[k] = _.deepClone(obj[k]);
+                        }
                     }
                 }
                 break;

@@ -287,13 +287,16 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             jsonb.AppendLine("}");
                     }
                 }
+                string readOnlys = "";
+                foreach (string s in readOnlyProperties)
+                    readOnlys += ",'"+s+"'";
                 sb.AppendFormat(
-@"          this._origAttributes = _.deepClone(attrs);    
+@"          this._origAttributes = _.deepClone(attrs,[{1}]);    
         }}
         return attrs;
     }},{0}
         return attrs;
-    }},", jsonb.ToString());
+    }},", jsonb.ToString(),(readOnlys.Length>0 ? readOnlys.Substring(1) : ""));
                 if (lazyLoads.Length > 0)
                 {
                     sb.AppendLine("\tLazyLoadAttributes : [" + lazyLoads.Substring(1) + "],");
