@@ -19,8 +19,13 @@
     });
     return obj;
 };
-_.deepClone = function (obj, ignoreKeys) {
-    ignoreKeys = (ignoreKeys == undefined ? [] : ignoreKeys);
+_.deepClone = function (obj, acceptKeys) {
+    if (acceptKeys != undefined) {
+        if (acceptKeys.length == 0) {
+            return null;
+        }
+    }
+    acceptKeys = (acceptKeys == undefined ? [] : acceptKeys);
     if (!_.isObject(obj)) return obj;
     var ret;
     if (_.isArray(obj)) {
@@ -41,10 +46,8 @@ _.deepClone = function (obj, ignoreKeys) {
                     ret = obj.clone();
                 } else {
                     ret = {};
-                    for (var k in obj) {
-                        if (ignoreKeys.indexOf(k) < 0) {
-                            ret[k] = _.deepClone(obj[k]);
-                        }
+                    for(var x=0;x<acceptKeys;x++){
+                        ret[k] = _.deepClone(obj[acceptKeys[x]]);
                     }
                 }
                 break;
