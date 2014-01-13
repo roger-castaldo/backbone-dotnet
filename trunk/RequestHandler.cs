@@ -516,6 +516,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                         }
                     }
                 }
+                else
+                    _SetSecurityError(out status, out message);
             }
             else
             {
@@ -536,6 +538,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                         message = null;
                                         ret = mlc.HandleRequest(request);
                                     }
+                                    else
+                                        _SetSecurityError(out status, out message);
                                     break;
                                 }
                             }
@@ -550,6 +554,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     message = null;
                                     ret = _LoadAlls[request.URL.Host + request.URL.AbsolutePath].Invoke(null, new object[0]);
                                 }
+                                else
+                                    _SetSecurityError(out status, out message);
                             }
                             else if (_LoadAlls.ContainsKey("*" + request.URL.AbsolutePath))
                             {
@@ -559,6 +565,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     message = null;
                                     ret = _LoadAlls["*" + request.URL.AbsolutePath].Invoke(null, new object[0]);
                                 }
+                                else
+                                    _SetSecurityError(out status, out message);
                             }
                             else if (_Loads.ContainsKey(request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             {
@@ -568,6 +576,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     message = null;
                                     ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                                 }
+                                else
+                                    _SetSecurityError(out status, out message);
                             }
                             else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                             {
@@ -577,6 +587,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     message = null;
                                     ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                                 }
+                                else
+                                    _SetSecurityError(out status, out message);
                             }
                         }
                         break;
@@ -593,6 +605,9 @@ namespace Org.Reddragonit.BackBoneDotNet
                                         message = null;
                                         ret = mlc.HandlesRequest(request);
                                     }
+                                    else
+                                        _SetSecurityError(out status, out message);
+                                    break;
                                 }
                             }
                         }
@@ -607,6 +622,9 @@ namespace Org.Reddragonit.BackBoneDotNet
                                         message = null;
                                         ret = mlc.HandleRequest(request);
                                     }
+                                    else
+                                        _SetSecurityError(out status, out message);
+                                    break;
                                 }
                             }
                         }
@@ -621,6 +639,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 message = null;
                                 ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                             }
+                            else
+                                _SetSecurityError(out status, out message);
                         }
                         else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                         {
@@ -629,6 +649,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 message = null;
                                 ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                             }
+                            else
+                                _SetSecurityError(out status, out message);
                         }
                         if (ret != null)
                         {
@@ -667,6 +689,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 else if (!(bool)ret)
                                     ret = null;
                             }
+                            else
+                                _SetSecurityError(out status, out message);
                         }
                         break;
                     case "DELETE":
@@ -678,6 +702,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 message = null;
                                 ret = _Loads[request.URL.Host + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                             }
+                            else
+                                _SetSecurityError(out status, out message);
                         }
                         else if (_Loads.ContainsKey("*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))))
                         {
@@ -686,6 +712,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 message = null;
                                 ret = _Loads["*" + request.URL.AbsolutePath.Substring(0, request.URL.AbsolutePath.LastIndexOf("/"))].Invoke(null, new object[] { Uri.UnescapeDataString(request.URL.AbsolutePath.Substring(request.URL.AbsolutePath.LastIndexOf("/") + 1)) });
                             }
+                            else
+                                _SetSecurityError(out status, out message);
                         }
                         if (ret != null)
                         {
@@ -696,6 +724,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     message = null;
                                     ret = _DeleteMethods[ret.GetType()].Invoke(ret, new object[0]);
                                 }
+                                else
+                                    _SetSecurityError(out status, out message);
                             }
                             else
                                 ret = null;
@@ -732,11 +762,17 @@ namespace Org.Reddragonit.BackBoneDotNet
                                         ((Hashtable)ret).Add("id", mod.id);
                                     }
                                     else
+                                    {
+                                        message = "Error saving model.";
+                                        status = 500;
                                         ret = null;
+                                    }
                                 }
                                 else
                                     ret = null;
                             }
+                            else
+                                _SetSecurityError(out status, out message);
                         }
                         break;
                     case "METHOD":
@@ -758,6 +794,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     message = null;
                                     ret = _Loads[request.URL.Host + url].Invoke(null, new object[] { id });
                                 }
+                                else
+                                    _SetSecurityError(out status, out message);
                             }
                             else if (_Loads.ContainsKey("*" + url))
                             {
@@ -766,6 +804,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     message = null;
                                     ret = _Loads["*" + url].Invoke(null, new object[] { id });
                                 }
+                                else
+                                    _SetSecurityError(out status, out message);
                             }
                             if (ret != null)
                             {
@@ -794,7 +834,10 @@ namespace Org.Reddragonit.BackBoneDotNet
                             if (methods.Count > 0)
                             {
                                 if (!request.IsStaticExposedMethodAllowed(methods[0].DeclaringType, method, pars, out status, out message))
+                                {
                                     methods.Clear();
+                                    _SetSecurityError(out status, out message);
+                                }
                             }
                         }
                         if (methods.Count>0)
@@ -874,11 +917,11 @@ namespace Org.Reddragonit.BackBoneDotNet
                         }
                         break;
                 }
+                request.SetResponseContentType("application/json");
                 if (ret != null)
                 {
                     Logger.Trace("Request successfully handled, sending response");
                     request.SetResponseStatus(200);
-                    request.SetResponseContentType("application/json");
                     request.WriteContent(JSON.JsonEncode(_SetupAdditionalBackbonehash(ret,request)));
                     request.SendResponse();
                 }
@@ -886,14 +929,21 @@ namespace Org.Reddragonit.BackBoneDotNet
                 {
                     if (message!=null){
                         request.SetResponseStatus(status);
-                        request.WriteContent(message);
+                        request.WriteContent(JSON.JsonEncode(message));
                     }else{
                         Logger.Trace("Handling of request failed, sending 404 response");
                         request.SetResponseStatus(404);
+                        request.WriteContent(JSON.JsonEncode("Not Found"));
                     }
                     request.SendResponse();
                 }
             }
+        }
+
+        private static void _SetSecurityError(out int status, out string message)
+        {
+            status = 403;
+            message = "You are not authorized to perform the requested action.";
         }
 
         private static Hashtable _SetupAdditionalBackbonehash(object response,IHttpRequest request)

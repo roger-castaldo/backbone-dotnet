@@ -81,16 +81,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     sb.AppendLine(string.Format(@"if (attrs.{0}!=undefined){{delete attrs.{0};}}", str));
         sb.AppendLine(@"}
         options = _.extend({ validate: true }, options);
-        this._baseSave(attrs, _.extend({}, {
-            originalOptions: _.clone(options),
-            originalSuccess: options.success,
-            success: function (model, response, options) {
-                model._origAttributes = _.clone(model.attributes);
-                if (options.originalSuccess != undefined) {
-                    options.originalSuccess(model, response, options.originalOptions);
-                }
-            }
-        }));
+        this._baseSave(attrs, options);
     },");
             }
         }
