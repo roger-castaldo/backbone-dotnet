@@ -101,6 +101,16 @@
         }
         return this._set(attrs, options);
     };
+    Backbone.Model.prototype.toJSON = function () {
+        var attrs = {};
+        this._changedFields = (this._changedFields == undefined ? [] : this._changedFields);
+        for (var k in this.attributes) {
+            if (this._changedFields.indexOf(k) >= 0 || this.isNew()) {
+                attrs[k] = this.attributes[k];
+            }
+        }
+        return attrs;
+    };
     //added in sync Save function to specify synchronous communication
     Backbone.Model.prototype.syncSave = function (attrs, options) {
         if (!options) { options = {}; }
@@ -151,16 +161,6 @@
         this._origSave(attrs,newOptions);
     };
     Backbone.Model.prototype.save = function (key, val, options) { this._save(key, val, options); };
-    Backbone.Model.prototype.changedAttributes = function (diff) {
-        this._origAttributes = (this._origAttributes == undefined ? {} : this._origAttributes);
-        if (!diff) return this.hasChanged() ? _.clone(this.changed) : false;
-        var val, changed = false;
-        for (var attr in diff) {
-            if (_.isEqual(this._origAttributes[attr], (val = diff[attr]))) continue;
-            (changed || (changed = {}))[attr] = val;
-        }
-        return changed;
-    };
     Backbone.View.prototype.AdditionalRenderCalls = [];
     Backbone.View.prototype.initialize = function (options) {
         if (this.model != undefined) {
