@@ -181,4 +181,36 @@
             this.on('pre_render_complete', this.AdditionalRenderCalls[x], this);
         }
     };
+    Backbone.Collection.prototype.initialize = function () {
+        this.isNew = true;
+    }
+    eval('Backbone.Collection.prototype._fetch = ' + Backbone.Collection.prototype.fetch.toString());
+    Backbone.Collection.prototype.fetch = function (options) {
+        options = options ? _.clone(options) : {};
+        options.sort = false;
+        if (this.isNew) {
+            var newOptions = _.extend(_.deepClone(options), {
+                reset: true,
+                silent:true,
+                originalOptions: options,
+                originalSuccess: options.success,
+                originalError: options.error,
+                success: function (collection, response, options) {
+                    collection.isNew = false;
+                    if (options.originalSuccess != undefined) {
+                        options.originalSuccess(collection, response, options.originalOptions);
+                    }
+                    //collection.trigger('sync', collection, response, options);
+                },
+                error: function (collection, xhr, options) {
+                    if (options.originalError != undefined) {
+                        options.originalError(model, xhr, options.originalOptions);
+                    }
+                }
+            });
+            this._fetch(newOptions);
+        } else {
+            this._fetch(options);
+        }
+    };
 }).call(this);
