@@ -142,7 +142,7 @@
                 this._changedFields.push(k);
             }
         }
-        var newOptions = _.extend(_.deepClone(options), {
+        var newOptions = _.extend(_.clone(options), {
             originalOptions: options,
             originalSuccess: options.success,
             originalError:options.error,
@@ -183,13 +183,13 @@
     };
     Backbone.Collection.prototype.initialize = function () {
         this.isNew = true;
-    }
+    };
     eval('Backbone.Collection.prototype._fetch = ' + Backbone.Collection.prototype.fetch.toString());
     Backbone.Collection.prototype.fetch = function (options) {
-        options = options ? _.clone(options) : {};
+        options = (options==undefined || options==null ? {} : _.clone(options));
         options.sort = false;
         if (this.isNew) {
-            var newOptions = _.extend(_.deepClone(options), {
+            newOptions = _.extend(_.clone(options), {
                 reset: true,
                 silent:true,
                 originalOptions: options,
@@ -200,7 +200,6 @@
                     if (options.originalSuccess != undefined) {
                         options.originalSuccess(collection, response, options.originalOptions);
                     }
-                    //collection.trigger('sync', collection, response, options);
                 },
                 error: function (collection, xhr, options) {
                     if (options.originalError != undefined) {
@@ -208,9 +207,9 @@
                     }
                 }
             });
-            this._fetch(newOptions);
+            return this._fetch(newOptions);
         } else {
-            this._fetch(options);
+            return this._fetch(options);
         }
     };
 }).call(this);
