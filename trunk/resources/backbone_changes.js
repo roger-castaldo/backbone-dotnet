@@ -171,9 +171,13 @@
             if (this.collection.on != undefined) {
                 this.collection.on('reset', this.render, this);
                 this.collection.on('sync', this.render, this);
-                this.collection.on('add', this.render, this);
-                this.collection.on('remove', this.render, this);
                 this.collection.on('sort', this.render, this);
+                if (this.AddModel != undefined) {
+                    this.collection.on('add',this.AddModel,this);
+                }
+                if (this.RemoveModel != undefined) {
+                    this.collection.on('remove', this.RemoveModel, this);
+                }
             }
         }
         _.extend(this, _.omit(options, _.keys(this)));
