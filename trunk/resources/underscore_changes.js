@@ -1,4 +1,4 @@
-﻿_.extend = function () {
+_.extend = function () {
     var deep = (typeof arguments[0] == "boolean" ? arguments[0] == true : false);
     var sindex = (deep ? 2 : 1);
     var obj = arguments[(deep ? 1 : 0)];
