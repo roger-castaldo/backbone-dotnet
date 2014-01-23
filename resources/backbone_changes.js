@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     var wrapError = function (model, options) {
         var error = options.error;
         options.error = function (resp) {
