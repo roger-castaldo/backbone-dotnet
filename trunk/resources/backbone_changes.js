@@ -123,6 +123,35 @@
         options = _.extend(options, { async: false });
         return this.destroy(options);
     };
+    Backbone.Model.prototype.destroy = function (options) {
+        options = options ? _.clone(options) : {};
+        var model = this;
+        var success = options.success;
+
+        var destroy = function () {
+            model.trigger('destroy', model, model.collection, options);
+        };
+
+        options.success = function (resp) {
+            if (resp) {
+                if (options.wait || model.isNew()) destroy();
+                if (success) success(model, resp, options);
+                if (!model.isNew()) model.trigger('sync', model, resp, options);
+            } else if (options.error) {
+                options.error(model, response, options);
+            }
+        };
+
+        if (this.isNew()) {
+            options.success();
+            return false;
+        }
+        wrapError(this, options);
+
+        var xhr = this.sync('delete', this, options);
+        if (!options.wait) destroy();
+        return xhr;
+    };
     eval('Backbone.Model.prototype._origSave = ' + Backbone.Model.prototype.save.toString());
     eval('Backbone.Model.prototype._destroy = ' + Backbone.Model.prototype.destroy.toString());
     Backbone.Model.prototype._save = function (key, val, options) {
