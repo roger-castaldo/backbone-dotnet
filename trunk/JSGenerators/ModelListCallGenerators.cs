@@ -23,11 +23,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         if (mlm.Host == host || mlm.Host == "*")
                         {
+                            StringBuilder sbCurParameters = new StringBuilder();
+                            sbCurParameters.Append("function(){return {");
                             sb.Append(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(" + ModelNamespace.GetFullNameForModel(modelType, host) + ", {" + mi.Name + " : function(");
                             for (int x = 0; x < (mlm.Paged ? mi.GetParameters().Length-3 : mi.GetParameters().Length); x++)
                             {
                                 sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
+                                sbCurParameters.AppendLine((x == 0 ? "" : ",") + string.Format("'{0}':{0}", mi.GetParameters()[x].Name));
                             }
+                            sbCurParameters.Append("};}");
                             if (mlm.Paged)
                             {
                                 if (mi.GetParameters().Length != 3)
@@ -43,6 +47,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 @"pageStartIndex = (pageStartIndex == undefined ? 0 : (pageStartIndex == null ? 0 : pageStartIndex));
 pageSize = (pageSize == undefined ? 10 : (pageSize == null ? 10 : pageSize));
 var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" : "?")+@"PageStartIndex='+pageStartIndex+'&PageSize='+pageSize,
+    CurrentParameters:" + sbCurParameters.ToString() + @",
     currentIndex : pageStartIndex*pageSize,
     currentPageSize : pageSize,
     parse : function(response){
@@ -56,7 +61,7 @@ var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" :
     MoveToPage : function(pageNumber){
         if (pageNumber>=0 && pageNumber<this.TotalPages){
             this.currentIndex = pageNumber*this.currentPageSize;
-"+
+" +
                                                                    (mlm.Path.Contains("?") ? 
                                                                    "\t\t\tthis.url = this.url.substring(0,this.url.indexOf('&PageStartIndex='))+'&PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;" : 
                                                                    "\t\t\tthis.url = this.url.substring(0,this.url.indexOf('?'))+'?PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;") +
@@ -86,6 +91,7 @@ var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" :
                                     }
                                     sb.AppendLine("){"+urlCode);
                                     sb.AppendLine("url+='" + (mlm.Path.Contains("?") ? "&" : "?") + "PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;");
+                                    sb.AppendLine("this.CurrentParameters = " + sbCurParameters.ToString() + ";");
                                     sb.AppendLine(
 @"      this.currentIndex=0;
         this.url=url;
@@ -98,7 +104,7 @@ var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" :
                             else
                             {
                                 sb.AppendLine(
-@"var ret = Backbone.Collection.extend({url:url,parse : function(response){
+"var ret = Backbone.Collection.extend({url:url,CurrentParameters:" + sbCurParameters.ToString() + @",parse : function(response){
     if(response.Backbone!=undefined){
         _.extend(Backbone,response.Backbone);
         return response.response;
@@ -114,6 +120,7 @@ var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" :
                                         sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
                                     }
                                     sb.AppendLine("){"+urlCode);
+                                    sb.AppendLine("this.CurrentParameters = " + sbCurParameters.ToString() + ";");
                                     sb.AppendLine(
 @"      this.currentIndex=0;
         this.url=url;
