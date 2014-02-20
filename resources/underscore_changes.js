@@ -31,7 +31,7 @@ _.deepClone = function (obj, acceptKeys) {
     if (_.isArray(obj)) {
         ret = [];
         for (var x = 0; x < obj.length; x++) {
-            ret[x] = _.deepClone(obj[x],acceptKeys);
+            ret[x] = _.deepClone(obj[x],(acceptKeys.length==0 ? undefined : acceptKeys));
         }
     } else {
         switch (toString.call(obj)) {
@@ -47,7 +47,7 @@ _.deepClone = function (obj, acceptKeys) {
                 } else {
                     ret = {};
                     for(var x=0;x<acceptKeys.length;x++){
-                        ret[acceptKeys[x]] = _.deepClone(obj[acceptKeys[x]],acceptKeys);
+                        ret[acceptKeys[x]] = _.deepClone(obj[acceptKeys[x]], (acceptKeys.length == 0 ? undefined : acceptKeys));
                     }
                 }
                 break;
