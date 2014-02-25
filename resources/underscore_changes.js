@@ -55,3 +55,11 @@ _.deepClone = function (obj, acceptKeys) {
     }
     return ret;
 };
+
+_.extractUTCDate = function (date) {
+    var ret = date;
+    if (!(date instanceof Date)) {
+        ret = new Date(date);
+    }
+    return Date.UTC(ret.getUTCFullYear(), ret.getUTCMonth(), ret.getUTCDate(), ret.getUTCHours(), ret.getUTCMinutes(), ret.getUTCSeconds());
+};
