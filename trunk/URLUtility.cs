@@ -246,29 +246,19 @@ namespace Org.Reddragonit.BackBoneDotNet
             if (pars.Length > 0)
             {
                 string[] pNames = new string[pars.Length];
-                StringBuilder sb = new StringBuilder();
                 for (int x = 0; x < (mlm.Paged ? pars.Length -3 : pars.Length); x++)
                 {
-                    sb.AppendLine("if (" + pars[x].Name + " == undefined){");
-                    sb.AppendLine("\t" + pars[x].Name + " = null;");
-                    sb.AppendLine("}");
-                    sb.AppendLine("if (" + pars[x].Name + " == null){");
-                    sb.AppendLine("\t" + pars[x].Name + " = 'NULL';");
-                    sb.AppendLine("}");
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append("'+(");
                     if (pars[x].ParameterType == typeof(bool))
-                        sb.AppendLine(pars[x].Name + " = (" + pars[x].Name + " == null ? 'false' : ("+pars[x].Name+" ? 'true' : 'false'));");
-                    else if (pars[x].ParameterType == typeof(DateTime)){
-                        sb.AppendLine("if (" + pars[x].Name + " != 'NULL'){");
-                        sb.AppendLine("\tif (!(" + pars[x].Name + " instanceof Date)){");
-                        sb.AppendLine("\t\t" + pars[x].Name + " = new Date(" + pars[x].Name + ");");
-                        sb.AppendLine("\t}");
-                        sb.AppendLine("\t" + pars[x].Name + " = Date.UTC(" + pars[x].Name + ".getUTCFullYear(), " + pars[x].Name + ".getUTCMonth(), " + pars[x].Name + ".getUTCDate(),  " + pars[x].Name + ".getUTCHours(), " + pars[x].Name + ".getUTCMinutes(), " + pars[x].Name + ".getUTCSeconds());");
-                        sb.AppendLine("}");
-                    }
-                    pNames[x] = "'+"+pars[x].Name+"+'";
+                        sb.AppendFormat("{0}==undefined ? 'false' : ({0}==null ? 'false' : ({0} ? 'true' : 'false')))+'",pars[x].Name);
+                    else if (pars[x].ParameterType == typeof(DateTime))
+                        sb.AppendFormat("{0}==undefined ? 'NULL' : ({0}==null ? 'NULL' : _.extractUTCDate({0})))+'",pars[x].Name);
+                    else
+                        sb.AppendFormat("{0}==undefined ? 'NULL' : ({0} == null ? 'NULL' : {0}))+'",pars[x].Name);
+                    pNames[x] = sb.ToString();
                 }
-                sb.AppendLine("var url='" + string.Format((mlm.Path.StartsWith("/") ? mlm.Path : "/" + mlm.Path).TrimEnd('/'), pNames) + "';");
-                return sb.ToString();
+                return "var url='" + string.Format((mlm.Path.StartsWith("/") ? mlm.Path : "/" + mlm.Path).TrimEnd('/'), pNames) + "';";
             }
             else
                 return "var url='" + (mlm.Path.StartsWith("/") ? mlm.Path : "/" + mlm.Path).TrimEnd('/') + "';";
