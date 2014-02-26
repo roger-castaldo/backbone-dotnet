@@ -412,8 +412,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             if (_running)
             {
                 Logger.Debug("Checking if url " + url.ToString()+ " is handled by the Backbone request handler");
-                if (!_RPC_URL.IsMatch(method.ToUpper(), url.Host, url.AbsolutePath))
-                    return _RPC_SELECT.IsMatch(method.ToUpper(), url.Host, url.AbsolutePath+(url.Query!="" ? url.Query : ""));
+                if (!_RPC_URL.IsMatch(method.ToUpper(), url.Host, Uri.UnescapeDataString(url.AbsolutePath)))
+                    return _RPC_SELECT.IsMatch(method.ToUpper(), url.Host, Uri.UnescapeDataString(url.AbsolutePath) + (url.Query != "" ? url.Query : ""));
                 else
                     return true;
             }
@@ -436,25 +436,25 @@ namespace Org.Reddragonit.BackBoneDotNet
             string message=null;
             if (request.URL.AbsolutePath.EndsWith(".js") && request.Method.ToUpper() == "GET")
             {
-                if (request.IsJsURLAllowed(request.URL.AbsolutePath, out status, out message))
+                if (request.IsJsURLAllowed(Uri.UnescapeDataString(request.URL.AbsolutePath), out status, out message))
                 {
                     message = null;
                     request.SetResponseContentType("text/javascript");
-                    if (request.URL.AbsolutePath == (_jqueryURL == null ? "" : _jqueryURL))
+                    if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_jqueryURL == null ? "" : _jqueryURL))
                     {
                         Logger.Trace("Sending jquery javascript response through backbone handler");
                         request.SetResponseStatus(200);
                         request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.jquery.min.js"));
                         request.SendResponse();
                     }
-                    else if (request.URL.AbsolutePath == (_jsonURL == null ? "" : _jsonURL))
+                    else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_jsonURL == null ? "" : _jsonURL))
                     {
                         Logger.Trace("Sending json javascript response through backbone handler");
                         request.SetResponseStatus(200);
                         request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.json2.min.js"));
                         request.SendResponse();
                     }
-                    else if (request.URL.AbsolutePath == (_backboneURL == null ? "" : _backboneURL))
+                    else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_backboneURL == null ? "" : _backboneURL))
                     {
                         Logger.Trace("Sending modified backbone javascript response through backbone handler");
                         request.SetResponseStatus(200);
@@ -466,26 +466,26 @@ namespace Org.Reddragonit.BackBoneDotNet
                         bool found = false;
                         lock (_CachedJScript)
                         {
-                            if (_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
+                            if (_CachedJScript.ContainsKey(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath)))
                             {
                                 Logger.Trace("Sending cached javascript response for path " + request.URL.Host + request.URL.AbsolutePath);
                                 found = true;
                                 request.SetResponseStatus(200);
-                                request.WriteContent((string)_CachedJScript[request.URL.Host + request.URL.AbsolutePath].Value);
+                                request.WriteContent((string)_CachedJScript[request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath)].Value);
                                 request.SendResponse();
                             }
                         }
                         if (!found)
                         {
-                            Logger.Trace("Buidling model javascript for path " + request.URL.Host + request.URL.AbsolutePath);
+                            Logger.Trace("Buidling model javascript for path " + request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath));
                             StringBuilder sb = new StringBuilder();
                             foreach (Type t in Utility.LocateTypeInstances(typeof(IModel)))
                             {
                                 foreach (ModelJSFilePath mj in t.GetCustomAttributes(typeof(ModelJSFilePath), false))
                                 {
-                                    if ((mj.Host == "*" || mj.Host == request.URL.Host) && mj.Path == request.URL.AbsolutePath)
+                                    if ((mj.Host == "*" || mj.Host == request.URL.Host) && mj.Path == Uri.UnescapeDataString(request.URL.AbsolutePath))
                                     {
-                                        Logger.Trace("Appending model " + t.FullName + " to path " + request.URL.Host + request.URL.AbsolutePath);
+                                        Logger.Trace("Appending model " + t.FullName + " to path " + request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath));
                                         sb.Append(_GenerateModelJSFile(t, request.URL.Host));
                                     }
                                 }
@@ -499,8 +499,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 request.WriteContent(comp);
                                 lock (_CachedJScript)
                                 {
-                                    if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
-                                        _CachedJScript.Add(request.URL.Host + request.URL.AbsolutePath, new CachedItemContainer(comp));
+                                    if (!_CachedJScript.ContainsKey(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath)))
+                                        _CachedJScript.Add(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath), new CachedItemContainer(comp));
                                 }
                             }
                             else
@@ -509,7 +509,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 lock (_CachedJScript)
                                 {
                                     if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
-                                        _CachedJScript.Add(request.URL.Host + request.URL.AbsolutePath, new CachedItemContainer(sb.ToString()));
+                                        _CachedJScript.Add(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath), new CachedItemContainer(sb.ToString()));
                                 }
                             }
                             request.SendResponse();
