@@ -70,6 +70,18 @@ namespace Org.Reddragonit.BackBoneDotNet
                         invalidModels.Add(t);
                         errors.Add(new NoRouteException(t));
                     }
+                    bool genView = true;
+                    bool genCollection=true;
+                    bool genCollectionView=true;
+                    bool genEditForm=true;
+                    if (t.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration),false).Length > 0)
+                    {
+                        ModelBlockJavascriptGeneration mdjg = (ModelBlockJavascriptGeneration)t.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false)[0];
+                        genView = !(((int)mdjg.BlockType&(int)ModelBlockJavascriptGenerations.View) == (int)ModelBlockJavascriptGenerations.View);
+                        genCollection = !(((int)mdjg.BlockType & (int)ModelBlockJavascriptGenerations.Collection) == (int)ModelBlockJavascriptGenerations.Collection);
+                        genCollectionView = !(((int)mdjg.BlockType & (int)ModelBlockJavascriptGenerations.CollectionView) == (int)ModelBlockJavascriptGenerations.CollectionView);
+                        genEditForm = !(((int)mdjg.BlockType & (int)ModelBlockJavascriptGenerations.EditForm) == (int)ModelBlockJavascriptGenerations.EditForm);
+                    }
                     bool hasAdd = false;
                     bool hasUpdate = false;
                     bool hasDelete = false;
@@ -376,7 +388,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                         break;
                                     }
                                 }
-                                if (!foundSelMethod && (hasAdd || hasUpdate))
+                                if (!foundSelMethod && (hasAdd || hasUpdate) && genEditForm)
                                 {
                                     if (!invalidModels.Contains(t))
                                         invalidModels.Add(t);
