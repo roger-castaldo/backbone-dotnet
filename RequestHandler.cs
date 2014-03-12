@@ -434,6 +434,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             Logger.Debug("Handling backbone request for path " + request.URL.ToString());
             int status=-1;
             string message=null;
+            bool allowNullResponse = false;
             if (request.URL.AbsolutePath.EndsWith(".js") && request.Method.ToUpper() == "GET")
             {
                 if (request.IsJsURLAllowed(Uri.UnescapeDataString(request.URL.AbsolutePath), out status, out message))
@@ -898,6 +899,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                             }
                             else
                             {
+                                allowNullResponse = ((ExposedMethod)mi.GetCustomAttributes(typeof(ExposedMethod), false)[0]).AllowNullResponse;
+                                message = null;
                                 try
                                 {
                                     if (mi.ReturnType == typeof(void))
@@ -918,7 +921,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         break;
                 }
                 request.SetResponseContentType("application/json");
-                if (ret != null)
+                if (ret != null || (allowNullResponse&&message==null))
                 {
                     Logger.Trace("Request successfully handled, sending response");
                     request.SetResponseStatus(200);
