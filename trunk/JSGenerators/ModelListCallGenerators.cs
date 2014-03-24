@@ -7,6 +7,10 @@ using Org.Reddragonit.BackBoneDotNet.Attributes;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator generates the javascript code for a model list call
+     * The function call object will exist as the path namespace.type.{FunctionName}
+     */
     internal class ModelListCallGenerators : IJSGenerator
     {
         #region IJSGenerator Members

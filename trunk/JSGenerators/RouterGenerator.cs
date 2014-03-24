@@ -7,6 +7,9 @@ using System.Text.RegularExpressions;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator extends the Router code with additional hash routers found in the Model Definition
+     */
     public class RouterGenerator : IJSGenerator
     {
         private static readonly Regex _REG_PARS = new Regex(":([^/\\)]+)", RegexOptions.Compiled | RegexOptions.ECMAScript);

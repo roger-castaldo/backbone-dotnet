@@ -4,6 +4,12 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to define error messages that can be accessed in the javascript code.
+     * Language is a 2 character language ISO code
+     * message Name is the name of it, this would then be called through Backbone.TranslateValidationError(MessageName)
+     * Message is the actual message value
+     */
     [AttributeUsage(AttributeTargets.Class,AllowMultiple=true)]
     public class ModelErrorMessage : Attribute
     {

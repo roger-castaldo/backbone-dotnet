@@ -4,6 +4,11 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to indicate a non-default code for a edit button on a given model.  This is used when 
+     * using the built in View generating code instead of specifying your own.  It also implements the 
+     * edit button event call that will call model.delete
+     */
     [AttributeUsage(AttributeTargets.Class,AllowMultiple=false)]
     public class EditButtonDefinition : Attribute
     {

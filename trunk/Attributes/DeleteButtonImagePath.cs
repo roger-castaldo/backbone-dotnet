@@ -4,6 +4,11 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to indicate an image for a delete button instead of the base code.  
+     * Specify the image url for a given host and it will generate the delete button with the image
+     * including the event triggers.  Only used when using the default View code generator.
+     */
     [AttributeUsage(AttributeTargets.Class,AllowMultiple=false)]
     public class DeleteButtonImagePath : Attribute
     {

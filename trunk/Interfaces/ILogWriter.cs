@@ -11,6 +11,9 @@ namespace Org.Reddragonit.BackBoneDotNet.Interfaces
         Critical = 0
     }
 
+    /*
+     * Implement this interface to allow interception of the Logging calls from the code.
+     */
     public interface ILogWriter
     {
         void WriteLogMessage(DateTime timestamp, LogLevels level, string message);

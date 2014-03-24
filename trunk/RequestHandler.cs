@@ -427,7 +427,7 @@ namespace Org.Reddragonit.BackBoneDotNet
          * javascript for the given url, as specified by an attribute or attributes in Models, that define the 
          * url that the model/view/collection javascript is available on.
          * If the call is not for javascript it processes the given action using the http method (GET = load,
-         * DELETE = delete, POST = create, PUT = update, SELECT = SelectList)
+         * DELETE = delete, POST = create, PUT = update, SELECT = SelectList, SMETHOD = StaticMethodCall, METHOD = MethodCall)
          */
         public static void HandleRequest(IHttpRequest request)
         {
