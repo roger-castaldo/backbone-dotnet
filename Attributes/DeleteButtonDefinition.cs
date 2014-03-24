@@ -4,6 +4,11 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to indicate a non-default code for a delete button on a given model.  This is used when 
+     * using the built in View generating code instead of specifying your own.  It also implements the 
+     * delete button event call that will call model.delete
+     */
     [AttributeUsage(AttributeTargets.Class,AllowMultiple=false)]
     public class DeleteButtonDefinition : Attribute
     {

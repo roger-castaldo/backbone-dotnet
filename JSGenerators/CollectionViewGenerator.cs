@@ -6,6 +6,10 @@ using Org.Reddragonit.BackBoneDotNet.Attributes;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator generates the javascript code for a model CollectionView.
+     * The collection object will exist as the path namespace.type.CollectionView
+     */
     internal class CollectionViewGenerator : IJSGenerator
     {
         private void _AppendClassName(Type modelType,string host, StringBuilder sb)

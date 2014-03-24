@@ -4,6 +4,9 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to specify the namespace in the generated javascript code that this IModel class will belong to
+     */
     [AttributeUsage(AttributeTargets.Class,AllowMultiple=true)]
     public class ModelNamespace : Attribute
     {

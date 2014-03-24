@@ -7,6 +7,12 @@ using Org.Reddragonit.BackBoneDotNet.Attributes;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator generates the javascript code for a static exposed method
+     * The function call object will exist as the path namespace.type.{FunctionName}
+     * This also generates the non-static exposed methods
+     * Those function calls will be accessibel from an instance of the Model().{FunctionName} as the load the model when the call is made.
+     */
     internal class StaticExposedMethodGenerator : IJSGenerator
     {
         internal static void AppendMethodCall(string urlRoot,string host,MethodInfo mi,ref StringBuilder sb){

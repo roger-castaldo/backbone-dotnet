@@ -4,6 +4,11 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to specify a regular expression for validating the field specified
+     * and allow for the error message to be specified when the regex check fails,
+     * this checks get called on model.validate()
+     */
     [AttributeUsage(AttributeTargets.Property,AllowMultiple=true)]
     public class ModelFieldValidationRegex : Attribute
     {

@@ -7,6 +7,9 @@ using System.Collections;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
+    /*
+     * This generator extends the Backbone Error Messages component to include the Error Messages defined in the given model class.
+     */
     internal class ErrorMessageGenerator : IJSGenerator
     {
         private void _RecurAdd(string[] messageName, string message, int index, ref Hashtable ht)

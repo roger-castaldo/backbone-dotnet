@@ -4,6 +4,10 @@ using System.Text;
 
 namespace Org.Reddragonit.BackBoneDotNet.Attributes
 {
+    /*
+     * Used to add a route to the Backbone Hash Router, specify the name, path and the javascript code
+     * called by the route.  Suggest using the name Router for the router name as it is the standard.
+     */
     [AttributeUsage(AttributeTargets.Class,AllowMultiple=true,Inherited=false)]
     public class BackboneHashRoute : Attribute
     {
