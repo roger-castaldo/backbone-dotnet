@@ -81,6 +81,14 @@ namespace Org.Reddragonit.BackBoneDotNet
         { }
     }
 
+    //thrown when the ModelSelectList function is not static
+    public class InvalidModelSelectStaticException : Exception
+    {
+        public InvalidModelSelectStaticException(Type t, MethodInfo mi)
+            : base("The IModel type " + t.FullName + " is not valid because the ModelSelectList function " + mi.Name + " is not static.")
+        { }
+    }
+
     //thrown when no model select method is specified but another model uses that type as a property
     public class NoModelSelectMethodException : Exception
     {

@@ -15,7 +15,7 @@ namespace Org.Reddragonit.BackBoneDotNet
     public static class RequestHandler
     {
         //structure to be used for model list call checks
-        private struct sModelListCall
+        private struct sModelListCall : IComparable
         {
             private string _path;
             private Regex _reg;
@@ -94,6 +94,12 @@ namespace Org.Reddragonit.BackBoneDotNet
                         break;
                     }
                 }
+            }
+
+            public int CompareTo(object obj)
+            {
+                sModelListCall mlc = (sModelListCall)obj;
+                return mlc._method.GetParameters().Length - _method.GetParameters().Length;
             }
         }
 
@@ -345,6 +351,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                     hasUpdate = true;
                 }
             }
+            SelectList.Sort();
             foreach (ModelRoute mr in t.GetCustomAttributes(typeof(ModelRoute), false))
             {
                 Logger.Trace("Adding route " + mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/') + " for type " + t.FullName);
@@ -357,7 +364,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 }
                 if (hasAdd)
                     _RPC_URL.AddMethod("POST", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'));
-                if (SelectList != null)
+                if (SelectList.Count>0)
                 {
                     _RPC_URL.AddMethod("SELECT", mr.Host, (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'));
                     _SelectLists.Add(mr.Host + (mr.Path.StartsWith("/") ? mr.Path : "/" + mr.Path).TrimEnd('/'), SelectList);

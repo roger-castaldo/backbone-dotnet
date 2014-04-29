@@ -236,6 +236,12 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     invalidModels.Add(t);
                                 errors.Add(new InvalidModelSelectOptionValueReturnException(t, mi));
                             }
+                            else if (!mi.IsStatic)
+                            {
+                                if (!invalidModels.Contains(t))
+                                    invalidModels.Add(t);
+                                errors.Add(new InvalidModelSelectStaticException(t, mi));
+                            }
                             else
                             {
                                 //    if (foundLoadSelMethod)

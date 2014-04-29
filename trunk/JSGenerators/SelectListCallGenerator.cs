@@ -45,12 +45,33 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 if (mi.GetCustomAttributes(typeof(ModelSelectListMethod), false).Length > 0)
                     methods.Add(mi);
             }
+            int curLen = 0;
+            for (int x = 0; x < methods.Count; x++)
+                curLen = Math.Max(methods[x].GetParameters().Length, curLen);
+            int index = 0;
+            while (index < methods.Count)
+            {
+                for (int x = index; x < methods.Count; x++)
+                {
+                    if (curLen == methods[x].GetParameters().Length)
+                    {
+                        MethodInfo mi = methods[x];
+                        methods.RemoveAt(x);
+                        methods.Insert(index, mi);
+                        index++;
+                        x = index - 1;
+                    }
+                }
+                curLen = 0;
+                for (int x = index; x < methods.Count; x++)
+                    curLen = Math.Max(methods[x].GetParameters().Length, curLen);
+            }
             if (methods.Count > 0)
             {
                 sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ",{SelectList : function(pars){");
                 for (int x = 0; x < methods.Count; x++)
                 {
-                    sb.Append("\t"+(x == 0 ? "" : "else ") + "if(");
+                    sb.Append("\t" + (x == 0 ? "" : "else ") + "if(");
                     if (methods[x].GetParameters().Length == 0)
                     {
                         sb.AppendLine("pars==undefined || pars==null){");
@@ -63,7 +84,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         code.AppendLine("\t\turl='?';");
                         for (int y = 0; y < pars.Length; y++)
                         {
-                            sb.Append((y!=0 ? " && " : "")+"pars." + pars[y].Name + "!=undefined");
+                            sb.Append((y != 0 ? " && " : "") + "pars." + pars[y].Name + "!=undefined");
                             code.AppendLine("\t\tpars." + pars[y].Name + " = (pars." + pars[y].Name + " == null ? 'NULL' : pars." + pars[y].Name + ");");
                             if (pars[y].ParameterType == typeof(bool))
                                 code.AppendLine("pars." + pars[y].Name + " = (pars." + pars[y].Name + " == null ? 'false' : (pars." + pars[y].Name + " ? 'true' : 'false'));");
@@ -76,7 +97,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 code.AppendLine("\tpars." + pars[y].Name + " = Date.UTC(pars." + pars[y].Name + ".getUTCFullYear(), pars." + pars[y].Name + ".getUTCMonth(), pars." + pars[y].Name + ".getUTCDate(), pars." + pars[y].Name + ".getUTCHours(), pars." + pars[y].Name + ".getUTCMinutes(), pars." + pars[y].Name + ".getUTCSeconds());");
                                 code.AppendLine("}");
                             }
-                            code.AppendLine("\t\turl+='"+(y==0 ? "" : "&") + pars[y].Name + "='+pars." + pars[y].Name + ".toString();");
+                            code.AppendLine("\t\turl+='" + (y == 0 ? "" : "&") + pars[y].Name + "='+pars." + pars[y].Name + ".toString();");
                         }
                         sb.AppendLine("){");
                         sb.Append(code.ToString());
@@ -100,7 +121,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     }
 return response;
 }});");
-                    
+
             }
             return sb.ToString();
         }
