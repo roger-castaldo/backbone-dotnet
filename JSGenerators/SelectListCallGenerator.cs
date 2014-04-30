@@ -82,6 +82,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         ParameterInfo[] pars = methods[x].GetParameters();
                         StringBuilder code = new StringBuilder();
                         code.AppendLine("\t\turl='?';");
+                        sb.Append("pars!=undefined && pars!=null && (");
                         for (int y = 0; y < pars.Length; y++)
                         {
                             sb.Append((y != 0 ? " && " : "") + "pars." + pars[y].Name + "!=undefined");
@@ -99,7 +100,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             }
                             code.AppendLine("\t\turl+='" + (y == 0 ? "" : "&") + pars[y].Name + "='+pars." + pars[y].Name + ".toString();");
                         }
-                        sb.AppendLine("){");
+                        sb.AppendLine(")){");
                         sb.Append(code.ToString());
                     }
                     sb.AppendLine("}");
