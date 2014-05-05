@@ -42,6 +42,8 @@
         }
     });
 
+    Backbone.Model.prototype.isModel = function () { return true;}
+
     Backbone.Model.prototype.get = function (attr) {
         if (this.LazyLoadAttributes != undefined) {
             for (var x = 0; x < this.LazyLoadAttributes.length; x++) {
@@ -82,6 +84,13 @@
         }
         return this.attributes[attr];
     };
+    eval('Backbone.Model.prototype._fetch = '+Backbone.Model.prototype.fetch.toString());
+    Backbone.Model.prototype.fetch = function (options) {
+        options = options ? _.clone(options) : {};
+        if (options.parse === void 0) options.parse = true;
+        options.reset = true;
+        return this._fetch(options);
+    },
     eval('Backbone.Model.prototype._set = ' + Backbone.Model.prototype.set.toString());
     Backbone.Model.prototype.set = function (key, val, options) {
         if (key == null) return this;
@@ -93,10 +102,12 @@
         } else {
             (attrs = {})[key] = val;
         }
-        this._changedFields = (this._changedFields == undefined ? [] : this._changedFields);
-        for (var k in attrs) {
-            if (!_.isEqual(this.attributes[k], attrs[k]) && this._changedFields.indexOf(k) < 0) {
-                this._changedFields.push(k);
+        if (options != undefined && !options.reset) {
+            this._changedFields = (this._changedFields == undefined ? [] : this._changedFields);
+            for (var k in attrs) {
+                if (!_.isEqual((this.attributes[k] == undefined ? null : (this.attributes[k].isModel != undefined && this.attributes[k].isModel() ? this.attributes[k].id : this.attributes[k])), (this.attributes[k] == undefined ? attrs[k] : (this.attributes[k].isModel != undefined && this.attributes[k].isModel() ? attrs[k].id : attrs[k]))) && this._changedFields.indexOf(k) < 0) {
+                    this._changedFields.push(k);
+                }
             }
         }
         return this._set(attrs, options);
