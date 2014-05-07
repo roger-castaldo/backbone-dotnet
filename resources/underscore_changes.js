@@ -6,7 +6,10 @@ _.extend = function () {
         if (source) {
             for (var prop in source) {
                 if (obj[prop] != undefined && deep) {
-                    if (_.isObject(obj[prop])) {
+                    if (_.isFunction(obj[prop])){
+                        obj[prop] = source[prop];
+                    }
+                    else if (_.isObject(obj[prop])) {
                         obj[prop] = _.extend(deep, obj[prop], source[prop]);
                     } else {
                         obj[prop] = source[prop];
