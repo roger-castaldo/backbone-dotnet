@@ -77,13 +77,13 @@ var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" :
         this.MoveToPage(Math.floor(this.currentIndex/pageSize));
     },
     MoveToNextPage : function(){
-        if(Math.floor(this.currentIndex/pageSize)+1<this.TotalPages){
-            this.MoveToPage(Math.floor(this.currentIndex/pageSize)+1);
+        if(Math.floor(this.currentIndex/this.currentPageSize)+1<this.TotalPages){
+            this.MoveToPage(Math.floor(this.currentIndex/this.currentPageSize)+1);
         }
     },
     MoveToPreviousPage : function(){
-        if(Math.floor(this.currentIndex/pageSize)-1>=0){
-            this.MoveToPage(Math.floor(this.currentIndex/pageSize)-1);
+        if(Math.floor(this.currentIndex/this.currentPageSize)-1>=0){
+            this.MoveToPage(Math.floor(this.currentIndex/this.currentPageSize)-1);
         }
     },");
                                 if (mi.GetParameters().Length > 0)
