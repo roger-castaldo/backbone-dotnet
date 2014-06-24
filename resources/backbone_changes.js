@@ -1,11 +1,4 @@
 (function () {
-    var wrapError = function (model, options) {
-        var error = options.error;
-        options.error = function (resp) {
-            if (error) error(model, resp, options);
-            model.trigger('error', model, resp, options);
-        };
-    };
     Backbone = _.extend(Backbone, {
         ErrorMessages: {},
         Language: 'en',
@@ -157,14 +150,37 @@
             options.success();
             return false;
         }
-        wrapError(this, options);
+        if (this.wrapError == undefined) {
+            this.wrapError = function (model, options) {
+                var error = options.error;
+                options.error = function (resp) {
+                    if (error) error(model, resp, options);
+                    model.trigger('error', model, resp, options);
+                };
+            };
+        }
+        this.wrapError(this, options);
 
         var xhr = this.sync('delete', this, options);
         if (!options.wait) destroy();
         return xhr;
     };
-    eval('Backbone.Model.prototype._origSave = ' + Backbone.Model.prototype.save.toString());
-    eval('Backbone.Model.prototype._destroy = ' + Backbone.Model.prototype.destroy.toString());
+    eval('var wrapError = function (model, options) { \
+        var error = options.error; \
+        options.error = function (resp) { \
+            if (error) error(model, resp, options); \
+            model.trigger(\'error\', model, resp, options); \
+        }; \
+    };\
+    Backbone.Model.prototype._origSave = ' + Backbone.Model.prototype.save.toString());
+    eval('var wrapError = function (model, options) { \
+        var error = options.error; \
+        options.error = function (resp) { \
+            if (error) error(model, resp, options); \
+            model.trigger(\'error\', model, resp, options); \
+        }; \
+    };\
+    Backbone.Model.prototype._destroy = ' + Backbone.Model.prototype.destroy.toString());
     Backbone.Model.prototype._save = function (key, val, options) {
         Backbone.Model.prototype._baseSave(key, val, options);
     };
@@ -228,7 +244,14 @@
     Backbone.Collection.prototype.initialize = function () {
         this.isNew = true;
     };
-    eval('Backbone.Collection.prototype._fetch = ' + Backbone.Collection.prototype.fetch.toString());
+    eval('var wrapError = function (model, options) { \
+        var error = options.error; \
+        options.error = function (resp) { \
+            if (error) error(model, resp, options); \
+            model.trigger(\'error\', model, resp, options); \
+        }; \
+    };\
+    Backbone.Collection.prototype._fetch = ' + Backbone.Collection.prototype.fetch.toString());
     Backbone.Collection.prototype.fetch = function (options) {
         options = (options==undefined || options==null ? {} : _.clone(options));
         options.sort = false;

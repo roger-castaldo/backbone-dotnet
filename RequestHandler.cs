@@ -236,6 +236,8 @@ namespace Org.Reddragonit.BackBoneDotNet
         //to rescan for all new model types and add them accordingly.
         public static void AssemblyAdded()
         {
+            if (_loadedTypes == null) 
+                throw new Exception("Unable to Load Additional Assemblies, Handler has not been started.");
             Utility.ClearCaches();
             _running = false;
             List<Exception> errors = DefinitionValidator.Validate(out _invalidModels);
