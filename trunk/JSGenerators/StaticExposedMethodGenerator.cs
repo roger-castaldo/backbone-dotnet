@@ -174,7 +174,7 @@ response=ret;", ModelNamespace.GetFullNameForModel(propType, host)));
                 if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
                     AppendMethodCall(urlRoot,host, mi, ref sb);
             }
-            if (sb.ToString().EndsWith(","))
+            while (sb.ToString().TrimEnd().EndsWith(","))
                 sb.Length = sb.Length - 1;
             sb.AppendLine("});");
             return sb.ToString();
