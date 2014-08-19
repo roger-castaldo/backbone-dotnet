@@ -54,6 +54,7 @@ var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" :
     CurrentParameters:" + sbCurParameters.ToString() + @",
     currentIndex : pageStartIndex*pageSize,
     currentPageSize : pageSize,
+    CurrentPage : Math.floor(pageStartIndex/pageSize),
     parse : function(response){
         if(response.Backbone!=undefined){
             _.extend(Backbone,response.Backbone);
@@ -70,6 +71,7 @@ var ret = Backbone.Collection.extend({url:url+'"+(mlm.Path.Contains("?") ? "&" :
                                                                    "\t\t\tthis.url = this.url.substring(0,this.url.indexOf('&PageStartIndex='))+'&PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;" : 
                                                                    "\t\t\tthis.url = this.url.substring(0,this.url.indexOf('?'))+'?PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;") +
 @"          this.fetch();
+            this.CurrentPage=pageNumber;
         }
     },
     ChangePageSize : function(pageSize){
