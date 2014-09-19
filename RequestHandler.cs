@@ -968,6 +968,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                 Backbone.Add("Language", "en");
             else if (!request.AcceptLanguageHeaderValue.Contains(";"))
                 Backbone.Add("Language",request.AcceptLanguageHeaderValue.Split('-')[0]);
+            else if (request.AcceptLanguageHeaderValue.Split(';')[0].Split(',')[1].Trim().Contains("-"))
+                Backbone.Add("Language", request.AcceptLanguageHeaderValue.Split(';')[0].Split(',')[1].Split('-')[0].Trim());
             else
                 Backbone.Add("Language", request.AcceptLanguageHeaderValue.Split(';')[0].Split(',')[1].Trim());
             Hashtable ht = request.AdditionalBackboneVariables;
