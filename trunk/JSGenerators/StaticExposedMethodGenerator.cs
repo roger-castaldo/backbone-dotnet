@@ -15,7 +15,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
      */
     internal class StaticExposedMethodGenerator : IJSGenerator
     {
-        internal static void AppendMethodCall(string urlRoot,string host,MethodInfo mi,ref StringBuilder sb){
+        internal static void AppendMethodCall(string urlRoot,string host,MethodInfo mi,bool allowNull,ref StringBuilder sb){
             sb.Append(string.Format("\t{0}:function(", mi.Name));
             ParameterInfo[] pars = mi.GetParameters();
             for (int x = 0; x < pars.Length; x++)
@@ -76,7 +76,8 @@ for(var x=0;x<{0}.length;x++){{
             mi.Name,
             (mi.ReturnType == typeof(void) ? "" : "var ret = "),
             (mi.ReturnType == typeof(void) ? "" : ".responseText"),
-            (mi.ReturnType==typeof(void) ? "" : @"var response = JSON.parse(ret);
+            (mi.ReturnType==typeof(void) ? "" : @"if (ret!=undefined){
+    var response = JSON.parse(ret);
     if(response.Backbone!=undefined){
         _.extend(Backbone,response.Backbone);
         response=response.response;
@@ -108,6 +109,12 @@ for(var x=0;x<{0}.length;x++){{
                         propType = propType.GetGenericArguments()[0];
                     }
                 }
+                sb.AppendLine("if (response==null){");
+                if (!allowNull)
+                    sb.AppendLine("throw \"A null response was returned by the server which is invalid.\";");
+                else
+                    sb.AppendLine("return response;");
+                sb.AppendLine("}else{");
                 if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                 {
                     if (array)
@@ -135,7 +142,8 @@ ret.attributes = ret.parse(response);
 response=ret;", ModelNamespace.GetFullNameForModel(propType, host)));
                     }
                 }
-                sb.AppendLine("return response;");
+                sb.AppendLine(@"}
+return response;}else{return null;}");
             }
             sb.AppendLine("},");
         }
@@ -172,7 +180,7 @@ response=ret;", ModelNamespace.GetFullNameForModel(propType, host)));
             foreach (MethodInfo mi in modelType.GetMethods(BindingFlags.Public | BindingFlags.Static))
             {
                 if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
-                    AppendMethodCall(urlRoot,host, mi, ref sb);
+                    AppendMethodCall(urlRoot,host, mi,((ExposedMethod)mi.GetCustomAttributes(typeof(ExposedMethod), false)[0]).AllowNullResponse, ref sb);
             }
             while (sb.ToString().TrimEnd().EndsWith(","))
                 sb.Length = sb.Length - 1;
