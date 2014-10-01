@@ -316,7 +316,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             foreach (MethodInfo mi in modelType.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
-                    StaticExposedMethodGenerator.AppendMethodCall(urlRoot,host, mi, ref sb);
+                    StaticExposedMethodGenerator.AppendMethodCall(urlRoot,host, mi,((ExposedMethod)mi.GetCustomAttributes(typeof(ExposedMethod), false)[0]).AllowNullResponse, ref sb);
             }
         }
 
