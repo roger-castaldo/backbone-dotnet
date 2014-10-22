@@ -135,7 +135,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 ptype == typeof(float))
                 ret = "(-?\\d+(.\\d+)?" + (nullable ? "|NULL" : "") + ")";
             else if (ptype == typeof(bool))
-                ret = "(true|false)";
+                ret = "(true|false"+(nullable ? "|NULL":"")+")";
             else if (ptype.IsEnum)
             {
                 ret = "(";
