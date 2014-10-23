@@ -16,10 +16,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete,bool minimize)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.RouterGenerator");
+            WrappedStringBuilder sb = new WrappedStringBuilder(minimize);
+            if (!minimize)
+                sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.RouterGenerator");
             Dictionary<string, List<BackboneHashRoute>> routes = new Dictionary<string, List<BackboneHashRoute>>();
             foreach (BackboneHashRoute bhr in modelType.GetCustomAttributes(typeof(BackboneHashRoute), false))
             {
@@ -41,7 +42,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         string tmp = "";
                         foreach (string str in ModelNamespace.GetFullNameForModel(modelType, host).Split('.'))
                         {
-                            sb.AppendLine(string.Format("{1}{0} = {2}{0} || {{}};",
+                            sb.AppendLine(string.Format((minimize ? "{1}{0}={2}{0}||{{}};" : "{1}{0} = {2}{0} || {{}};"),
                                 str,
                                 (tmp.Length == 0 ? "var " : tmp+"."),
                                 (tmp.Length == 0 ? "" : tmp + ".")));
@@ -49,14 +50,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         }
                     }
                     else
-                        sb.AppendLine(string.Format("var {0} = {0} || {{}};", routerName));
-                    sb.AppendLine(string.Format(
-@"if (!Backbone.History.started){{
+                        sb.AppendLine(string.Format((minimize ? "var {0}={0}||{{}};" : "var {0} = {0} || {{}};"), routerName));
+                    sb.AppendLine(string.Format((minimize ?
+                        "if(!Backbone.History.started){{Backbone.history.start({{pushState:false}});}}if({0}.navigate==undefined){{{0}=new Backbone.Router();}}"
+                        : @"if (!Backbone.History.started){{
     Backbone.history.start({{ pushState: false }});
 }}
 if ({0}.navigate == undefined){{
     {0} = new Backbone.Router();
-}}", routerName));
+}}"), routerName));
                     foreach (BackboneHashRoute bhr in routes[routerName])
                     {
                         sb.AppendFormat(@"{0}.route('{1}','{2}',function(",routerName,bhr.Path,bhr.FunctionName);
@@ -66,7 +68,7 @@ if ({0}.navigate == undefined){{
                                 sb.Append(m.Groups[1].Value + ",");
                             sb.Length = sb.Length - 1;
                         }
-                        sb.AppendLine(string.Format("){{ {0} }});", bhr.Code));
+                        sb.AppendLine(string.Format((minimize ? "){{{0}}});" : "){{ {0} }});"), bhr.Code));
                     }
                 }
             }

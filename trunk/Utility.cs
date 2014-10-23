@@ -180,19 +180,40 @@ namespace Org.Reddragonit.BackBoneDotNet
             return ret;
         }
 
+        private static Dictionary<string, string> _compressedJS = new Dictionary<string, string>();
+
         //returns a string containing the contents of an embedded resource
-        public static string ReadEmbeddedResource(string name)
+        public static string ReadEmbeddedResource(string name,bool minimize)
         {
-            Logger.Debug("Reading embedded resource " + name);
-            Stream s = LocateEmbededResource(name);
-            string ret = "";
-            if (s != null)
+            string ret = null;
+            if (minimize)
             {
-                TextReader tr = new StreamReader(s);
-                ret = tr.ReadToEnd();
-                tr.Close();
+                lock (_compressedJS)
+                {
+                    ret = (_compressedJS.ContainsKey(name) ? _compressedJS[name] : null);
+                }
             }
-            return ret;
+            if (ret == null)
+            {
+                Logger.Debug("Reading embedded resource " + name);
+                Stream s = LocateEmbededResource(name);
+                if (s != null)
+                {
+                    TextReader tr = new StreamReader(s);
+                    ret = tr.ReadToEnd();
+                    tr.Close();
+                    if (minimize)
+                    {
+                        ret = JSMinifier.Minify(ret).Trim();
+                        lock (_compressedJS)
+                        {
+                            if (!_compressedJS.ContainsKey(name))
+                                _compressedJS.Add(name, ret);
+                        }
+                    }
+                }
+            }
+            return (ret==null ? "" : ret);
         }
 
         internal static bool IsBlockedModel(Type t)

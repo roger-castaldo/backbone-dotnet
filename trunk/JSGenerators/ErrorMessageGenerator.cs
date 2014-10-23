@@ -32,20 +32,20 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-        private void _RecurWrite(StringBuilder sb, Hashtable msgs,string indent)
+        private void _RecurWrite(WrappedStringBuilder sb, Hashtable msgs, string indent, bool minimize)
         {
             string[] keys = new string[msgs.Keys.Count];
             msgs.Keys.CopyTo(keys,0);
             for(int x=0;x<keys.Length;x++)
             {
-                sb.Append(indent + "'" + keys[x] + "' : ");
+                sb.Append(indent + "'" + keys[x] + (minimize ? "':" : "' : "));
                 if (msgs[keys[x]] is string)
                     sb.Append("'" + msgs[keys[x]].ToString().Replace("'", "\'") + "'");
                 else
                 {
-                    sb.AppendLine(indent+"\t{");
-                    _RecurWrite(sb, (Hashtable)msgs[keys[x]], indent + "\t");
-                    sb.Append(indent+"\t}");
+                    sb.AppendLine(indent+(minimize ? "" : "\t")+"{");
+                    _RecurWrite(sb, (Hashtable)msgs[keys[x]], indent + (minimize ? "" : "\t"),minimize);
+                    sb.Append(indent+(minimize ? "" : "\t")+"}");
                 }
                 sb.AppendLine((x == keys.Length - 1 ? "" : ","));
             }
@@ -53,7 +53,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete,bool minimize)
         {
             Hashtable msgs = new Hashtable();
             foreach (ModelErrorMessage mem in modelType.GetCustomAttributes(typeof(ModelErrorMessage), false))
@@ -67,13 +67,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 _RecurAdd(mem.MessageName.Split('.'), mem.Message, 0, ref ht);
                 msgs.Add(mem.language, ht);
             }
-            StringBuilder sb = new StringBuilder();
+            WrappedStringBuilder sb = new WrappedStringBuilder(minimize);
             if (msgs.Count > 0)
             {
-                sb.AppendLine(
-@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ErrorMessageGenerator
-_.extend(true,Backbone.ErrorMessages,{");
-                _RecurWrite(sb, msgs,"\t");
+                sb.AppendLine((!minimize ? "//Org.Reddragonit.BackBoneDotNet.JSGenerators.ErrorMessageGenerator\n" : "")+
+"_.extend(true,Backbone.ErrorMessages,{");
+                _RecurWrite(sb, msgs,(minimize ? "" : "\t"),minimize);
                 sb.AppendLine("});");
             }
             return sb.ToString();

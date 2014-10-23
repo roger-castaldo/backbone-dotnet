@@ -22,9 +22,14 @@ namespace Org.Reddragonit.BackBoneDotNet.Attributes
             get { return _path; }
         }
 
+        internal string MinPath
+        {
+            get { return (_path.EndsWith(".min.js") ? _path : _path.Substring(0, _path.LastIndexOf(".")) + ".min.js"); }
+        }
+
         public ModelJSFilePath(string host,string path)
         {
-            _path = path;
+            _path = (!path.EndsWith(".js") ? path+".js" : path);
             _host = host;
         }
 
