@@ -15,7 +15,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     {
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete,bool minimize)
         {
             string urlRoot = "";
             foreach (ModelRoute mr in modelType.GetCustomAttributes(typeof(ModelRoute), false))
@@ -37,8 +37,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                 }
             }
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.SelectListCallGenerator");
+            WrappedStringBuilder sb = new WrappedStringBuilder(minimize);
+            if (!minimize)
+                sb.AppendLine("//Org.Reddragonit.BackBoneDotNet.JSGenerators.SelectListCallGenerator");
             List<MethodInfo> methods = new List<MethodInfo>();
             foreach (MethodInfo mi in modelType.GetMethods(Constants.LOAD_METHOD_FLAGS))
             {
@@ -68,60 +69,74 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             if (methods.Count > 0)
             {
-                sb.AppendLine(ModelNamespace.GetFullNameForModel(modelType, host) + " = _.extend(true," + ModelNamespace.GetFullNameForModel(modelType, host) + ",{SelectList : function(pars){");
+                sb.AppendLine(string.Format((minimize ?
+                    "{0}=_.extend(true,{0},{{SelectList:function(pars){{"
+                    : "{0} = _.extend(true,{0},{{SelectList : function(pars){{"
+                ),ModelNamespace.GetFullNameForModel(modelType, host)));
                 for (int x = 0; x < methods.Count; x++)
                 {
-                    sb.Append("\t" + (x == 0 ? "" : "else ") + "if(");
+                    sb.Append((minimize ? "" : "\t") + (x == 0 ? "" : "else ") + "if(");
                     if (methods[x].GetParameters().Length == 0)
                     {
-                        sb.AppendLine("pars==undefined || pars==null){");
-                        sb.AppendLine("\t\turl='';");
+                        sb.AppendLine((minimize? 
+                            "pars==undefined||pars==null){url='';"
+                        : @"pars==undefined || pars==null){
+        url='';"));
                     }
                     else
                     {
                         ParameterInfo[] pars = methods[x].GetParameters();
-                        StringBuilder code = new StringBuilder();
-                        code.AppendLine("\t\turl='?';");
-                        sb.Append("pars!=undefined && pars!=null && (");
+                        WrappedStringBuilder code = new WrappedStringBuilder(minimize);
+                        code.AppendLine((minimize ? "url='?';" : "\t\turl='?';"));
+                        sb.Append((minimize ? "pars!=undefined&&pars!=null&&(" : "pars!=undefined && pars!=null && ("));
                         for (int y = 0; y < pars.Length; y++)
                         {
-                            sb.Append((y != 0 ? " && " : "") + "pars." + pars[y].Name + "!=undefined");
-                            code.AppendLine("\t\tpars." + pars[y].Name + " = (pars." + pars[y].Name + " == null ? 'NULL' : pars." + pars[y].Name + ");");
+                            sb.Append((y != 0 ? (minimize ? "&&" : " && ") : "") + "pars." + pars[y].Name + "!=undefined");
+                            code.AppendLine(string.Format((minimize?
+                                "pars.{0}=(pars.{0}==null?'NULL':pars.{0});"
+                                :"\t\tpars.{0} = (pars.{0} == null ? 'NULL' : pars.{0});"),
+                                pars[y].Name));
                             if (pars[y].ParameterType == typeof(bool))
-                                code.AppendLine("pars." + pars[y].Name + " = (pars." + pars[y].Name + " == null ? 'false' : (pars." + pars[y].Name + " ? 'true' : 'false'));");
-                            else if (pars[y].ParameterType == typeof(DateTime))
+                                code.AppendLine(string.Format((minimize?
+                                "pars.{0}=(pars.{0}==null?'false':(pars.{0}?'true':'false'));"
+                                :"\t\tpars.{0} = (pars.{0} == null ? 'false' : (pars.{0} ? 'true' : 'false'));"),
+                                pars[y].Name));
+                            else if (pars[y].ParameterType == typeof(DateTime)||pars[y].ParameterType == typeof(DateTime?))
                             {
-                                code.AppendLine("if (pars." + pars[y].Name + " != 'NULL'){");
-                                code.AppendLine("\tif (!(pars." + pars[y].Name + " instanceof Date)){");
-                                code.AppendLine("\t\tpars." + pars[y].Name + " = new Date(pars." + pars[y].Name + ");");
-                                code.AppendLine("\t}");
-                                code.AppendLine("\tpars." + pars[y].Name + " = Date.UTC(pars." + pars[y].Name + ".getUTCFullYear(), pars." + pars[y].Name + ".getUTCMonth(), pars." + pars[y].Name + ".getUTCDate(), pars." + pars[y].Name + ".getUTCHours(), pars." + pars[y].Name + ".getUTCMinutes(), pars." + pars[y].Name + ".getUTCSeconds());");
-                                code.AppendLine("}");
+                                code.AppendLine(string.Format((minimize ?
+                                    "if(pars.{0}!='NULL'){{if(!(pars.{0} instanceof Date)){{pars.{0}=new Date(pars.{0});}}pars.{0}=Date.UTC(pars.{0}.getUTCFullYear(), pars.{0}.getUTCMonth(), pars.{0}.getUTCDate(), pars.{0}.getUTCHours(), pars.{0}.getUTCMinutes(), pars.{0}.getUTCSeconds());}}"
+                                    : @"if (pars.{0} != 'NULL'){{
+    if (!(pars.{0} instanceof Date)){{
+        pars.{0} = new Date(pars.{0});
+    }}
+    pars.{0} = Date.UTC(pars.{0}.getUTCFullYear(), pars.{0}.getUTCMonth(), pars.{0}.getUTCDate(), pars.{0}.getUTCHours(), pars.{0}.getUTCMinutes(), pars.{0}.getUTCSeconds());
+}}"),pars[y].Name));
                             }
-                            code.AppendLine("\t\turl+='" + (y == 0 ? "" : "&") + pars[y].Name + "='+pars." + pars[y].Name + ".toString();");
+                            code.AppendLine((minimize ? "" : "\t\t")+"url+='" + (y == 0 ? "" : "&") + pars[y].Name + "='+pars." + pars[y].Name + ".toString();");
                         }
                         sb.AppendLine(")){");
                         sb.Append(code.ToString());
                     }
                     sb.AppendLine("}");
                 }
-                sb.AppendLine(
-@"  else{
+                sb.AppendLine(string.Format((minimize ? 
+                    "else{{return null;}}var ret=$.ajax('{0}'+url,{{async:false,cache:false,type : 'SELECT'}}).responseText;var response=JSON.parse(ret);if(response.Backbone!=undefined){{_.extend(Backbone,response.Backbone);response=response.response;}}return response;}}}});"
+                    :@"  else{{
         return null;
-    }
+    }}
     var ret=$.ajax(
-        '" + urlRoot + @"'+url,{
+        '{0}'+url,{{
             async:false,
             cache:false,
             type : 'SELECT'
-}).responseText;
+}}).responseText;
     var response = JSON.parse(ret);
-    if(response.Backbone!=undefined){
+    if(response.Backbone!=undefined){{
         _.extend(Backbone,response.Backbone);
         response=response.response;
-    }
+    }}
 return response;
-}});");
+}}}});"),urlRoot));
 
             }
             return sb.ToString();

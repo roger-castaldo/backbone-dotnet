@@ -391,6 +391,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 Logger.Trace("Adding js path " + mj.Host + (mj.Path.StartsWith("/") ? mj.Path : "/" + mj.Path) + " for type " + t.FullName);
                 _RPC_URL.AddMethod("GET", mj.Host, (mj.Path.StartsWith("/") ? mj.Path : "/" + mj.Path));
+                _RPC_URL.AddMethod("GET", mj.Host, (mj.MinPath.StartsWith("/") ? mj.MinPath : "/" + mj.MinPath));
             }
         }
 
@@ -454,21 +455,21 @@ namespace Org.Reddragonit.BackBoneDotNet
                     {
                         Logger.Trace("Sending jquery javascript response through backbone handler");
                         request.SetResponseStatus(200);
-                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.jquery.min.js"));
+                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.jquery.min.js",false));
                         request.SendResponse();
                     }
                     else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_jsonURL == null ? "" : _jsonURL))
                     {
                         Logger.Trace("Sending json javascript response through backbone handler");
                         request.SetResponseStatus(200);
-                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.json2.min.js"));
+                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.json2.min.js",false));
                         request.SendResponse();
                     }
                     else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_backboneURL == null ? "" : _backboneURL))
                     {
                         Logger.Trace("Sending modified backbone javascript response through backbone handler");
                         request.SetResponseStatus(200);
-                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone_combined.min.js"));
+                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone_combined.min.js",false));
                         request.SendResponse();
                     }
                     else
@@ -493,34 +494,20 @@ namespace Org.Reddragonit.BackBoneDotNet
                             {
                                 foreach (ModelJSFilePath mj in t.GetCustomAttributes(typeof(ModelJSFilePath), false))
                                 {
-                                    if ((mj.Host == "*" || mj.Host == request.URL.Host) && mj.Path == Uri.UnescapeDataString(request.URL.AbsolutePath))
+                                    if ((mj.Host == "*" || mj.Host == request.URL.Host) && 
+                                        (mj.Path == Uri.UnescapeDataString(request.URL.AbsolutePath)||mj.MinPath==Uri.UnescapeDataString(request.URL.AbsolutePath)))
                                     {
                                         Logger.Trace("Appending model " + t.FullName + " to path " + request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath));
-                                        sb.Append(_GenerateModelJSFile(t, request.URL.Host));
+                                        sb.Append(_GenerateModelJSFile(t, request.URL.Host, mj.MinPath == Uri.UnescapeDataString(request.URL.AbsolutePath) || Settings.Default.CompressAllJS));
                                     }
                                 }
                             }
                             request.SetResponseStatus(200);
-                            if (request.URL.AbsolutePath.EndsWith(".min.js") || Settings.Default.CompressAllJS)
+                            request.WriteContent(sb.ToString());
+                            lock (_CachedJScript)
                             {
-                                Logger.Trace("Compressing javascript for path " + request.URL.Host + request.URL.AbsolutePath);
-                                string comp = JSMinifier.Minify(sb.ToString());
-                                Logger.Trace("Caching compressed javascript for path " + request.URL.Host + request.URL.AbsolutePath);
-                                request.WriteContent(comp);
-                                lock (_CachedJScript)
-                                {
-                                    if (!_CachedJScript.ContainsKey(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath)))
-                                        _CachedJScript.Add(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath), new CachedItemContainer(comp));
-                                }
-                            }
-                            else
-                            {
-                                request.WriteContent(sb.ToString());
-                                lock (_CachedJScript)
-                                {
-                                    if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
-                                        _CachedJScript.Add(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath), new CachedItemContainer(sb.ToString()));
-                                }
+                                if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
+                                    _CachedJScript.Add(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath), new CachedItemContainer(sb.ToString()));
                             }
                             request.SendResponse();
                         }
@@ -1125,7 +1112,7 @@ namespace Org.Reddragonit.BackBoneDotNet
 
         //called to generate Javascript for the given model.  It uses all the specified IJSGenerators above
         //they were broken into components for easier code reading.
-        private static string _GenerateModelJSFile(Type t,string host)
+        private static string _GenerateModelJSFile(Type t,string host,bool minimize)
         {
             Logger.Debug("Generating js file for type " + t.FullName);
             string ret = "";
@@ -1163,7 +1150,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             foreach (IJSGenerator gen in _generators)
             {
                 Logger.Trace("Running js generator " + gen.GetType().FullName);
-                ret += gen.GenerateJS(t, host, readOnlyProperties, properties, viewIgnoreProperties, hasUpdate, hasAdd, hasDelete);
+                ret += gen.GenerateJS(t, host, readOnlyProperties, properties, viewIgnoreProperties, hasUpdate, hasAdd, hasDelete,minimize);
             }
             return ret;
         }

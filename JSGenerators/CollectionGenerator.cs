@@ -14,7 +14,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     {
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete,bool minimize)
         {
             if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
             {
@@ -41,14 +41,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                 }
             }
-            return string.Format(
-@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionGenerator
+            return string.Format((minimize ? 
+                "{0}=_.extend(true,{0},{{Collection:Backbone.Collection.extend({{model:{0}.Model,parse:function(response){{return (response.Backbone==undefined?response:response.response);}},url:\"{1}\"}})}});"
+                :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionGenerator
 {0} = _.extend(true,{0},{{Collection: Backbone.Collection.extend({{
     model : {0}.Model,
     parse : function(response){{return (response.Backbone == undefined ? response : response.response);}},
     url : ""{1}""
     }})
-}});",
+}});"),
                 new object[]{
                     ModelNamespace.GetFullNameForModel(modelType, host),
                     (urlRoot.StartsWith("/") ? "" : "/") + urlRoot

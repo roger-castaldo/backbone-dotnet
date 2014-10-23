@@ -13,13 +13,15 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     {
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete,bool minimize)
         {
             string ret = "";
             string tmp = "";
             foreach (string str in ModelNamespace.GetFullNameForModel(modelType,host).Split('.'))
             {
-                ret += (tmp.Length == 0 ? "var " + str : tmp + "." + str) + " = " + (tmp.Length == 0 ? "" : tmp + ".") + str + " || {};"+Environment.NewLine;
+                ret += (minimize ? 
+                    (tmp.Length == 0 ? "var " + str : tmp + "." + str) + "=" + (tmp.Length == 0 ? "" : tmp + ".") + str + "||{};"
+                    : (tmp.Length == 0 ? "var " + str : tmp + "." + str) + " = " + (tmp.Length == 0 ? "" : tmp + ".") + str + " || {};"+Environment.NewLine);
                 tmp += (tmp.Length == 0 ? "" : ".") + str;
             }
             return ret;

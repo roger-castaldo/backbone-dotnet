@@ -13,9 +13,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
      */
     internal class ViewGenerator : IJSGenerator
     {
-        private void _AppendClassName(Type modelType,string host, StringBuilder sb)
+        private void _AppendClassName(Type modelType, string host, WrappedStringBuilder sb, bool minimize)
         {
-            sb.Append("\tclassName : \"");
+            sb.Append((minimize ? "className:\"" : "\tclassName : \""));
             foreach (string str in ModelNamespace.GetFullNameForModel(modelType, host).Split('.'))
                 sb.Append(str + " ");
             foreach (ModelViewClass mvc in modelType.GetCustomAttributes(typeof(ModelViewClass), false))
@@ -23,19 +23,19 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sb.AppendLine(" View\",");
         }
 
-        private void _AppendAttributes(Type modelType, StringBuilder sb)
+        private void _AppendAttributes(Type modelType, WrappedStringBuilder sb,bool minimize)
         {
             if (modelType.GetCustomAttributes(typeof(ModelViewAttribute), false).Length > 0)
             {
-                sb.Append("\tattributes: {");
+                sb.Append((minimize ? "attributes:{":"\tattributes: {"));
                 object[] atts = modelType.GetCustomAttributes(typeof(ModelViewAttribute),false);
                 for (int x = 0; x < atts.Length; x++)
-                    sb.Append("\t\t\"" + ((ModelViewAttribute)atts[x]).Name + "\" : '" + ((ModelViewAttribute)atts[x]).Value + "'" + (x < atts.Length - 1 ? "," : ""));
-                sb.Append("\t},");
+                    sb.Append((minimize ? "" : "\t\t")+"\"" + ((ModelViewAttribute)atts[x]).Name + "\" : '" + ((ModelViewAttribute)atts[x]).Value + "'" + (x < atts.Length - 1 ? "," : ""));
+                sb.Append((minimize ? "" : "\t")+"},");
             }
         }
 
-        private void _AppendRenderFunction(Type modelType,string host,string tag,List<string> properties,bool hasUpdate,bool hasDelete, StringBuilder sb, List<string> viewIgnoreProperties,string editImage,string deleteImage,EditButtonDefinition edDef,DeleteButtonDefinition delDef)
+        private void _AppendRenderFunction(Type modelType,string host,string tag,List<string> properties,bool hasUpdate,bool hasDelete, WrappedStringBuilder sb, List<string> viewIgnoreProperties,string editImage,string deleteImage,EditButtonDefinition edDef,DeleteButtonDefinition delDef,bool minimize)
         {
             bool hasUpdateFunction = true;
             if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
@@ -43,7 +43,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 if (((int)((ModelBlockJavascriptGeneration)modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false)[0]).BlockType & (int)ModelBlockJavascriptGenerations.EditForm) == (int)ModelBlockJavascriptGenerations.EditForm)
                     hasUpdateFunction = false;
             }
-            sb.AppendLine("\trender : function(){");
+            sb.AppendLine((minimize ? "render:function(){" : "\trender : function(){"));
             string fstring = "";
             switch (tag.ToLower())
             {
@@ -59,8 +59,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     break;
             }
             int arIndex = 0;
-            StringBuilder sbHtml = new StringBuilder();
-            sbHtml.Append("\t\t$(this.el).html(");
+            WrappedStringBuilder sbHtml = new WrappedStringBuilder(minimize);
+            sbHtml.Append((minimize ? "" : "\t\t")+"$(this.el).html(");
             foreach (string prop in properties)
             {
                 if (!viewIgnoreProperties.Contains(prop)&&prop!="id")
@@ -92,23 +92,24 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         if (array)
                         {
                             string tsets = "";
-                            string tcode = _RecurAddRenderModelPropertyCode(prop, PropType,host, "this.model.get('" + prop + "').at(x).get('{0}')", out tsets, true);
+                            string tcode = _RecurAddRenderModelPropertyCode(prop, PropType,host, "this.model.get('" + prop + "').at(x).get('{0}')", out tsets, true,minimize);
                             if (tsets != "")
                                 sb.Append(tsets);
-                            sb.AppendFormat(
-@"      var ars{0} = '';
+                            sb.AppendFormat((minimize ?
+                                "var ars{0}='';if(this.model.get('{1}')!=null){{for(var x=0;x<this.model.get('{1}').length;x++){{ars{0}+={2};}}}}"
+                                :@"      var ars{0} = '';
         if(this.model.get('{1}')!=null){{
             for(var x=0;x<this.model.get('{1}').length;x++){{
                 ars{0}+={2};
             }}
-        }}", arIndex, prop, string.Format(tcode, prop));
+        }}"), arIndex, prop, string.Format(tcode, prop));
                             sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                             arIndex++;
                         }
                         else
                         {
                             string tsets = "";
-                            string code = _RecurAddRenderModelPropertyCode(prop, PropType,host, "this.model.get('" + prop + "').get('{0}')", out tsets, false);
+                            string code = _RecurAddRenderModelPropertyCode(prop, PropType,host, "this.model.get('" + prop + "').get('{0}')", out tsets, false,minimize);
                             if (tsets != "")
                                 sb.Append(tsets);
                             sbHtml.Append(string.Format(fstring, prop, "(this.model.get('" + prop + "') == null ? '' : "+code+")", (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
@@ -118,20 +119,21 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     {
                         if (array)
                         {
-                            sb.AppendFormat(
-@"      var ars{0} = '';
+                            sb.AppendFormat((minimize?
+                                "var ars{0}='';if(this.model.get('{1}')!=null){{for(x in this.model.get('{1}')){{if(this.model.get('{1}')[x]!=null){{ars{0}+='<span class=\"'+this.className+' {1} els\">'+this.model.get('{1}')[x]+'</span>';}}}}}}"
+                                :@"      var ars{0} = '';
         if(this.model.get('{1}')!=null){{
             for(x in this.model.get('{1}')){{
                 if(this.model.get('{1}')[x]!=null){{
                     ars{0}+='<span class=""'+this.className+' {1} els"">'+this.model.get('{1}')[x]+'</span>';
                 }}
             }}
-        }}",arIndex,prop);
+        }}"),arIndex,prop);
                             sbHtml.Append(string.Format(fstring, prop, "ars" + arIndex.ToString(), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                             arIndex++;
                         }
                         else
-                            sbHtml.Append(string.Format(fstring, prop, string.Format("(this.model.get('{0}')==null ? '' : this.model.get('{0}'))", prop), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
+                            sbHtml.Append(string.Format(fstring, prop, string.Format((minimize ? "(this.model.get('{0}')==null?'':this.model.get('{0}'))":"(this.model.get('{0}')==null ? '' : this.model.get('{0}'))"), prop), (properties.IndexOf(prop) == properties.Count - 1 ? "" : "+")));
                     }
                 }
             }
@@ -198,45 +200,49 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         break;
                 }
             }
-            sb.AppendLine(
-@");
+            sb.AppendLine((minimize ? 
+                ");$(this.el).attr('name',this.model.id);this.trigger('pre_render_complete',this);this.trigger('render',this);return this;}"
+                : @");
         $(this.el).attr('name',this.model.id);
         this.trigger('pre_render_complete',this);
         this.trigger('render',this);
         return this;
-    }" + (hasUpdate || hasDelete ? "," : ""));
+    }") + (hasUpdate || hasDelete ? "," : ""));
             if ((hasUpdate&&hasUpdateFunction) || hasDelete)
             {
-                sb.AppendLine("\tevents : {");
+                sb.AppendLine((minimize ? "events:{" : "\tevents : {"));
                 if (hasUpdate && hasUpdateFunction)
-                    sb.AppendLine("\t\t'click .button.edit' : 'editModel'" + (hasDelete ? "," : ""));
+                    sb.AppendLine((minimize ? "'click .button.edit':'editModel'" : "\t\t'click .button.edit' : 'editModel'") + (hasDelete ? "," : ""));
                 if (hasDelete)
-                    sb.AppendLine("\t\t'click .button.delete' : 'deleteModel'");
-                sb.AppendLine("\t},");
+                    sb.AppendLine((minimize ? "'click .button.delete':'deleteModel'" : "\t\t'click .button.delete' : 'deleteModel'"));
+                sb.AppendLine((minimize ? "" : "\t")+"},");
                 if (hasUpdate && hasUpdateFunction)
                 {
-                    sb.AppendLine("\teditModel : function(){");
-                    sb.AppendLine("\t\t" + ModelNamespace.GetFullNameForModel(modelType, host) + ".editModel(this);");
-                    sb.AppendLine("\t}" + (hasDelete ? "," : ""));
+                    sb.AppendLine(string.Format((minimize ? 
+                        "editModel:function(){{{0}.editModel(this);}}"
+                        : @"    editModel : function(){{
+        {0}.editModel(this);
+    }}"),ModelNamespace.GetFullNameForModel(modelType, host)) + (hasDelete ? "," : ""));
                 }
                 if (hasDelete)
                 {
-                    sb.AppendLine(
-@"  deleteModel : function(){
+                    sb.AppendLine((minimize ? 
+                        "deleteModel:function(){this.model.destroy();}"
+                        :@"  deleteModel : function(){
         this.model.destroy();
-    }");
+    }"));
                 }
             }
         }
 
-		private string _RecurAddRenderModelPropertyCode(string prop,Type PropType,string host,string modelstring,out string arstring,bool addEls)
+		private string _RecurAddRenderModelPropertyCode(string prop,Type PropType,string host,string modelstring,out string arstring,bool addEls,bool minimize)
 		{
             string className = ModelNamespace.GetFullNameForModel(PropType, host).Replace(".", " ") + (addEls ? " els " : "");
             foreach (ModelViewClass mvc in PropType.GetCustomAttributes(typeof(ModelViewClass), false))
                 className += mvc.ClassName + " ";
             string code = "";
             int arIndex = 0;
-            StringBuilder sb = new StringBuilder();
+            WrappedStringBuilder sb = new WrappedStringBuilder(minimize);
 			foreach (PropertyInfo pi in PropType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
 		    {
 			    if (pi.GetCustomAttributes(typeof(ModelIgnoreProperty), false).Length == 0)
@@ -270,34 +276,52 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (array)
                             {
                                 string tsets = "";
-                                string tcode = _RecurAddRenderModelPropertyCode(pi.Name, ptype,host, string.Format(modelstring, pi.Name) + ".at(x).get('{0}')", out tsets,true);
+                                string tcode = _RecurAddRenderModelPropertyCode(pi.Name, ptype,host, string.Format(modelstring, pi.Name) + ".at(x).get('{0}')", out tsets,true,minimize);
                                 if (tsets != "")
                                     sb.Append(tsets);
-                                sb.AppendLine("\t\tvar ars" + prop + arIndex.ToString() + " = '';");
-                                sb.AppendLine("\t\tif(" + string.Format(modelstring, pi.Name) + "!=null){");
-                                sb.AppendLine("\t\t\tfor(var x=0;x<" + string.Format(modelstring, pi.Name) + ").length;x++){");
-                                sb.AppendLine("\t\t\t\tars" + prop + arIndex.ToString() + " += '<span class=\"" + className + " " + pi.Name + " els\">'+" + tcode + "+'</span>'");
-                                sb.AppendLine("\t\t\t}");
-                                sb.AppendLine("\t\t}");
+                                sb.AppendLine(string.Format((minimize ? 
+                                    "var ars{0}{1}='';if({2}!=null{{for(var x=0;x<{2}).length;x++){{ars{0}{1}+='<span class=\"{3} {4} els\">'+{5}+'</span>'}}}}"
+                                    :@"     var ars{0}{1} = '';
+        if({2}!=null{{
+            for(var x=0;x<{2}.length;x++){{
+                ars{0}{1} += '<span class=""{3} {4} els"">'+{5}+'</span>'
+            }}
+        }}"
+                                    ),new object[]{
+                                        prop,
+                                        arIndex,
+                                        string.Format(modelstring, pi.Name),
+                                        className,
+                                        pi.Name,
+                                        tcode
+                                    }));
                                 code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+ars" + prop + arIndex.ToString() + "+'</span>'";
                                 arIndex++;
                             }
                             else
                             {
                                 string tsets = "";
-                                code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "") + "("+string.Format(modelstring,prop)+"==null ? '' : '<span class=\"" + className + " " + pi.Name + "\">'+" + _RecurAddRenderModelPropertyCode(pi.Name, ptype,host, string.Format(modelstring, pi.Name) + ".get('{0}')",out tsets,false) + "+'</span>')";
+                                code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "") + "("+string.Format(modelstring,prop)+"==null ? '' : '<span class=\"" + className + " " + pi.Name + "\">'+" + _RecurAddRenderModelPropertyCode(pi.Name, ptype,host, string.Format(modelstring, pi.Name) + ".get('{0}')",out tsets,false,minimize) + "+'</span>')";
                                 if (tsets != "")
                                     sb.Append(tsets);
                             }
                         }else{
                             if (array)
                             {
-                                sb.AppendLine("\t\tvar ars" + prop + arIndex.ToString() + " = '';");
-                                sb.AppendLine("\t\tif (" + string.Format(modelstring, pi.Name) + "!=null){");
-                                sb.AppendLine("\t\t\tfor(x in " + string.Format(modelstring, pi.Name) + "){");
-                                sb.AppendLine("\t\t\t\tars" + prop + arIndex.ToString() + " += '<span class=\"" + className + " " + pi.Name + " els\">'+" + string.Format(modelstring,pi.Name) + "[x]+'</span>'");
-                                sb.AppendLine("\t\t\t}");
-                                sb.AppendLine("\t\t}");
+                                sb.AppendLine(string.Format((minimize ?
+                                    "var ars{0}{1}='';if ({2}!=null){{for(x in {2}){{ars{0}{1}+='<span class=\"{3} {4} els\">'+{2}[x]+'</span>';}}}}"
+                                    : @"     var ars{0}{1} = '';
+        if ({2}!=null){{
+            for(x in {2}){{
+                ars{0}{1} += '<span class=""{3} {4} els"">'+{2}[x]+'</span>';
+            }}
+        }}"), new object[]{
+               prop,
+               arIndex,
+               string.Format(modelstring, pi.Name),
+               className,
+               pi.Name
+           }));
                                 code += (code.EndsWith(">'") || code.EndsWith(">')") ? "+" : "") + "'<span class=\"" + className + " " + pi.Name + "\">'+ars" + prop + arIndex.ToString() + "+'</span>'";
                                 arIndex++;
                             }else
@@ -395,7 +419,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete,bool minimize)
         {
             if (modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false).Length > 0)
             {
@@ -407,19 +431,20 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             EditButtonDefinition edDef;
             DeleteButtonDefinition delDef;
             _LocateButtonImages(modelType, host, out editImage, out deleteImage,out edDef,out delDef);
-            StringBuilder sb = new StringBuilder();
-            sb.AppendFormat(
-@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator
+            WrappedStringBuilder sb = new WrappedStringBuilder(minimize);
+            sb.AppendFormat((minimize ? 
+                "{0}=_.extend(true,{0},{{View : Backbone.View.extend({{" 
+                :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator
 {0} = _.extend(true,{0},{{View : Backbone.View.extend({{
-    ",ModelNamespace.GetFullNameForModel(modelType, host));
+    "),ModelNamespace.GetFullNameForModel(modelType, host));
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
                 tag = ((ModelViewTag)modelType.GetCustomAttributes(typeof(ModelViewTag), false)[0]).TagName;
-            sb.AppendLine("\ttagName : \"" + tag + "\",");
+            sb.AppendLine(string.Format((minimize ?  "tagName:\"{0}\",":"\ttagName : \"{0}\","),tag));
             
-            _AppendClassName(modelType,host, sb);
-            _AppendAttributes(modelType, sb);
-            _AppendRenderFunction(modelType,host,tag, properties, hasUpdate, hasDelete, sb,viewIgnoreProperties,editImage,deleteImage,edDef,delDef);
+            _AppendClassName(modelType,host, sb,minimize);
+            _AppendAttributes(modelType, sb,minimize);
+            _AppendRenderFunction(modelType,host,tag, properties, hasUpdate, hasDelete, sb,viewIgnoreProperties,editImage,deleteImage,edDef,delDef,minimize);
 
             sb.AppendLine("})});");
             return sb.ToString();

@@ -14,7 +14,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     internal class EditFormGenerator : IJSGenerator
     {
 
-        private void _RenderFieldInput(string propName,Type propType,string host,StringBuilder sb)
+        private void _RenderFieldInput(string propName,Type propType,string host,WrappedStringBuilder sb)
         {
             bool array = false;
             if (propType.FullName.StartsWith("System.Nullable"))
@@ -57,12 +57,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
         }
 
-        private void _AppendArrayInputsCode(StringBuilder sb)
+        private void _AppendArrayInputsCode(WrappedStringBuilder sb,bool minimize)
         {
-            sb.Append(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.arrayInputFormCode.js"));
+            sb.Append(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.arrayInputFormCode.js",minimize));
         }
 
-        private void _AppendInputSetupCode(StringBuilder sb,string host, List<string> properties, List<string> readOnlyProperties, Type modelType)
+        private void _AppendInputSetupCode(WrappedStringBuilder sb,string host, List<string> properties, List<string> readOnlyProperties, Type modelType,bool minimize)
         {
             foreach (string propName in properties)
             {
@@ -94,21 +94,23 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         }
                         if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                         {
-                            sb.AppendFormat(
-@"      var sel{0} = $(frm.find('select[name=""{0}""]')[0]);
+                            sb.AppendFormat((minimize ? 
+                                "var sel{0}=$(frm.find('select[name=\"{0}\"]')[0]);var opts={1}.SelectList();for(var x=0;x<opts.length;x++){{var opt=opts[x];sel{0}.append($('<option value=\"'+opt.ID+'\">'+opt.Text+'</option>'));}}"
+                                :@"      var sel{0} = $(frm.find('select[name=""{0}""]')[0]);
         var opts = {1}.SelectList();
         for(var x=0;x<opts.length;x++){{
             var opt = opts[x];
             sel{0}.append($('<option value=""'+opt.ID+'"">'+opt.Text+'</option>'));
-        }}",
+        }}"),
                                 propName,
                                 ModelNamespace.GetFullNameForModel(propType, host));
                             if (array)
                             {
-                                sb.AppendFormat(
-@"      for(var x=0;x<view.model.get('{0}').length;x++){{;
+                                sb.AppendFormat((minimize ?
+                                    "for(var x=0;x<view.model.get('{0}').length;x++){{;$(sel{0}.find('option[value=\"'+view.model.get('{0}')[x].get('id')+'\"]')[0]).attr('selected', 'selected');}}"
+                                    :@"      for(var x=0;x<view.model.get('{0}').length;x++){{;
             $(sel{0}.find('option[value=""'+view.model.get('{0}')[x].get('id')+'""]')[0]).attr('selected', 'selected');
-        }}",
+        }}"),
                                     propName);
                             }
                             else
@@ -118,22 +120,24 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         {
                             if (array)
                             {
-                                sb.AppendFormat(
-@"      var sel{0} = $(frm.find('select[name=""{0}""]')[0]);
+                                sb.AppendFormat((minimize ? 
+                                    "var sel{0}=$(frm.find('select[name=\"{0}\"]')[0]);for(var x=0;x<view.model.get('{0}').length;x++){{$(sel.find('option[value=\"'+view.model.get('{0}')[x]+'\"]')[0]).attr('selected', 'selected');}}"
+                                    :@"      var sel{0} = $(frm.find('select[name=""{0}""]')[0]);
         for(var x=0;x<view.model.get('{0}').length;x++){{
             $(sel.find('option[value=""'+view.model.get('{0}')[x]+'""]')[0]).attr('selected', 'selected');
-        }}",
+        }}"),
                                     propName);
                             }
                             else
-                                sb.AppendLine("\t\t$(frm.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
+                                sb.AppendLine((minimize ? "" : "\t\t")+"$(frm.find('select[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
                         }
                         else
                         {
                             if (array)
                             {
-                                sb.AppendFormat(
-@"      var ins = frm.find('input[name={0}');
+                                sb.AppendFormat((minimize ? 
+                                    "var ins=frm.find('input[name={0}');for(var x=1;x<ins.length;x++){{$(ins[x]).remove();}}var inp=$(ins[0]);for(var x=0;x<view.model.get('{0}').length;x++){{inp.val(view.model.get('{0}'));if (x<model.get('{0}').length-1){{var newInp=inp.clone();inp.after(newInp);inp.after('<br/>');inp=newInp;}}}}"
+                            :@"      var ins = frm.find('input[name={0}');
         for(var x=1;x<ins.length;x++){{
             $(ins[x]).remove();
         }}
@@ -146,27 +150,32 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 inp.after('<br/>');
                 inp = newInp;
             }}
-        }}",propName);
+        }}"),propName);
                             }
                             else if (propType==typeof(bool))
-                                sb.AppendLine("\t\t$(frm.find('input[name=\"" + propName + "\"][value=\"'+view.model.get('" + propName + "')+'\"]')[0]).prop('checked', true);");
+                                sb.AppendLine(string.Format((minimize ? 
+                                    "$(frm.find('input[name=\"{0}\"][value=\"'+view.model.get('{0}')+'\"]')[0]).prop('checked',true);"
+                                    :"\t\t$(frm.find('input[name=\"{0}\"][value=\"'+view.model.get('{0}')+'\"]')[0]).prop('checked', true);"),propName));
                             else
-                                sb.AppendLine("\t\t$(frm.find('input[name=\"" + propName + "\"]')[0]).val(view.model.get('" + propName + "'));");
+                                sb.AppendLine(string.Format((minimize ? 
+                                    "$(frm.find('input[name=\"{0}\"]')[0]).val(view.model.get('{0}'));"
+                                    :"\t\t$(frm.find('input[name=\"{0}\"]')[0]).val(view.model.get('{0}'));"),propName));
                         }
                     }
                 }
             }
-            _AppendAcceptCode(sb);
+            _AppendAcceptCode(sb,minimize);
         }
 
-        private void _AppendAcceptCode(StringBuilder sb)
+        private void _AppendAcceptCode(WrappedStringBuilder sb,bool minimize)
         {
-            sb.Append(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.editFormAccept.js"));
+            sb.Append(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.editFormAccept.js",minimize));
         }
 
-        private void _RenderDialogConstructCode(Type modelType,string host,List<string> readOnlyProperties, List<string> properties, StringBuilder sb){
-            sb.AppendFormat(
-@"      if($('#{0}_dialog').length==0){{
+        private void _RenderDialogConstructCode(Type modelType,string host,List<string> readOnlyProperties, List<string> properties, WrappedStringBuilder sb,bool minimize){
+            sb.AppendFormat((minimize ? 
+                "if($('#{0}_dialog').length==0){{var dlog=$('<div></div>');dlog.attr('id','{0}_dialog');dlog.attr('class',view.className+' dialog');var frm=$('<table></table>');dlog.append(frm);frm.append('<thead><tr><th colspan=\"2\"></th></tr></thead>');frm.append('<tbody></tbody>');frm=$(frm.children()[1]);"
+                :@"      if($('#{0}_dialog').length==0){{
             var dlog = $('<div></div>');
             dlog.attr('id','{0}_dialog');
             dlog.attr('class',view.className+' dialog');
@@ -174,7 +183,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             dlog.append(frm);
             frm.append('<thead><tr><th colspan=""2""></th></tr></thead>');
             frm.append('<tbody></tbody>');
-            frm = $(frm.children()[1]);",
+            frm = $(frm.children()[1]);"),
                 ModelNamespace.GetFullNameForModel(modelType, host).Replace(".", "_"));
             foreach (string propName in properties)
             {
@@ -183,40 +192,42 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (!readOnlyProperties.Contains(propName))
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
-                        sb.Append("\t\t\tfrm.append($('<tr><td class=\"fieldName\">" + propName + "</td><td class=\"fieldInput " + propType.Name + "\" proptype=\"" + propType.Name + "\">");
+                        sb.Append((minimize ? "" : "\t\t\t")+"frm.append($('<tr><td class=\"fieldName\">" + propName + "</td><td class=\"fieldInput " + propType.Name + "\" proptype=\"" + propType.Name + "\">");
                         _RenderFieldInput(propName,propType,host, sb);
                         sb.AppendLine("</td></tr>'));");
                     }
                 }
             }
-            _AppendArrayInputsCode(sb);
-            sb.AppendFormat(
-@"          frm.append($('<tr><td colspan=""2"" style=""text-align:center""><span class=""button accept"">Okay</span><span class=""button cancel"">Cancel</span></td></tr>'));
+            _AppendArrayInputsCode(sb,minimize);
+            sb.AppendFormat((minimize ? 
+                "frm.append($('<tr><td colspan=\"2\" style=\"text-align:center\"><span class=\"button accept\">Okay</span><span class=\"button cancel\">Cancel</span></td></tr>'));var butCancel=$(dlog.find('tr>td>span.cancel')[0]);butCancel.bind('click',function(){{$('#{0}_dialog').hide();$('#Org_Reddragonit_BackBoneDotNet_DialogBackground').hide();}});$(document.body).append(dlog);}}"
+                :@"          frm.append($('<tr><td colspan=""2"" style=""text-align:center""><span class=""button accept"">Okay</span><span class=""button cancel"">Cancel</span></td></tr>'));
             var butCancel = $(dlog.find('tr>td>span.cancel')[0]);
             butCancel.bind('click',function(){{
                 $('#{0}_dialog').hide();
                 $('#Org_Reddragonit_BackBoneDotNet_DialogBackground').hide();
             }});
             $(document.body).append(dlog);
-        }}",
+        }}"),
                 ModelNamespace.GetFullNameForModel(modelType, host).Replace(".", "_"));
         }
 
-        private void _RenderDialogCode(Type modelType,string host, List<string> readOnlyProperties, List<string> properties, StringBuilder sb)
+        private void _RenderDialogCode(Type modelType,string host, List<string> readOnlyProperties, List<string> properties, WrappedStringBuilder sb,bool minimize)
         {
-            _RenderDialogConstructCode(modelType,host,readOnlyProperties,properties,sb);
-            sb.AppendLine(
-@"      if($('#Org_Reddragonit_BackBoneDotNet_DialogBackground').length==0){
+            _RenderDialogConstructCode(modelType,host,readOnlyProperties,properties,sb,minimize);
+            sb.AppendLine((minimize ? 
+                "if($('#Org_Reddragonit_BackBoneDotNet_DialogBackground').length==0){$(document.body).append($('<div id=\"Org_Reddragonit_BackBoneDotNet._DialogBackground\" class=\"Org Reddragonit BackBoneDotNet DialogBackground\"></div>'));}$('#Org_Reddragonit_BackBoneDotNet_DialogBackground').show();var frm=$('#"
+                :@"      if($('#Org_Reddragonit_BackBoneDotNet_DialogBackground').length==0){
             $(document.body).append($('<div id=""Org_Reddragonit_BackBoneDotNet._DialogBackground"" class=""Org Reddragonit BackBoneDotNet DialogBackground""></div>'));
         }
         $('#Org_Reddragonit_BackBoneDotNet_DialogBackground').show();
-        var frm = $('#" + ModelNamespace.GetFullNameForModel(modelType, host).Replace(".", "_") + "_dialog');");
-            _AppendInputSetupCode(sb,host, properties, readOnlyProperties, modelType);
-            _AppendAcceptCode(sb);
-            sb.AppendLine("\t\tfrm.show();");
+        var frm = $('#") + ModelNamespace.GetFullNameForModel(modelType, host).Replace(".", "_") + "_dialog');");
+            _AppendInputSetupCode(sb,host, properties, readOnlyProperties, modelType,minimize);
+            _AppendAcceptCode(sb,minimize);
+            sb.AppendLine((minimize ? "" : "\t\t")+"frm.show();");
         }
 
-        private void _RenderInlineCode(Type modelType,string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, StringBuilder sb)
+        private void _RenderInlineCode(Type modelType,string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, WrappedStringBuilder sb,bool minimize)
         {
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
@@ -237,9 +248,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     break;
             }
 
-            sb.AppendFormat(
-@"      var frm = view.$el;
-        $(frm.find('{0}.buttons>span.button')).hide();",tstring);
+            sb.AppendFormat((minimize ?
+                "var frm=view.$el;$(frm.find('{0}.buttons>span.button')).hide();"
+                :@"      var frm = view.$el;
+        $(frm.find('{0}.buttons>span.button')).hide();"),tstring);
             
             foreach (string propName in properties)
             {
@@ -248,39 +260,42 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (!readOnlyProperties.Contains(propName))
                     {
                         Type propType = modelType.GetProperty(propName).PropertyType;
-                        sb.Append("\t\tvar inp = $('");
+                        sb.Append((minimize ? "var inp=$('" : "\t\tvar inp = $('"));
                         _RenderFieldInput(propName,propType,host, sb);
                         sb.AppendLine("');");
                         if (viewIgnoreProperties.Contains(propName))
                         {
-                            sb.AppendFormat(
-@"      $(frm.find('{0}:last')[0]).before($('<{0} class=""'+view.className+' {0}""><span class=""'+view.className+' FieldTitle"">{1}</span><br/></{0}>'));
-        $(frm.find('{0}.{1}')[0]).append(inp);",tstring,propName);
+                            sb.AppendFormat((minimize ? 
+                                "$(frm.find('{0}:last')[0]).before($('<{0} class=\"'+view.className+' {0}\"><span class=\"'+view.className+' FieldTitle\">{1}</span><br/></{0}>'));$(frm.find('{0}.{1}')[0]).append(inp);"
+                                :@"      $(frm.find('{0}:last')[0]).before($('<{0} class=""'+view.className+' {0}""><span class=""'+view.className+' FieldTitle"">{1}</span><br/></{0}>'));
+        $(frm.find('{0}.{1}')[0]).append(inp);"),tstring,propName);
                         }else
-                            sb.AppendLine("\t\t$(frm.find('" + tstring + "." + propName + "')[0]).html(inp);");
+                            sb.AppendLine(string.Format((minimize ? "$(frm.find('{0}.{1}')[0]).html(inp);" : "\t\t$(frm.find('{0}.{1}')[0]).html(inp);"),tstring,propName));
                     }else
-                        sb.AppendFormat(
-@"      $(frm.find('{0}:last')[0]).before($('<{0} class=""'+view.className+' {0}""><span class=""'+view.className+' FieldTitle"">{1}</span><br/></{0}>'));
-        $(frm.find('{0}.{1}')[0]).append(this.model.get('{1}'));", tstring, propName);
+                        sb.AppendFormat((minimize?
+                            "$(frm.find('{0}:last')[0]).before($('<{0} class=\"'+view.className+' {0}\"><span class=\"'+view.className+' FieldTitle\">{1}</span><br/></{0}>'));$(frm.find('{0}.{1}')[0]).append(this.model.get('{1}'));"
+                            :@"      $(frm.find('{0}:last')[0]).before($('<{0} class=""'+view.className+' {0}""><span class=""'+view.className+' FieldTitle"">{1}</span><br/></{0}>'));
+        $(frm.find('{0}.{1}')[0]).append(this.model.get('{1}'));"), tstring, propName);
                 }
             }
 
-            _AppendInputSetupCode(sb,host, properties, readOnlyProperties, modelType);
-            _AppendArrayInputsCode(sb);
+            _AppendInputSetupCode(sb,host, properties, readOnlyProperties, modelType,minimize);
+            _AppendArrayInputsCode(sb,minimize);
 
-            sb.AppendFormat(
-@"          $(frm.find('{0}.buttons')[0]).append($('<span class=""button accept"">Okay</span><span class=""button cancel"">Cancel</span>'));
+            sb.AppendFormat((minimize ? 
+                "$(frm.find('{0}.buttons')[0]).append($('<span class=\"button accept\">Okay</span><span class=\"button cancel\">Cancel</span>'));var butCancel=$(frm.find('{0}.buttons>span.cancel')[0]);butCancel.bind('click',{{view:view}},function(event){{event.data.view.render();}});"
+                :@"          $(frm.find('{0}.buttons')[0]).append($('<span class=""button accept"">Okay</span><span class=""button cancel"">Cancel</span>'));
             var butCancel = $(frm.find('{0}.buttons>span.cancel')[0]);
             butCancel.bind('click',{{view:view}},function(event){{
                 event.data.view.render();
-            }});",tstring);
+            }});"),tstring);
 
-            _AppendAcceptCode(sb);
+            _AppendAcceptCode(sb,minimize);
         }
 
         #region IJSGenerator Members
 
-        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete)
+        public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete,bool minimize)
         {
             if (!hasUpdate)
                     return "";
@@ -289,10 +304,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 if (((int)((ModelBlockJavascriptGeneration)modelType.GetCustomAttributes(typeof(ModelBlockJavascriptGeneration), false)[0]).BlockType & (int)ModelBlockJavascriptGenerations.EditForm) == (int)ModelBlockJavascriptGenerations.EditForm)
                     return "";
             }
-            StringBuilder sb = new StringBuilder();
-            sb.AppendFormat(
-@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.EditAddFormGenerator
-{0} = _.extend(true,{0},{{editModel : function(view){{",
+            WrappedStringBuilder sb = new WrappedStringBuilder(minimize);
+            sb.AppendFormat((minimize ?
+                "{0}=_.extend(true,{0},{{editModel:function(view){{"
+                :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.EditAddFormGenerator
+{0} = _.extend(true,{0},{{editModel : function(view){{"),
                       ModelNamespace.GetFullNameForModel(modelType, host));
 
             ModelEditAddTypes meat = ModelEditAddTypes.dialog;
@@ -301,10 +317,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             switch (meat)
             {
                 case ModelEditAddTypes.dialog:
-                    _RenderDialogCode(modelType,host, readOnlyProperties, properties,sb);
+                    _RenderDialogCode(modelType,host, readOnlyProperties, properties,sb,minimize);
                     break;
                 case ModelEditAddTypes.inline:
-                    _RenderInlineCode(modelType,host, readOnlyProperties, properties,viewIgnoreProperties, sb);
+                    _RenderInlineCode(modelType,host, readOnlyProperties, properties,viewIgnoreProperties, sb,minimize);
                     break;
             }
 
