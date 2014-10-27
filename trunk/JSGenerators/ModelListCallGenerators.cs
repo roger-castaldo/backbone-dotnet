@@ -143,7 +143,7 @@ var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartInd
         this.currentIndex=0;
         this.url=url;
         this.fetch();
-}},"),urlCode,sbCurParameters));
+}},"),urlCode,sbCurParameters.ToString()));
                                 }
                                 sb.AppendLine("model:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model});");
                             }
