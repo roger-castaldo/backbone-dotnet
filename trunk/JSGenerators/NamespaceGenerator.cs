@@ -20,8 +20,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             foreach (string str in ModelNamespace.GetFullNameForModel(modelType,host).Split('.'))
             {
                 ret += (minimize ? 
-                    (tmp.Length == 0 ? "var " + str : tmp + "." + str) + "=" + (tmp.Length == 0 ? "" : tmp + ".") + str + "||{};"
-                    : (tmp.Length == 0 ? "var " + str : tmp + "." + str) + " = " + (tmp.Length == 0 ? "" : tmp + ".") + str + " || {};"+Environment.NewLine);
+                    (tmp.Length == 0 ? "window." + str : tmp + "." + str) + "=" + (tmp.Length == 0 ? "window." : tmp + ".") + str + "||{};"
+                    : (tmp.Length == 0 ? "window." + str : tmp + "." + str) + " = " + (tmp.Length == 0 ? "window." : tmp + ".") + str + " || {};"+Environment.NewLine);
                 tmp += (tmp.Length == 0 ? "" : ".") + str;
             }
             return ret;
