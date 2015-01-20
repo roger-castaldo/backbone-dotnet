@@ -32,6 +32,23 @@
                 ul.append('<li class="' + model.errors[x].field + '"><span class="error_field_name">' + model.errors[x].field + '</span><span class="error_field_message">' + model.errors[x].error + '</span></li>');
             }
             erDialog.show();
+        },
+        DefineErrorMessage: function (language, path, message) {
+            if (language == undefined) { throw 'You must supply a language'; }
+            if (path == undefined) { throw 'You must supply an exception path'; }
+            if (message == undefined) { throw 'You must supply a message'; }
+            var props = path.split('.');
+            Backbone.ErrorMessages[language] = Backbone.ErrorMessages[language] || {};
+            var obj = Backbone.ErrorMessages[language];
+            for (var x = 0; x < props.length-1; x++) {
+                obj[props[x]] = obj[props[x]] || {};
+                obj = obj[props[x]];
+            }
+            if (typeof message == 'string' || message instanceof String) {
+                obj[props[props.length - 1]] = message;
+            } else {
+                obj[props[props.length - 1]] = _.extend(true, obj[props[props.length - 1]] || {}, message);
+            }
         }
     });
 
