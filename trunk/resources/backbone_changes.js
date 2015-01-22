@@ -112,7 +112,8 @@
         } else {
             (attrs = {})[key] = val;
         }
-        if (options != undefined && !options.reset) {
+        options || (options = {});
+        if (!(options.reset==undefined ? false : options.reset)) {
             this._changedFields = (this._changedFields == undefined ? [] : this._changedFields);
             for (var k in attrs) {
                 if (!_.isEqual((this.attributes[k] == undefined ? null : (this.attributes[k].isModel != undefined && this.attributes[k].isModel() ? this.attributes[k].id : this.attributes[k])), (this.attributes[k] == undefined ? attrs[k] : (this.attributes[k].isModel != undefined && this.attributes[k].isModel() ? attrs[k].id : attrs[k]))) && this._changedFields.indexOf(k) < 0) {
