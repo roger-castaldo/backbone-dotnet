@@ -63,24 +63,27 @@ for(var x=0;x<{0}.length;x++){{
                     sb.AppendLine(string.Format((minimize ? "function_data.{0}={0};": "function_data.{0} = {0};"), par.Name));
             }
             sb.AppendLine(string.Format((minimize ?
-"{2}$.ajax({{type:'{6}',url:'{0}/{5}{1}',processData:false,data:escape(JSON.stringify(function_data)),content_type:\"application/json; charset=utf-8\",dataType:'json',async:false,cache:false}}){3};{4}"
-:@"{2}$.ajax({{
-            type:'{6}',
-            url:'{0}/{5}{1}',
+"var response = $.ajax({{type:'{4}',url:'{0}/{3}{1}',processData:false,data:escape(JSON.stringify(function_data)),content_type:'application/json; charset=utf-8',dataType:'json',async:false,cache:false}});if(response.status==200){{{2}}}else{{throw new Exception(response.responseText);}}"
+:@"var response = $.ajax({{
+            type:'{4}',
+            url:'{0}/{3}{1}',
             processData:false,
             data:escape(JSON.stringify(function_data)),
-            content_type:""application/json; charset=utf-8"",
+            content_type:'application/json; charset=utf-8',
             dataType:'json',
             async:false,
             cache:false
-        }}){3};
-        {4}
+        }});
+if (response.status==200){{
+        {2}
+}}else{{
+    throw new Exception(response.responseText);
+}}
 "), new object[]{
             urlRoot,
             mi.Name,
-            (mi.ReturnType == typeof(void) ? "" : (minimize ? "var ret=":"var ret = ")),
-            (mi.ReturnType == typeof(void) ? "" : ".responseText"),
-            (mi.ReturnType==typeof(void) ? "" : (minimize ? "if(ret!=undefined){var response=JSON.parse(ret);if(response.Backbone!=undefined){_.extend(Backbone,response.Backbone);response=response.response;}" : @"if (ret!=undefined){
+            (mi.ReturnType==typeof(void) ? "" : (minimize ? "var ret=response.responseText; if(ret!=undefined){var response=JSON.parse(ret);if(response.Backbone!=undefined){_.extend(Backbone,response.Backbone);response=response.response;}" : @"var ret=response.responseText;
+    if (ret!=undefined){
     var response = JSON.parse(ret);
     if(response.Backbone!=undefined){
         _.extend(Backbone,response.Backbone);
