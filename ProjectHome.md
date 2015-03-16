@@ -1,0 +1,1 @@
+This library is designed to automatically generate javascript code as well as handling the interfacing for BackBone.js.  It handles basic tempting (using specific css tags) and code generation to allow for rapidly built data based websites.
