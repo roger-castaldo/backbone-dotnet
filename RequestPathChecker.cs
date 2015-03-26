@@ -6,7 +6,7 @@ namespace Org.Reddragonit.BackBoneDotNet
 {
     internal class RequestPathChecker
     {
-        private struct sPathPortion
+        private struct sPathPortion:IComparable
         {
             private string _path;
             public string Path
@@ -43,7 +43,10 @@ namespace Org.Reddragonit.BackBoneDotNet
                         }
                     }
                     if (add)
+                    {
                         subPortions.Add(new sPathPortion(path, index + 1));
+                        subPortions.Sort();
+                    }
                 }
                 else
                     _isEnd = true;
@@ -63,10 +66,32 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 return true;
                         }
                     }
-                    else if (index == path.Length-1 && _path.StartsWith("{") && _path.EndsWith("}") && _isEnd)
-                        return true;
+                    return _isEnd;
                 }
                 return false;
+            }
+
+            public int CompareTo(object obj)
+            {
+                sPathPortion por = (sPathPortion)obj;
+                if (Path.StartsWith("{") && Path.EndsWith("}"))
+                {
+                    if (por.Path.StartsWith("{") && por.Path.EndsWith("}"))
+                    {
+                        if (_isEnd)
+                            return 1;
+                        else if (por._isEnd)
+                            return -1;
+                        else
+                            return -0;
+                    }
+                    else
+                        return 1;
+                }
+                else if (por.Path.StartsWith("{") && por.Path.EndsWith("}"))
+                    return -1;
+                else
+                    return Path.CompareTo(por.Path);
             }
         }
 
@@ -84,6 +109,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                 _host = host;
                 _paths = new List<sPathPortion>();
                 _paths.Add(new sPathPortion(path, 0));
+                _paths.Sort();
             }
 
             public void MergeInPath(string[] path)
@@ -99,7 +125,10 @@ namespace Org.Reddragonit.BackBoneDotNet
                     }
                 }
                 if (add)
+                {
                     _paths.Add(new sPathPortion(path, 0));
+                    _paths.Sort();
+                }
             }
 
             public bool IsMatch(string[] url)
