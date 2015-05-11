@@ -534,7 +534,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                             {
                                 if (mlc.HandlesRequest(request))
                                 {
-                                    if (request.IsListAllowed(mlc.ModelType,mlc.Method, out status, out message))
+                                    if (request.IsListAllowed(mlc.ModelType,mlc.Method,request.URL, out status, out message))
                                     {
                                         message = null;
                                         ret = mlc.HandleRequest(request);

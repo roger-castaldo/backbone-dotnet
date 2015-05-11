@@ -36,7 +36,7 @@ namespace Org.Reddragonit.BackBoneDotNet.Interfaces
         */
         bool IsLoadAllowed(Type model,string id, out int HttpStatusCode, out string HttpStatusMessage);
         bool IsLoadAllAllowed(Type model, out int HttpStatusCode, out string HttpStatusMessage);
-        bool IsListAllowed(Type model,MethodInfo method, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsListAllowed(Type model,MethodInfo method,Uri url, out int HttpStatusCode, out string HttpStatusMessage);
         bool IsSelectAllowed(Type model, out int HttpStatusCode, out string HttpStatusMessage);
         bool IsUpdateAllowed(IModel model, Hashtable parameters, out int HttpStatusCode, out string HttpStatusMessage);
         bool IsSaveAllowed(Type model, Hashtable parameters, out int HttpStatusCode, out string HttpStatusMessage);
