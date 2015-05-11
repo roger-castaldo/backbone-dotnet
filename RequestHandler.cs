@@ -20,6 +20,10 @@ namespace Org.Reddragonit.BackBoneDotNet
             private string _path;
             private Regex _reg;
             private MethodInfo _method;
+            public MethodInfo Method
+            {
+                get { return _method; }
+            }
             public Type ModelType{
                 get{return _method.DeclaringType;}
             }
@@ -530,7 +534,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                             {
                                 if (mlc.HandlesRequest(request))
                                 {
-                                    if (request.IsListAllowed(mlc.ModelType, out status, out message))
+                                    if (request.IsListAllowed(mlc.ModelType,mlc.Method, out status, out message))
                                     {
                                         message = null;
                                         ret = mlc.HandleRequest(request);
