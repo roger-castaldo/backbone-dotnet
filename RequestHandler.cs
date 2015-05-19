@@ -720,7 +720,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                         {
                             if (_DeleteMethods.ContainsKey(ret.GetType()))
                             {
-                                if (request.IsDeleteAllowed(ret.GetType(), ((IModel)ret).id, out status, out message))
+                                if (request.IsDeleteAllowed((IModel)ret, out status, out message))
                                 {
                                     message = null;
                                     ret = _DeleteMethods[ret.GetType()].Invoke(ret, new object[0]);
