@@ -102,14 +102,15 @@ var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartInd
                                     {
                                         sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
                                     }
-                                    sb.AppendLine(string.Format((minimize ? 
-                                        "){{{0}url+='{1}PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;this.CurrentParameters={2};this.currentIndex=0;this.url=url;this.fetch();}},"
-                                        :@"){{{0}
+                                    sb.AppendLine(string.Format((minimize ?
+                                        "){{{0}url+='{1}PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;this.CurrentParameters={2};this.currentIndex=0;this.url=url;this.fetch({{async:false}});this.length=this.models.length;}},"
+                                        : @"){{{0}
         url+='{1}PageStartIndex='+this.currentIndex+'&PageSize='+this.currentPageSize;
         this.CurrentParameters = {2};
         this.currentIndex=0;
         this.url=url;
-        this.fetch();
+        this.fetch({{async:false}});
+        this.length=this.models.length;
 }},"),new object[]{urlCode,(mlm.Path.Contains("?") ? "&" : "?"),sbCurParameters.ToString()}));
                                 }
                                 sb.AppendLine(string.Format((minimize ? 
@@ -136,13 +137,14 @@ var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartInd
                                     {
                                         sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
                                     }
-                                    sb.AppendLine(string.Format((minimize ? 
-                                        "){{{0}this.CurrentParameters={1};this.currentIndex=0;this.url=url;this.fetch();}}," 
-                                        :@"){{{0}
+                                    sb.AppendLine(string.Format((minimize ?
+                                        "){{{0}this.CurrentParameters={1};this.currentIndex=0;this.url=url;this._reset();this.fetch({{async:false}});this.length=this.models.length;}}," 
+                                        : @"){{{0}
         this.CurrentParameters = {1};
         this.currentIndex=0;
         this.url=url;
-        this.fetch();
+        this.fetch({{async:false}});
+        this.length=this.models.length;
 }},"),urlCode,sbCurParameters.ToString()));
                                 }
                                 sb.AppendLine("model:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model});");
