@@ -82,12 +82,13 @@ if (response.status==200){{
 "), new object[]{
             urlRoot,
             mi.Name,
-            (mi.ReturnType==typeof(void) ? "" : (minimize ? "var ret=response.responseText; if(ret!=undefined){var response=JSON.parse(ret);if(response.Backbone!=undefined){_.extend(Backbone,response.Backbone);response=response.response;}" : @"var ret=response.responseText;
+            (mi.ReturnType==typeof(void) ? "" : (minimize ? "var ret=response.responseText; if(ret!=undefined){var response=JSON.parse(ret);if(response.Backbone!=undefined){_.extend(Backbone,response.Backbone);response=response.response;Backbone.trigger('backbone_extension_occurred');}" : @"var ret=response.responseText;
     if (ret!=undefined){
     var response = JSON.parse(ret);
     if(response.Backbone!=undefined){
         _.extend(Backbone,response.Backbone);
         response=response.response;
+        Backbone.trigger('backbone_extension_occurred');
     }")),
       (mi.IsStatic ? "" : "'+this.id+'/"),
       (mi.IsStatic ? "SMETHOD" : "METHOD")

@@ -51,7 +51,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             if (mlm.Paged)
                             {
                                 sb.AppendLine(string.Format((minimize ? 
-                                    "pageStartIndex=(pageStartIndex==undefined?0:(pageStartIndex==null?0:pageStartIndex));pageSize=(pageSize==undefined?10:(pageSize==null?10:pageSize));var ret=Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartIndex+'&PageSize='+pageSize,CurrentParameters:{1},currentIndex:pageStartIndex*pageSize,currentPageSize:pageSize,CurrentPage:Math.floor(pageStartIndex/pageSize),parse:function(response){{if(response.Backbone!=undefined){{_.extend(Backbone,response.Backbone);}}response=response.response;this.TotalPages=response.Pager.TotalPages;return response.response;}},MoveToPage:function(pageNumber){{if(pageNumber>=0&&pageNumber<this.TotalPages){{this.currentIndex=pageNumber*this.currentPageSize;{2}this.fetch();this.CurrentPage=pageNumber;}}}},ChangePageSize:function(pageSize){{this.currentPageSize=pageSize;this.MoveToPage(Math.floor(this.currentIndex/pageSize));}},MoveToNextPage:function(){{if(Math.floor(this.currentIndex/this.currentPageSize)+1<this.TotalPages){{this.MoveToPage(Math.floor(this.currentIndex/this.currentPageSize)+1);}}}},MoveToPreviousPage:function(){{if(Math.floor(this.currentIndex/this.currentPageSize)-1>=0){{this.MoveToPage(Math.floor(this.currentIndex/this.currentPageSize)-1);}}}},"
+                                    "pageStartIndex=(pageStartIndex==undefined?0:(pageStartIndex==null?0:pageStartIndex));pageSize=(pageSize==undefined?10:(pageSize==null?10:pageSize));var ret=Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartIndex+'&PageSize='+pageSize,CurrentParameters:{1},currentIndex:pageStartIndex*pageSize,currentPageSize:pageSize,CurrentPage:Math.floor(pageStartIndex/pageSize),parse:function(response){{this.TotalPages=response.Pager.TotalPages;return response.response;}},MoveToPage:function(pageNumber){{if(pageNumber>=0&&pageNumber<this.TotalPages){{this.currentIndex=pageNumber*this.currentPageSize;{2}this.fetch();this.CurrentPage=pageNumber;}}}},ChangePageSize:function(pageSize){{this.currentPageSize=pageSize;this.MoveToPage(Math.floor(this.currentIndex/pageSize));}},MoveToNextPage:function(){{if(Math.floor(this.currentIndex/this.currentPageSize)+1<this.TotalPages){{this.MoveToPage(Math.floor(this.currentIndex/this.currentPageSize)+1);}}}},MoveToPreviousPage:function(){{if(Math.floor(this.currentIndex/this.currentPageSize)-1>=0){{this.MoveToPage(Math.floor(this.currentIndex/this.currentPageSize)-1);}}}},"
                                     :@"pageStartIndex = (pageStartIndex == undefined ? 0 : (pageStartIndex == null ? 0 : pageStartIndex));
 pageSize = (pageSize == undefined ? 10 : (pageSize == null ? 10 : pageSize));
 var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartIndex+'&PageSize='+pageSize,
@@ -60,10 +60,6 @@ var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartInd
     currentPageSize : pageSize,
     CurrentPage : Math.floor(pageStartIndex/pageSize),
     parse : function(response){{
-        if(response.Backbone!=undefined){{
-            _.extend(Backbone,response.Backbone);
-        }}
-        response = response.response;
         this.TotalPages = response.Pager.TotalPages;
         return response.response;
     }},
@@ -121,14 +117,9 @@ var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartInd
                             else
                             {
                                 sb.AppendLine(string.Format((minimize ? 
-                                    "var ret=Backbone.Collection.extend({{url:url,CurrentParameters:{0},parse : function(response){{if(response.Backbone!=undefined){{_.extend(Backbone,response.Backbone);return response.response;}}else{{return response;}}}},"
+                                    "var ret=Backbone.Collection.extend({{url:url,CurrentParameters:{0},parse : function(response){{return response;}},"
                                     :@" var ret = Backbone.Collection.extend({{url:url,CurrentParameters:{0},parse : function(response){{
-    if(response.Backbone!=undefined){{
-        _.extend(Backbone,response.Backbone);
-        return response.response;
-    }}else{{
-        return response;
-    }}
+    return response;
 }},"),sbCurParameters.ToString()));
                                 if (mi.GetParameters().Length > 0)
                                 {

@@ -183,14 +183,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         this._changedFields = (this._changedFields == undefined ? [] : this._changedFields);"));
 
                 sb.AppendLine((minimize ? 
-                    "parse:function(response){var attrs={};this._origAttributes=(this._origAttributes==undefined?{}:this._origAttributes);if(response.Backbone!=undefined){_.extend(Backbone,response.Backbone);response=response.response;}if(response!=true){"
+                    "parse:function(response){var attrs={};this._origAttributes=(this._origAttributes==undefined?{}:this._origAttributes);if(response!=true){"
                     :@"  parse: function(response) {
         var attrs = {};
         this._origAttributes = (this._origAttributes==undefined ? {} : this._origAttributes);
-        if(response.Backbone!=undefined){
-            _.extend(Backbone,response.Backbone);
-            response=response.response;
-        }
         if (response!=true){"));
 
                 foreach (string str in properties)
@@ -319,12 +315,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             else
             {
                 sb.AppendLine((minimize ? 
-                    "parse:function(response){if(response.Backbone!=undefined){_.extend(Backbone,response.Backbone);response=response.response;}return response;},"
+                    "parse:function(response){return response;},"
                     :@"  parse: function(response) {
-        if(response.Backbone!=undefined){
-            _.extend(Backbone,response.Backbone);
-            response=response.response;
-        }
         return response;
     },"));
             }

@@ -119,9 +119,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                     sb.AppendLine("}");
                 }
-                sb.AppendLine(string.Format((minimize ? 
-                    "else{{return null;}}var ret=$.ajax('{0}'+url,{{async:false,cache:false,type : 'SELECT'}}).responseText;var response=JSON.parse(ret);if(response.Backbone!=undefined){{_.extend(Backbone,response.Backbone);response=response.response;}}return response;}}}});"
-                    :@"  else{{
+                sb.AppendLine(string.Format((minimize ?
+                    "else{{return null;}}var ret=$.ajax('{0}'+url,{{async:false,cache:false,type : 'SELECT'}}).responseText;var response=JSON.parse(ret);if(response.Backbone!=undefined){{_.extend(Backbone,response.Backbone);response=response.response;Backbone.trigger('backbone_extension_occurred');}}return response;}}}});"
+                    : @"  else{{
         return null;
     }}
     var ret=$.ajax(
@@ -134,6 +134,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     if(response.Backbone!=undefined){{
         _.extend(Backbone,response.Backbone);
         response=response.response;
+        Backbone.trigger('backbone_extension_occurred');
     }}
 return response;
 }}}});"),urlRoot));

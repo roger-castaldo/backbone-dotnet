@@ -1,5 +1,22 @@
 (function () {
     Backbone = _.extend(Backbone, {
+        _sync: Backbone.sync,
+        sync: function (method, model, options) {
+            if (method == 'read') {
+                var _success = options.success;
+                options.success = function (response) {
+                    if (response.Backbone != undefined) {
+                        {
+                            _.extend(Backbone, response.Backbone);
+                            Backbone.trigger('backbone_extension_occurred');
+                        }
+                    }
+                    response = response.response;
+                    _success(response);
+                }
+            }
+            return Backbone._sync(method, model, options);
+        },
         ErrorMessages: {},
         Language: 'en',
         TranslateValidationError: function (errorMessage) {

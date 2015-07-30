@@ -42,11 +42,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }
             return string.Format((minimize ? 
-                "{0}=_.extend(true,{0},{{Collection:Backbone.Collection.extend({{model:{0}.Model,parse:function(response){{return (response.Backbone==undefined?response:response.response);}},url:\"{1}\"}})}});"
+                "{0}=_.extend(true,{0},{{Collection:Backbone.Collection.extend({{model:{0}.Model,parse:function(response){{return response;}},url:\"{1}\"}})}});"
                 :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionGenerator
 {0} = _.extend(true,{0},{{Collection: Backbone.Collection.extend({{
     model : {0}.Model,
-    parse : function(response){{return (response.Backbone == undefined ? response : response.response);}},
+    parse : function(response){{return response;}},
     url : ""{1}""
     }})
 }});"),
