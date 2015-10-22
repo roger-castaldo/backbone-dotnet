@@ -123,7 +123,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             errors.push({{field:'{0}',error:Backbone.TranslateValidationError('{1}')}});
         }}"),str,mrf.ErrorMessageName);
                     }
-                    else if (modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false).Length > 0)
+                    if (modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false).Length > 0)
                     {
                         ModelFieldValidationRegex mfvr = (ModelFieldValidationRegex)modelType.GetProperty(str).GetCustomAttributes(typeof(ModelFieldValidationRegex), false)[0];
                         sb.AppendFormat((minimize ? 
