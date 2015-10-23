@@ -222,6 +222,9 @@
                 originalError:options.error,
                 success: function (model, response, options) {
                     model._changedFields = [];
+                    if (model.isNew()) {
+                        model.id = (response != undefined ? ((response.response != undefined ? response.response : response).id != undefined ? (response.response != undefined ? response.response : response).id : model.id) : model.id);
+                    }
                     if (options.originalSuccess != undefined) {
                         options.originalSuccess(model, response, options.originalOptions);
                     }
