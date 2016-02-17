@@ -810,19 +810,14 @@ namespace Org.Reddragonit.BackBoneDotNet
                             }
                             if (ret != null)
                             {
-                                if (request.IsExposedMethodAllowed((IModel)ret, method, pars, out status, out message))
+                                foreach (MethodInfo m in ret.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public))
                                 {
-                                    foreach (MethodInfo m in ret.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public))
+                                    if (m.Name == method)
                                     {
-                                        if (m.Name == method)
-                                        {
-                                            if (m.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
-                                                methods.Add(m);
-                                        }
+                                        if (m.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)
+                                            methods.Add(m);
                                     }
                                 }
-                                else
-                                    ret = null;
                             }
                         }
                         else
@@ -832,14 +827,6 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 methods.AddRange(_ExposedMethods[request.URL.Host + url + "/" + method]);
                             else if (_ExposedMethods.ContainsKey("*" + url + "/" + method))
                                 methods.AddRange(_ExposedMethods["*" + url + "/" + method]);
-                            if (methods.Count > 0)
-                            {
-                                if (!request.IsStaticExposedMethodAllowed(methods[0].DeclaringType, method, pars, out status, out message))
-                                {
-                                    methods.Clear();
-                                    _SetSecurityError(out status, out message);
-                                }
-                            }
                         }
                         if (methods.Count>0)
                         {
@@ -899,22 +886,34 @@ namespace Org.Reddragonit.BackBoneDotNet
                             }
                             else
                             {
-                                allowNullResponse = ((ExposedMethod)mi.GetCustomAttributes(typeof(ExposedMethod), false)[0]).AllowNullResponse;
-                                message = null;
-                                try
+                                bool isValid = true;
+                                if (mi.IsStatic)
+                                    isValid = request.IsExposedMethodAllowed(mi.DeclaringType, mi, pars, out status, out message);
+                                else
+                                    isValid = request.IsExposedMethodAllowed((IModel)ret, mi, pars, out status, out message);
+                                if (!isValid)
                                 {
-                                    if (mi.ReturnType == typeof(void))
-                                    {
-                                        mi.Invoke(ret, opars);
-                                        ret = new object();
-                                    }
-                                    else
-                                        ret = mi.Invoke(ret, opars);
+                                    _SetSecurityError(out status, out message);
                                 }
-                                catch (Exception ex)
+                                else
                                 {
-                                    message = ex.Message;
-                                    status = 500;
+                                    allowNullResponse = ((ExposedMethod)mi.GetCustomAttributes(typeof(ExposedMethod), false)[0]).AllowNullResponse;
+                                    message = null;
+                                    try
+                                    {
+                                        if (mi.ReturnType == typeof(void))
+                                        {
+                                            mi.Invoke(ret, opars);
+                                            ret = new object();
+                                        }
+                                        else
+                                            ret = mi.Invoke(ret, opars);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        message = ex.Message;
+                                        status = 500;
+                                    }
                                 }
                             }
                         }

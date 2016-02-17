@@ -42,7 +42,7 @@ namespace Org.Reddragonit.BackBoneDotNet.Interfaces
         bool IsSaveAllowed(Type model, Hashtable parameters, out int HttpStatusCode, out string HttpStatusMessage);
         bool IsDeleteAllowed(IModel model, out int HttpStatusCode, out string HttpStatusMessage);
         bool IsJsURLAllowed(string url, out int HttpStatusCode, out string HttpStatusMessage);
-        bool IsExposedMethodAllowed(IModel model, string methodName, Hashtable parameters, out int HttpStatusCode, out string HttpStatusMessage);
-        bool IsStaticExposedMethodAllowed(Type model, string methodName, Hashtable parameters, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsExposedMethodAllowed(IModel model, MethodInfo method, Hashtable parameters, out int HttpStatusCode, out string HttpStatusMessage);
+        bool IsExposedMethodAllowed(Type model, MethodInfo method, Hashtable parameters, out int HttpStatusCode, out string HttpStatusMessage);
     }
 }
