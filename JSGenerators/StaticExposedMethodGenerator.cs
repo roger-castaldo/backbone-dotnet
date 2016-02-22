@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.BackBoneDotNet.Interfaces;
 using System.Reflection;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
+using Org.Reddragonit.BackBoneDotNet.Properties;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
@@ -127,31 +128,38 @@ if (response.status==200){{
                 {
                     if (array)
                     {
-                        sb.AppendLine(string.Format((minimize ? 
-                            "if({0}.Collection!=undefined){{ret = new {0}.Collection();for(var x=0;x<response.length;x++){{ret.add(new {0}.Model({{'id':response[x].id}}));ret.at(x).attributes=ret.at(x).parse(response[x]);}}}}else{{ret=[];for(var x=0;x<response.length;x++){{ret.push(new {0}.Model({{'id':response[x].id}}));ret[x].attributes=ret[x].parse(response[x]);}}}}response=ret;" 
-                            : @"          if({0}.Collection!=undefined){{
-                ret = new {0}.Collection();
+                        sb.AppendLine(string.Format((minimize ?
+                            @"if({0}.{1}!=undefined){{ret = new {0}.{1}();for (var x=0;x<response.length;x++){{ret.add(new {2}.{3}({{'id':response[x].id}}));ret.at(x).attributes=ret.at(x).parse(response[x]);}}}}else{{ret=[];for (var x=0;x<response.length;x++){{ret.push(new {2}.{3}({{'id':response[x].id}}));ret[x].attributes=ret[x].parse(response[x]);}}}}response = ret;" 
+                            : @"          if({0}.{1}!=undefined){{
+                ret = new {0}.{1}();
                 for (var x=0;x<response.length;x++){{
-                    ret.add(new {0}.Model({{'id':response[x].id}}));
+                    ret.add(new {2}.{3}({{'id':response[x].id}}));
                     ret.at(x).attributes=ret.at(x).parse(response[x]);
                 }}
             }}else{{
                 ret=[];
                 for (var x=0;x<response.length;x++){{
-                    ret.push(new {0}.Model({{'id':response[x].id}}));
+                    ret.push(new {2}.{3}({{'id':response[x].id}}));
                     ret[x].attributes=ret[x].parse(response[x]);
                 }}
             }}
-            response = ret;"),
-                                ModelNamespace.GetFullNameForModel(propType, host)));
+            response = ret;"),new object[]{
+                                (Settings.Default.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(propType, host)),
+                                (Settings.Default.UseAppNamespacing ? propType.Name : "Collection"),
+                                (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
+                                (Settings.Default.UseAppNamespacing ? propType.Name : "Model")
+                            }));
                     }
                     else
                     {
                         sb.AppendLine(string.Format((minimize ? 
-                            "ret=new {0}.Model({{id:response.id}});ret.attributes=ret.parse(response);response=ret;" 
-                            :@"ret = new {0}.Model({{id:response.id}});
+                            "ret=new {0}.{1}({{id:response.id}});ret.attributes=ret.parse(response);response=ret;" 
+                            :@"ret = new {0}.{1}({{id:response.id}});
 ret.attributes = ret.parse(response);
-response=ret;"), ModelNamespace.GetFullNameForModel(propType, host)));
+response=ret;"), new object[]{
+                  (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
+                  (Settings.Default.UseAppNamespacing ? propType.Name : "Model")
+              }));
                     }
                 }
                 sb.AppendLine((minimize ? 
@@ -190,8 +198,9 @@ return response;}else{return null;}"));
             sb.AppendFormat((minimize ?
                 "{0}=_.extend(true,{0},{{"
                 :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.StaticExposedMethodGenerator
-{0} = _.extend(true,{0}, {{"),
-                ModelNamespace.GetFullNameForModel(modelType, host));
+{0} = _.extend(true,{0}, {{"),new object[]{
+                (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host))
+            });
             foreach (MethodInfo mi in modelType.GetMethods(BindingFlags.Public | BindingFlags.Static))
             {
                 if (mi.GetCustomAttributes(typeof(ExposedMethod), false).Length > 0)

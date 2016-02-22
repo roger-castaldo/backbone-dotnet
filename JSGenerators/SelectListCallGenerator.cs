@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.BackBoneDotNet.Interfaces;
 using System.Reflection;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
+using Org.Reddragonit.BackBoneDotNet.Properties;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
@@ -72,7 +73,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine(string.Format((minimize ?
                     "{0}=_.extend(true,{0},{{SelectList:function(pars){{"
                     : "{0} = _.extend(true,{0},{{SelectList : function(pars){{"
-                ),ModelNamespace.GetFullNameForModel(modelType, host)));
+                ),new object[]{
+                    (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host))
+                }));
                 for (int x = 0; x < methods.Count; x++)
                 {
                     sb.Append((minimize ? "" : "\t") + (x == 0 ? "" : "else ") + "if(");

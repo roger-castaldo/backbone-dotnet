@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.BackBoneDotNet.Interfaces;
 using System.Reflection;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
+using Org.Reddragonit.BackBoneDotNet.Properties;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
@@ -32,7 +33,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sbCurParameters.Append((minimize ? "function(){return{":"function(){return {"));
                             sb.Append(string.Format((minimize ?
                                 "{0}=_.extend({0},{{{1}:function(" 
-                                : "{0} = _.extend({0}, {{{1}:function("),ModelNamespace.GetFullNameForModel(modelType, host),mi.Name));
+                                : "{0} = _.extend({0}, {{{1}:function("),new object[]{
+                                    (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host)),
+                                    mi.Name
+                                }));
                             for (int x = 0; x < (mlm.Paged ? mi.GetParameters().Length-3 : mi.GetParameters().Length); x++)
                             {
                                 sb.Append((x == 0 ? "" : ",") + mi.GetParameters()[x].Name);
@@ -110,9 +114,12 @@ var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartInd
 }},"),new object[]{urlCode,(mlm.Path.Contains("?") ? "&" : "?"),sbCurParameters.ToString()}));
                                 }
                                 sb.AppendLine(string.Format((minimize ? 
-                                    "model:{0}.Model}});"
-                                    :@" model:{0}.Model
-}});"),ModelNamespace.GetFullNameForModel(modelType, host)));
+                                    "model:{0}.{1}}});"
+                                    :@" model:{0}.{1}
+}});"),new object[]{
+         (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
+         (Settings.Default.UseAppNamespacing ? modelType.Name : "Model")
+     }));
                             }
                             else
                             {
@@ -138,7 +145,7 @@ var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartInd
         this.length=this.models.length;
 }},"),urlCode,sbCurParameters.ToString()));
                                 }
-                                sb.AppendLine("model:" + ModelNamespace.GetFullNameForModel(modelType, host) + ".Model});");
+                                sb.AppendLine("model:" + (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host)+".Model")+"});");
                             }
                             sb.AppendLine((minimize ? 
                                 "ret=new ret();return ret;}});"

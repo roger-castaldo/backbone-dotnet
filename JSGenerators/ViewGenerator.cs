@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.BackBoneDotNet.Interfaces;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
 using System.Reflection;
+using Org.Reddragonit.BackBoneDotNet.Properties;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
@@ -219,10 +220,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 if (hasUpdate && hasUpdateFunction)
                 {
                     sb.AppendLine(string.Format((minimize ? 
-                        "editModel:function(){{{0}.editModel(this);}}"
+                        "editModel:function(){{{0}.{1}(this);}}"
                         : @"    editModel : function(){{
-        {0}.editModel(this);
-    }}"),ModelNamespace.GetFullNameForModel(modelType, host)) + (hasDelete ? "," : ""));
+        {0}.{1}(this);
+    }}"),new object[]{
+           (Settings.Default.UseAppNamespacing ? "App.Forms" : ModelNamespace.GetFullNameForModel(modelType, host)),
+           (Settings.Default.UseAppNamespacing ? modelType.Name : "editModel")
+       }) + (hasDelete ? "," : ""));
                 }
                 if (hasDelete)
                 {
@@ -433,10 +437,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             _LocateButtonImages(modelType, host, out editImage, out deleteImage,out edDef,out delDef);
             WrappedStringBuilder sb = new WrappedStringBuilder(minimize);
             sb.AppendFormat((minimize ? 
-                "{0}=_.extend(true,{0},{{View : Backbone.View.extend({{" 
+                "{0}=_.extend(true,{0},{{{1} : Backbone.View.extend({{" 
                 :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator
-{0} = _.extend(true,{0},{{View : Backbone.View.extend({{
-    "),ModelNamespace.GetFullNameForModel(modelType, host));
+{0} = _.extend(true,{0},{{{1} : Backbone.View.extend({{
+    "),new object[]{
+         (Settings.Default.UseAppNamespacing ? "App.Views" : ModelNamespace.GetFullNameForModel(modelType, host)),
+         (Settings.Default.UseAppNamespacing ? modelType.Name : "View")
+     });
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
                 tag = ((ModelViewTag)modelType.GetCustomAttributes(typeof(ModelViewTag), false)[0]).TagName;

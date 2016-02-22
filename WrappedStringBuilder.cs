@@ -43,6 +43,11 @@ namespace Org.Reddragonit.BackBoneDotNet
             _sb.AppendFormat(format, arg0, arg1, arg2);
         }
 
+        internal void AppendFormat(string format,object[] args)
+        {
+            _sb.AppendFormat(format, args);
+        }
+
         internal void Append(string value)
         {
             _sb.Append(value);

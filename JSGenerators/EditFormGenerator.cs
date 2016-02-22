@@ -4,6 +4,7 @@ using System.Text;
 using Org.Reddragonit.BackBoneDotNet.Interfaces;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
 using System.Reflection;
+using Org.Reddragonit.BackBoneDotNet.Properties;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
@@ -101,9 +102,10 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         for(var x=0;x<opts.length;x++){{
             var opt = opts[x];
             sel{0}.append($('<option value=""'+opt.ID+'"">'+opt.Text+'</option>'));
-        }}"),
+        }}"),new object[]{
                                 propName,
-                                ModelNamespace.GetFullNameForModel(propType, host));
+                                (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host))
+           });
                             if (array)
                             {
                                 sb.AppendFormat((minimize ?
@@ -306,10 +308,12 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             WrappedStringBuilder sb = new WrappedStringBuilder(minimize);
             sb.AppendFormat((minimize ?
-                "{0}=_.extend(true,{0},{{editModel:function(view){{"
+                "{0}=_.extend(true,{0},{{{1}:function(view){{"
                 :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.EditAddFormGenerator
-{0} = _.extend(true,{0},{{editModel : function(view){{"),
-                      ModelNamespace.GetFullNameForModel(modelType, host));
+{0} = _.extend(true,{0},{{{1} : function(view){{"),new object[]{
+                      (Settings.Default.UseAppNamespacing ? "App.Forms" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                      (Settings.Default.UseAppNamespacing ? modelType.Name : "editModel")
+            });
 
             ModelEditAddTypes meat = ModelEditAddTypes.dialog;
             if (modelType.GetCustomAttributes(typeof(ModelEditAddType), false).Length > 0)

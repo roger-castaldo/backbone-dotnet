@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Org.Reddragonit.BackBoneDotNet.Interfaces;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
+using Org.Reddragonit.BackBoneDotNet.Properties;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
@@ -41,18 +42,21 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                 }
             }
-            return string.Format((minimize ? 
-                "{0}=_.extend(true,{0},{{Collection:Backbone.Collection.extend({{model:{0}.Model,parse:function(response){{return response;}},url:\"{1}\"}})}});"
+            return string.Format((minimize ?
+                @"{0}=_.extend(true,{0},{{{2}:Backbone.Collection.extend({{model:{3}.{4},parse:function(response){{return response;}},url:""{1}""}})}});"
                 :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionGenerator
-{0} = _.extend(true,{0},{{Collection: Backbone.Collection.extend({{
-    model : {0}.Model,
+{0} = _.extend(true,{0},{{{2}: Backbone.Collection.extend({{
+    model : {3}.{4},
     parse : function(response){{return response;}},
     url : ""{1}""
     }})
 }});"),
                 new object[]{
-                    ModelNamespace.GetFullNameForModel(modelType, host),
-                    (urlRoot.StartsWith("/") ? "" : "/") + urlRoot
+                    (Settings.Default.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                    (urlRoot.StartsWith("/") ? "" : "/") + urlRoot,
+                    (Settings.Default.UseAppNamespacing ? modelType.Name : "Collection"),
+                    (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                    (Settings.Default.UseAppNamespacing ? modelType.Name : "Model")
                 });
         }
 

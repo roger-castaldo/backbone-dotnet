@@ -40,7 +40,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (routerName.Contains("."))
                     {
                         string tmp = "";
-                        foreach (string str in ModelNamespace.GetFullNameForModel(modelType, host).Split('.'))
+                        foreach (string str in routerName.Split('.'))
                         {
                             sb.AppendLine(string.Format((minimize ? "{1}{0}={2}{0}||{{}};" : "{1}{0} = {2}{0} || {{}};"),
                                 str,

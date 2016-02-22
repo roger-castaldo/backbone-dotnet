@@ -5,6 +5,7 @@ using System.Reflection;
 using Org.Reddragonit.BackBoneDotNet.Interfaces;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
 using Org.Reddragonit.BackBoneDotNet;
+using Org.Reddragonit.BackBoneDotNet.Properties;
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {
@@ -224,22 +225,26 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         if (array)
                         {
                             sb.AppendFormat((minimize ?
-                                "if({0}.Collection!=undefined){{attrs.{1}=new {0}.Collection();for(var x=0;x<response.{1}.length;x++){{attrs.{1}.add(new {0}.Model({{'id':response.{1}[x].id}}));attrs.{1}.at(x).attributes=attrs.{1}.at(x).parse(response.{1}[x]);}}}}else{{attrs.{1}=[];for(var x=0;x<response.{1}.length;x++){{attrs.{1}.push(new {0}.Model({{'id':response.{1}[x].id}}));attrs.{1}[x].attributes=attrs.{1}[x].parse(response.{1}[x]);}}}}" 
-                                :@"          if({0}.Collection!=undefined){{
-                attrs.{1} = new {0}.Collection();
+                                @"if({0}.{2}!=undefined){{attrs.{1} = new {0}.{2}();for (var x=0;x<response.{1}.length;x++){{attrs.{1}.add(new {3}.{4}({{'id':response.{1}[x].id}}));attrs.{1}.at(x).attributes=attrs.{1}.at(x).parse(response.{1}[x]);}}}}else{{attrs.{1}=[];for (var x=0;x<response.{1}.length;x++){{attrs.{1}.push(new {3}.{4}({{'id':response.{1}[x].id}}));attrs.{1}[x].attributes=attrs.{1}[x].parse(response.{1}[x]);}}}}" 
+                                :@"          if({0}.{2}!=undefined){{
+                attrs.{1} = new {0}.{2}();
                 for (var x=0;x<response.{1}.length;x++){{
-                    attrs.{1}.add(new {0}.Model({{'id':response.{1}[x].id}}));
+                    attrs.{1}.add(new {3}.{4}({{'id':response.{1}[x].id}}));
                     attrs.{1}.at(x).attributes=attrs.{1}.at(x).parse(response.{1}[x]);
                 }}
             }}else{{
                 attrs.{1}=[];
                 for (var x=0;x<response.{1}.length;x++){{
-                    attrs.{1}.push(new {0}.Model({{'id':response.{1}[x].id}}));
+                    attrs.{1}.push(new {3}.{4}({{'id':response.{1}[x].id}}));
                     attrs.{1}[x].attributes=attrs.{1}[x].parse(response.{1}[x]);
                 }}
-            }}"),
-                                ModelNamespace.GetFullNameForModel(propType, host),
-                                str);
+            }}"),new object[]{
+                                (Settings.Default.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(propType, host)),
+                                str,
+                                (Settings.Default.UseAppNamespacing ? propType.Name : "Collection"),
+                                (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                                (Settings.Default.UseAppNamespacing ? propType.Name : "Model")
+               });
                             if (isReadOnly)
                                 jsonb.AppendLine((minimize ? "if(this.isNew()){" : "if (this.isNew()){"));
                             jsonb.AppendFormat((minimize ?
@@ -262,9 +267,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         else
                         {
                             sb.AppendFormat((minimize ?
-                                "attrs.{0}=new {1}.Model({{'id':response.{0}.id}});attrs.{0}.attributes=attrs.{0}.parse(response.{0});"
-                                :@"          attrs.{0} = new {1}.Model({{'id':response.{0}.id}});
-            attrs.{0}.attributes=attrs.{0}.parse(response.{0});"), str, ModelNamespace.GetFullNameForModel(propType, host));
+                                "attrs.{0}=new {1}.{2}({{'id':response.{0}.id}});attrs.{0}.attributes=attrs.{0}.parse(response.{0});"
+                                :@"          attrs.{0} = new {1}.{2}({{'id':response.{0}.id}});
+            attrs.{0}.attributes=attrs.{0}.parse(response.{0});"),new object[]{
+                                                                    str, 
+                                                                    (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
+                                                                    (Settings.Default.UseAppNamespacing ? propType.Name : "Model")
+                                                                });
                             if (isReadOnly)
                                 jsonb.AppendLine((minimize? "if(this.isNew()){": "if (this.isNew()){"));
                             jsonb.AppendFormat((minimize ?
@@ -336,16 +345,18 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete,bool minimize)
         {
             WrappedStringBuilder sb = new WrappedStringBuilder(minimize);
-            sb.AppendFormat((minimize ? 
-                "{0}=_.extend(true,{0},{{Model:Backbone.Model.extend({{initialize:function(){{if(this._revertReadonlyFields!=undefined){{this.on(\"change\",this._revertReadonlyFields);}}}},"
+            sb.AppendFormat((minimize ?
+                @"{0}=_.extend(true,{0},{{{1}:Backbone.Model.extend({{initialize:function(){{if(this._revertReadonlyFields!=undefined){{this.on(""change"",this._revertReadonlyFields);}}}},"
                 :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ModelDefinitionGenerator
-{0} = _.extend(true,{0}, {{Model : Backbone.Model.extend({{
+{0} = _.extend(true,{0}, {{{1} : Backbone.Model.extend({{
     initialize : function() {{
         if (this._revertReadonlyFields != undefined){{
             this.on(""change"",this._revertReadonlyFields);
         }}
-    }},"),
-                ModelNamespace.GetFullNameForModel(modelType, host));
+    }},"),new object[]{
+                (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                (Settings.Default.UseAppNamespacing ? modelType.Name : "Model")
+        });
             _AppendDefaults(modelType,properties,sb,minimize);
             if (!hasDelete)
                 _AppendBlockDestroy(sb, minimize);
