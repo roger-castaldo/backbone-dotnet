@@ -239,11 +239,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     attrs.{1}[x].attributes=attrs.{1}[x].parse(response.{1}[x]);
                 }}
             }}"),new object[]{
-                                (Settings.Default.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(propType, host)),
+                                (RequestHandler.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(propType, host)),
                                 str,
-                                (Settings.Default.UseAppNamespacing ? propType.Name : "Collection"),
-                                (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
-                                (Settings.Default.UseAppNamespacing ? propType.Name : "Model")
+                                (RequestHandler.UseAppNamespacing ? propType.Name : "Collection"),
+                                (RequestHandler.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                                (RequestHandler.UseAppNamespacing ? propType.Name : "Model")
                });
                             if (isReadOnly)
                                 jsonb.AppendLine((minimize ? "if(this.isNew()){" : "if (this.isNew()){"));
@@ -271,8 +271,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 :@"          attrs.{0} = new {1}.{2}({{'id':response.{0}.id}});
             attrs.{0}.attributes=attrs.{0}.parse(response.{0});"),new object[]{
                                                                     str, 
-                                                                    (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
-                                                                    (Settings.Default.UseAppNamespacing ? propType.Name : "Model")
+                                                                    (RequestHandler.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
+                                                                    (RequestHandler.UseAppNamespacing ? propType.Name : "Model")
                                                                 });
                             if (isReadOnly)
                                 jsonb.AppendLine((minimize? "if(this.isNew()){": "if (this.isNew()){"));
@@ -354,8 +354,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             this.on(""change"",this._revertReadonlyFields);
         }}
     }},"),new object[]{
-                (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
-                (Settings.Default.UseAppNamespacing ? modelType.Name : "Model")
+                (RequestHandler.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                (RequestHandler.UseAppNamespacing ? modelType.Name : "Model")
         });
             _AppendDefaults(modelType,properties,sb,minimize);
             if (!hasDelete)

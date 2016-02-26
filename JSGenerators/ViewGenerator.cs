@@ -224,8 +224,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         : @"    editModel : function(){{
         {0}.{1}(this);
     }}"),new object[]{
-           (Settings.Default.UseAppNamespacing ? "App.Forms" : ModelNamespace.GetFullNameForModel(modelType, host)),
-           (Settings.Default.UseAppNamespacing ? modelType.Name : "editModel")
+           (RequestHandler.UseAppNamespacing ? "App.Forms" : ModelNamespace.GetFullNameForModel(modelType, host)),
+           (RequestHandler.UseAppNamespacing ? modelType.Name : "editModel")
        }) + (hasDelete ? "," : ""));
                 }
                 if (hasDelete)
@@ -441,8 +441,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.ViewGenerator
 {0} = _.extend(true,{0},{{{1} : Backbone.View.extend({{
     "),new object[]{
-         (Settings.Default.UseAppNamespacing ? "App.Views" : ModelNamespace.GetFullNameForModel(modelType, host)),
-         (Settings.Default.UseAppNamespacing ? modelType.Name : "View")
+         (RequestHandler.UseAppNamespacing ? "App.Views" : ModelNamespace.GetFullNameForModel(modelType, host)),
+         (RequestHandler.UseAppNamespacing ? modelType.Name : "View")
      });
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)

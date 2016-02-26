@@ -74,7 +74,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     "{0}=_.extend(true,{0},{{SelectList:function(pars){{"
                     : "{0} = _.extend(true,{0},{{SelectList : function(pars){{"
                 ),new object[]{
-                    (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host))
+                    (RequestHandler.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host))
                 }));
                 for (int x = 0; x < methods.Count; x++)
                 {

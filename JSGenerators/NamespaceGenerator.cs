@@ -16,7 +16,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 
         public string GenerateJS(Type modelType, string host, List<string> readOnlyProperties, List<string> properties, List<string> viewIgnoreProperties, bool hasUpdate, bool hasAdd, bool hasDelete,bool minimize)
         {
-            if (Settings.Default.UseAppNamespacing)
+            if (RequestHandler.UseAppNamespacing)
                 return @"window.App=window.App||{};window.App.Models=window.App.Models||{};window.App.Views=window.App.Views||{};window.App.Collections=window.App.Collections||{};window.App.CollectionViews=window.App.CollectionViews||{};window.App.Forms=window.App.Forms||{};";
             else
             {

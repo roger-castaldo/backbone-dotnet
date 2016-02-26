@@ -188,13 +188,26 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static List<Type> _loadedTypes;
         private static StartTypes _startType;
 
+        private static bool? _compressAllJS=null;
+        internal static bool CompressAllJS { get { return (_compressAllJS.HasValue ? _compressAllJS.Value : Settings.Default.CompressAllJS); } }
+        private static bool? _useAppNamespacing=null;
+        internal static bool UseAppNamespacing { get { return (_useAppNamespacing.HasValue ? _useAppNamespacing.Value : Settings.Default.UseAppNamespacing); } }
+
         /*
          * This function will start the request handler, it does this by first validating 
          * all located models, and will react according to the starttype specified.
          * It will also assign jquery,json and backbone urls as specified.
          * It will then create the url check regex, locat all load,loadalls, and select list methods
          * as well as specify types to urls, once complete it flags running to allow for handling requests.
+         * It also allows overrides from the app settings in order to configure things differently at runtime.
          */
+        public static void Start(StartTypes startType, string jqueryURL, string jsonURL, string backboneURL, ILogWriter logWriter, bool compressAllJS, bool useAppNamespacing)
+        {
+            _compressAllJS = compressAllJS;
+            _useAppNamespacing = useAppNamespacing;
+            Start(startType, jqueryURL, jsonURL, backboneURL, logWriter);
+        }
+
         public static void Start(StartTypes startType,string jqueryURL,string jsonURL,string backboneURL,ILogWriter logWriter)
         {
             Logger.Setup(logWriter);
@@ -217,6 +230,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             _jqueryURL = jqueryURL;
             _jsonURL = jsonURL;
             _backboneURL = backboneURL;
+            Logger.Debug(string.Format("Current settings:\n\tCompressJS:{0}\n\tUseAppNamespacing:{1}", CompressAllJS, UseAppNamespacing));
             if (_jqueryURL != null)
             {
                 _jqueryURL = (!_jqueryURL.StartsWith("/") ? "/" + _jqueryURL : _jqueryURL);
@@ -502,7 +516,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                         (mj.Path == Uri.UnescapeDataString(request.URL.AbsolutePath)||mj.MinPath==Uri.UnescapeDataString(request.URL.AbsolutePath)))
                                     {
                                         Logger.Trace("Appending model " + t.FullName + " to path " + request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath));
-                                        sb.Append(_GenerateModelJSFile(t, request.URL.Host, mj.MinPath == Uri.UnescapeDataString(request.URL.AbsolutePath) || Settings.Default.CompressAllJS));
+                                        sb.Append(_GenerateModelJSFile(t, request.URL.Host, mj.MinPath == Uri.UnescapeDataString(request.URL.AbsolutePath) || CompressAllJS));
                                     }
                                 }
                             }

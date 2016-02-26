@@ -104,7 +104,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             sel{0}.append($('<option value=""'+opt.ID+'"">'+opt.Text+'</option>'));
         }}"),new object[]{
                                 propName,
-                                (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host))
+                                (RequestHandler.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host))
            });
                             if (array)
                             {
@@ -311,8 +311,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 "{0}=_.extend(true,{0},{{{1}:function(view){{"
                 :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.EditAddFormGenerator
 {0} = _.extend(true,{0},{{{1} : function(view){{"),new object[]{
-                      (Settings.Default.UseAppNamespacing ? "App.Forms" : ModelNamespace.GetFullNameForModel(modelType, host)),
-                      (Settings.Default.UseAppNamespacing ? modelType.Name : "editModel")
+                      (RequestHandler.UseAppNamespacing ? "App.Forms" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                      (RequestHandler.UseAppNamespacing ? modelType.Name : "editModel")
             });
 
             ModelEditAddTypes meat = ModelEditAddTypes.dialog;

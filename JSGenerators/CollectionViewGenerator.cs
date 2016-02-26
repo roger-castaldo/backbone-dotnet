@@ -50,8 +50,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     : @"//Org.Reddragonit.BackBoneDotNet.JSGenerators.CollectionViewGenerator
 {0} = _.extend(true,{0}, {{{1} : Backbone.View.extend({{
 "),
-            (Settings.Default.UseAppNamespacing ? "App.CollectionViews" : ModelNamespace.GetFullNameForModel(modelType, host)),
-            (Settings.Default.UseAppNamespacing ? modelType.Name : "CollectionView"));
+            (RequestHandler.UseAppNamespacing ? "App.CollectionViews" : ModelNamespace.GetFullNameForModel(modelType, host)),
+            (RequestHandler.UseAppNamespacing ? modelType.Name : "CollectionView"));
             
             string tag = "div";
             if (modelType.GetCustomAttributes(typeof(ModelViewTag), false).Length > 0)
@@ -116,8 +116,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
         }}
     }}
 }})}});"), new object[] { 
-            (Settings.Default.UseAppNamespacing ? "App.Views" : ModelNamespace.GetFullNameForModel(modelType, host)),
-            (Settings.Default.UseAppNamespacing ? modelType.Name : "View")
+            (RequestHandler.UseAppNamespacing ? "App.Views" : ModelNamespace.GetFullNameForModel(modelType, host)),
+            (RequestHandler.UseAppNamespacing ? modelType.Name : "View")
         });
             return sb.ToString();
         }

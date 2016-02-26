@@ -34,7 +34,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             sb.Append(string.Format((minimize ?
                                 "{0}=_.extend({0},{{{1}:function(" 
                                 : "{0} = _.extend({0}, {{{1}:function("),new object[]{
-                                    (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host)),
+                                    (RequestHandler.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host)),
                                     mi.Name
                                 }));
                             for (int x = 0; x < (mlm.Paged ? mi.GetParameters().Length-3 : mi.GetParameters().Length); x++)
@@ -117,8 +117,8 @@ var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartInd
                                     "model:{0}.{1}}});"
                                     :@" model:{0}.{1}
 }});"),new object[]{
-         (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
-         (Settings.Default.UseAppNamespacing ? modelType.Name : "Model")
+         (RequestHandler.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
+         (RequestHandler.UseAppNamespacing ? modelType.Name : "Model")
      }));
                             }
                             else
@@ -145,7 +145,7 @@ var ret = Backbone.Collection.extend({{url:url+'{0}PageStartIndex='+pageStartInd
         this.length=this.models.length;
 }},"),urlCode,sbCurParameters.ToString()));
                                 }
-                                sb.AppendLine("model:" + (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host)+".Model")+"});");
+                                sb.AppendLine("model:" + (RequestHandler.UseAppNamespacing ? "App.Models." + modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host) + ".Model") + "});");
                             }
                             sb.AppendLine((minimize ? 
                                 "ret=new ret();return ret;}});"

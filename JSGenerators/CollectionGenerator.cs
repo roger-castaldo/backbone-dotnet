@@ -52,11 +52,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
     }})
 }});"),
                 new object[]{
-                    (Settings.Default.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                    (RequestHandler.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(modelType, host)),
                     (urlRoot.StartsWith("/") ? "" : "/") + urlRoot,
-                    (Settings.Default.UseAppNamespacing ? modelType.Name : "Collection"),
-                    (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
-                    (Settings.Default.UseAppNamespacing ? modelType.Name : "Model")
+                    (RequestHandler.UseAppNamespacing ? modelType.Name : "Collection"),
+                    (RequestHandler.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                    (RequestHandler.UseAppNamespacing ? modelType.Name : "Model")
                 });
         }
 

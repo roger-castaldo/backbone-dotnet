@@ -144,10 +144,10 @@ if (response.status==200){{
                 }}
             }}
             response = ret;"),new object[]{
-                                (Settings.Default.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(propType, host)),
-                                (Settings.Default.UseAppNamespacing ? propType.Name : "Collection"),
-                                (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
-                                (Settings.Default.UseAppNamespacing ? propType.Name : "Model")
+                                (RequestHandler.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(propType, host)),
+                                (RequestHandler.UseAppNamespacing ? propType.Name : "Collection"),
+                                (RequestHandler.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
+                                (RequestHandler.UseAppNamespacing ? propType.Name : "Model")
                             }));
                     }
                     else
@@ -157,8 +157,8 @@ if (response.status==200){{
                             :@"ret = new {0}.{1}({{id:response.id}});
 ret.attributes = ret.parse(response);
 response=ret;"), new object[]{
-                  (Settings.Default.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
-                  (Settings.Default.UseAppNamespacing ? propType.Name : "Model")
+                  (RequestHandler.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
+                  (RequestHandler.UseAppNamespacing ? propType.Name : "Model")
               }));
                     }
                 }
@@ -199,7 +199,7 @@ return response;}else{return null;}"));
                 "{0}=_.extend(true,{0},{{"
                 :@"//Org.Reddragonit.BackBoneDotNet.JSGenerators.StaticExposedMethodGenerator
 {0} = _.extend(true,{0}, {{"),new object[]{
-                (Settings.Default.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host))
+                (RequestHandler.UseAppNamespacing ? "App.Models."+modelType.Name : ModelNamespace.GetFullNameForModel(modelType, host))
             });
             foreach (MethodInfo mi in modelType.GetMethods(BindingFlags.Public | BindingFlags.Static))
             {
