@@ -242,7 +242,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                                 (RequestHandler.UseAppNamespacing ? "App.Collections" : ModelNamespace.GetFullNameForModel(propType, host)),
                                 str,
                                 (RequestHandler.UseAppNamespacing ? propType.Name : "Collection"),
-                                (RequestHandler.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(modelType, host)),
+                                (RequestHandler.UseAppNamespacing ? "App.Models" : ModelNamespace.GetFullNameForModel(propType, host)),
                                 (RequestHandler.UseAppNamespacing ? propType.Name : "Model")
                });
                             if (isReadOnly)
