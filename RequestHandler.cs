@@ -155,6 +155,10 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static string _jsonURL;
         //houses the url for the backbone js file
         private static string _backboneURL;
+        //houses the url for the underscore js file
+        private static string _underscoreURL;
+        //houses the url for the extensions js file
+        private static string _extensionsURL;
         //houses the timer used to clean up cache
         private static Timer _cacheTimer;
 
@@ -201,14 +205,14 @@ namespace Org.Reddragonit.BackBoneDotNet
          * as well as specify types to urls, once complete it flags running to allow for handling requests.
          * It also allows overrides from the app settings in order to configure things differently at runtime.
          */
-        public static void Start(StartTypes startType, string jqueryURL, string jsonURL, string backboneURL, ILogWriter logWriter, bool compressAllJS, bool useAppNamespacing)
+        public static void Start(StartTypes startType, string jqueryURL, string jsonURL, string backboneURL,string underscoreURL, ILogWriter logWriter, bool compressAllJS, bool useAppNamespacing)
         {
             _compressAllJS = compressAllJS;
             _useAppNamespacing = useAppNamespacing;
-            Start(startType, jqueryURL, jsonURL, backboneURL, logWriter);
+            Start(startType, jqueryURL, jsonURL, backboneURL,underscoreURL, logWriter);
         }
 
-        public static void Start(StartTypes startType,string jqueryURL,string jsonURL,string backboneURL,ILogWriter logWriter)
+        public static void Start(StartTypes startType,string jqueryURL,string jsonURL,string backboneURL,string underscoreURL,ILogWriter logWriter)
         {
             Logger.Setup(logWriter);
             Logger.Debug("Starting up BackBone request handler");
@@ -230,6 +234,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             _jqueryURL = jqueryURL;
             _jsonURL = jsonURL;
             _backboneURL = backboneURL;
+            _underscoreURL = underscoreURL;
             Logger.Debug(string.Format("Current settings:\n\tCompressJS:{0}\n\tUseAppNamespacing:{1}", CompressAllJS, UseAppNamespacing));
             if (_jqueryURL != null)
             {
@@ -245,6 +250,15 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 _backboneURL = (!_backboneURL.StartsWith("/") ? "/" + _backboneURL : _backboneURL);
                 _RPC_URL.AddMethod("GET", "*", _backboneURL);
+                _extensionsURL = _backboneURL.Substring(0, _backboneURL.LastIndexOf(".") + 1) + "extensions.js";
+            }
+            else
+                _extensionsURL = "backbone.underscore.extensions.js";
+            _RPC_URL.AddMethod("GET", "*", _extensionsURL);
+            if (_underscoreURL != null)
+            {
+                _underscoreURL = (!_underscoreURL.StartsWith("/") ? "/" + _underscoreURL : _underscoreURL);
+                _RPC_URL.AddMethod("GET", "*", _underscoreURL);
             }
             Logger.Debug("Backbone request handler successfully started");
             AssemblyAdded();
@@ -487,7 +501,21 @@ namespace Org.Reddragonit.BackBoneDotNet
                     {
                         Logger.Trace("Sending modified backbone javascript response through backbone handler");
                         request.SetResponseStatus(200);
-                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone_combined.min.js",false));
+                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone.min.js",false));
+                        request.SendResponse();
+                    }
+                    else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_underscoreURL == null ? "" : _underscoreURL))
+                    {
+                        Logger.Trace("Sending modified backbone javascript response through backbone handler");
+                        request.SetResponseStatus(200);
+                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.underscore.min.js",false));
+                        request.SendResponse();
+                    }
+                    else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_extensionsURL == null ? "" : _extensionsURL))
+                    {
+                        Logger.Trace("Sending modified backbone javascript response through backbone handler");
+                        request.SetResponseStatus(200);
+                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.extensions.min.js", false));
                         request.SendResponse();
                     }
                     else
@@ -512,8 +540,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                             {
                                 foreach (ModelJSFilePath mj in t.GetCustomAttributes(typeof(ModelJSFilePath), false))
                                 {
-                                    if ((mj.Host == "*" || mj.Host == request.URL.Host) && 
-                                        (mj.Path == Uri.UnescapeDataString(request.URL.AbsolutePath)||mj.MinPath==Uri.UnescapeDataString(request.URL.AbsolutePath)))
+                                    if ((mj.Host == "*" || mj.Host == request.URL.Host) &&
+                                        (mj.Path == Uri.UnescapeDataString(request.URL.AbsolutePath) || mj.MinPath == Uri.UnescapeDataString(request.URL.AbsolutePath)))
                                     {
                                         Logger.Trace("Appending model " + t.FullName + " to path " + request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath));
                                         sb.Append(_GenerateModelJSFile(t, request.URL.Host, mj.MinPath == Uri.UnescapeDataString(request.URL.AbsolutePath) || CompressAllJS));
@@ -1132,7 +1160,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static string _GenerateModelJSFile(Type t,string host,bool minimize)
         {
             Logger.Debug("Generating js file for type " + t.FullName);
-            string ret = "";
+            string ret = string.Format("if(Backbone.DefineErrorMessage==undefined){{$.ajax('{0}',{{async:false,cache:true,dataType:'script'}});}}",_extensionsURL);
             List<string> properties = new List<string>();
             List<string> readOnlyProperties = new List<string>();
             List<string> viewIgnoreProperties = new List<string>();

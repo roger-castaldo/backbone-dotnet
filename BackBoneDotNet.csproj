@@ -108,12 +108,8 @@
     <Compile Include="WrappedStringBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="resources\backbone_combined.min.js" />
     <EmbeddedResource Include="resources\jquery.min.js" />
     <EmbeddedResource Include="resources\json2.min.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="resources\backbone_changes.js" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="resources\editFormAccept.js" />
@@ -129,13 +125,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\backbone.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="resources\underscore.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="resources\underscore_changes.js" />
+    <EmbeddedResource Include="resources\extensions.min.js" />
+    <EmbeddedResource Include="resources\backbone.min.js" />
+    <Content Include="resources\extensions.js" />
+    <EmbeddedResource Include="resources\underscore.min.js" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -146,9 +139,8 @@
   </Target>
   -->
   <PropertyGroup>
-    <PreBuildEvent>C:\jsmin.exe &lt; "$(ProjectDir)\resources\underscore.js" &gt; "$(ProjectDir)\resources\backbone_combined.min.js"
-C:\jsmin.exe &lt; "$(ProjectDir)\resources\underscore_changes.js" &gt;&gt; "$(ProjectDir)\resources\backbone_combined.min.js"
-C:\jsmin.exe &lt; "$(ProjectDir)\resources\backbone.js" &gt;&gt; "$(ProjectDir)\resources\backbone_combined.min.js"
-C:\jsmin.exe &lt; "$(ProjectDir)\resources\backbone_changes.js" &gt;&gt; "$(ProjectDir)\resources\backbone_combined.min.js"</PreBuildEvent>
+    <PreBuildEvent>C:\jsmin.exe &lt; "$(ProjectDir)\resources\extensions.js" &gt; "$(ProjectDir)\resources\extensions.min.js"
+
+</PreBuildEvent>
   </PropertyGroup>
 </Project>
