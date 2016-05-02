@@ -84,7 +84,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
                 if (readOnlyProperties.Count > 1 || !readOnlyProperties.Contains("id"))
                 {
-                    sb.AppendLine((minimize ? "if(!_.isEmpty(this._previousAttributes)||!this.isNew()){" : "        if (!_.isEmpty(this._previousAttributes)||!this.isNew()){"));
+                    sb.AppendLine((minimize ? "if((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){" : "        if ((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){"));
                     foreach (string str in readOnlyProperties)
                     {
                         if (str != "id")
@@ -113,7 +113,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             } else {
 			    (attrs = {})[key] = val;
         }"));
-                sb.AppendLine((minimize ? "if(!_.isEmpty(this._previousAttributes)||!this.isNew()){" : "        if (!_.isEmpty(this._previousAttributes)||!this.isNew()){"));
+                sb.AppendLine((minimize ? "if((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){" : "        if ((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){"));
                 foreach (string str in readOnlyProperties)
                 {
                     if (str != "id")
@@ -315,7 +315,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             if (readOnlyProperties.Count > 1 || !readOnlyProperties.Contains("id"))
             {
-                sb.AppendLine((minimize ? "if(!_.isEmpty(this._previousAttributes)||!this.isNew()){" : "        if (!_.isEmpty(this._previousAttributes)||!this.isNew()){"));
+                sb.AppendLine((minimize ? "if((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){" : "        if ((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){"));
                 foreach (string str in readOnlyProperties)
                 {
                     if (str != "id")
