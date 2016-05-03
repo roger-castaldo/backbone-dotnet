@@ -84,17 +84,25 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
                 if (readOnlyProperties.Count > 1 || !readOnlyProperties.Contains("id"))
                 {
-                    sb.AppendLine((minimize ? "if((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){" : "        if ((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){"));
+                    sb.AppendLine((minimize ? "if((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){var prev=this.changedAttributes();" : @"        if ((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){
+            var prev = this.changedAttributes();"));
                     foreach (string str in readOnlyProperties)
                     {
                         if (str != "id")
                         {
-                            sb.AppendFormat((minimize ? "if(attrs.{0}!=undefined){{delete attrs.{0};}}" : @"          if (attrs.{0} != undefined) {{ 
+                             sb.AppendFormat((minimize ? "if((prev != false)&&(attrs.{0} != undefined)&&(attrs.{0}!=prev.{0})){{delete attrs.{0};}}" : @"          if ((prev != false) && (attrs.{0} != undefined) && (attrs.{0} != prev.{0})) {{ 
                 delete attrs.{0};
             }}"), str);
                         }
                     }
-                    sb.AppendLine((minimize ? "}" : "\t\t\t}"));
+                    sb.AppendLine((minimize ? "}if(_.isEmpty(attrs)){if((options==undefined?undefined:options.error)!=undefined){options.error(this,'501',options);}else{return false;}}" : @"          }
+            if (_.isEmpty(attrs)){
+                if ((options==undefined ? undefined : options.error)!=undefined){
+                    options.error(this,'501',options);
+                }else{
+                    return false;
+                }
+            }"));
                 }
                 sb.AppendLine((minimize ? "Backbone.Model.prototype.save.apply(this, arguments);}," : @"        Backbone.Model.prototype.save.apply(this, [attrs,options]);
     },"));
@@ -113,12 +121,13 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             } else {
 			    (attrs = {})[key] = val;
         }"));
-                sb.AppendLine((minimize ? "if((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){" : "        if ((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){"));
+                sb.AppendLine((minimize ? "if((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){var prev=this.changedAttributes();" : @"        if ((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){
+            var prev = this.changedAttributes();"));
                 foreach (string str in readOnlyProperties)
                 {
                     if (str != "id")
                     {
-                        sb.AppendFormat((minimize ? "if(attrs.{0}!=undefined){{delete attrs.{0};}}" : @"          if (attrs.{0} != undefined) {{ 
+                        sb.AppendFormat((minimize ? "if((prev != false)&&(attrs.{0} != undefined)&&(attrs.{0}!=prev.{0})){{delete attrs.{0};}}" : @"          if ((prev != false) && (attrs.{0} != undefined) && (attrs.{0} != prev.{0})) {{ 
                 delete attrs.{0};
             }}"), str);
                     }
@@ -291,8 +300,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
                 if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                 {
-                    sb.AppendLine(string.Format((minimize ? "if(this.attributes.{0}!=undefined){{if(this.attributes{0}==null){{attrs.{0}=null;}}else{{" : @"     if (this.attributes.{0}!=undefined) {{
-            if (this.attributes{0}==null) {{
+                    sb.AppendLine(string.Format((minimize ? "if(this.attributes.{0}!=undefined){{if(this.attributes.{0}==null){{attrs.{0}=null;}}else{{" : @"     if (this.attributes.{0}!=undefined) {{
+            if (this.attributes.{0}==null) {{
                 attrs.{0} = null;
             }} else {{"), str));
                     if (array)
@@ -313,7 +322,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 else
                     sb.AppendLine(string.Format((minimize ? "attrs.{0}=this.attributes.{0};" : "        attrs.{0}=this.attributes.{0};"), str));
             }
-            if (readOnlyProperties.Count > 1 || !readOnlyProperties.Contains("id"))
+            /*if (readOnlyProperties.Count > 1 || !readOnlyProperties.Contains("id"))
             {
                 sb.AppendLine((minimize ? "if((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){" : "        if ((!_.isEmpty(this._previousAttributes)&&(this.id!=undefined))||!this.isNew()){"));
                 foreach (string str in readOnlyProperties)
@@ -326,7 +335,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     }
                 }
                 sb.AppendLine((minimize ? "}" : "\t\t\t}"));
-            }
+            }*/
             sb.AppendLine((minimize ? "return attrs;}," : "\treturn attrs;\n\t},"));
         }
 
