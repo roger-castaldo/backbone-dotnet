@@ -56,9 +56,14 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 sb.AppendLine((minimize ? "save:function(key,value,options){return false;}," : "\tsave : function(key, value, options){return false;},"));
             else if (readOnlyProperties.Count > 1 || !readOnlyProperties.Contains("id")||blockAdd||blockUpdate)
             {
-                sb.AppendLine((minimize ? "save:function(attrs,options){if(attrs==undefined){attrs=this.toJSON();}" : @"  save : function(attrs,options) {
+                sb.AppendLine((minimize ? "save:function(attrs,options){if(attrs==undefined){attrs=this.toJSON();}if(options==undefined){options={patch:!this.isNew()};}else{options.patch=!this.isNew();}" : @"  save : function(attrs,options) {
         if (attrs==undefined){
             attrs = this.toJSON();
+        }
+        if (options==undefined){
+            options = {patch:!this.isNew()};
+        }else{
+            options.patch=!this.isNew();
         }"));
                 if (blockAdd)
                 {
@@ -104,7 +109,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                 }
             }"));
                 }
-                sb.AppendLine((minimize ? "Backbone.Model.prototype.save.apply(this, arguments);}," : @"        Backbone.Model.prototype.save.apply(this, [attrs,options]);
+                sb.AppendLine((minimize ? "Backbone.Model.prototype.save.apply(this, [attrs,options]);}," : @"        Backbone.Model.prototype.save.apply(this, [attrs,options]);
     },"));
             }
         }
