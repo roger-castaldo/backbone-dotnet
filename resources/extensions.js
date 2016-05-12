@@ -33,29 +33,30 @@
 	Backbone = _.extend(Backbone, {
         _sync: Backbone.sync,
         sync: function (method, model, options) {
-            if (method == 'read') {
-                var _success = options.success;
-                options.success = function (response) {
-                    if (response.Backbone != undefined) {
-                        {
-                            _.extend(Backbone, response.Backbone);
-                            Backbone.trigger('backbone_extension_occurred');
-                        }
+            if (options == undefined) {
+                options = {};
+            }
+            var _success = options.success;
+            options.success = function (response,model,options) {
+                if (response.Backbone != undefined) {
+                    {
+                        _.extend(Backbone, response.Backbone);
+                        Backbone.trigger('backbone_extension_occurred');
                     }
-                    response = response.response;
-                    if (_success!=undefined){_success(response);}
                 }
-				var _error=options.error;
-				options.error = function (response) {
-                    if (response.Backbone != undefined) {
-                        {
-                            _.extend(Backbone, response.Backbone);
-                            Backbone.trigger('backbone_extension_occurred');
-                        }
+                response = response.response;
+                if (_success!=undefined){_success(response,model,options);}
+            }
+			var _error=options.error;
+			options.error = function (response, model, options) {
+                if (response.Backbone != undefined) {
+                    {
+                        _.extend(Backbone, response.Backbone);
+                        Backbone.trigger('backbone_extension_occurred');
                     }
-                    response = response.response;
-                    if (error!=undefined){error(response);}
                 }
+                response = response.response;
+                if (error != undefined) { error(response, model, options); }
             }
             return Backbone._sync(method, model, options);
         },
