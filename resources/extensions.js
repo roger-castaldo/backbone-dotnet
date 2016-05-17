@@ -56,7 +56,7 @@
                     }
                 }
                 response = response.response;
-                if (error != undefined) { error(response, model, options); }
+                if (_error != undefined) { _error(response, model, options); }
             }
             return Backbone._sync(method, model, options);
         },
