@@ -320,7 +320,7 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         }}"), str));
                     }
                     else
-                        sb.AppendLine(string.Format((minimize ? "      attrs.{0} = {{id:this.attributes.{0}}};" : "      attrs.{0} = {{id:this.attributes.{0}}};"),str));
+                        sb.AppendLine(string.Format((minimize ? "      attrs.{0} = {{id:this.attributes.{0}.id}};" : "      attrs.{0} = {{id:this.attributes.{0}.id}};"),str));
                     sb.AppendLine((minimize ? "}}" : @"           }
         }"));
                 }
