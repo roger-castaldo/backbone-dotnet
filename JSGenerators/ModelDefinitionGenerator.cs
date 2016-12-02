@@ -162,9 +162,9 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
             }
             if (add)
             {
-                sb.AppendLine((minimize ? "get:function(attribute){var ret=Backbone.Model.prototype.get.apply(this,arguments);if(ret!=undefined){" : @"   get : function(attribute) { 
+                sb.AppendLine((minimize ? "get:function(attribute){var ret=Backbone.Model.prototype.get.apply(this,arguments);if(ret!=undefined&&ret!=null){" : @"   get : function(attribute) { 
         var ret = Backbone.Model.prototype.get.apply(this, arguments);
-        if (ret != undefined) {"));
+        if (ret != undefined && ret!=null) {"));
                 foreach (string str in properties)
                 {
                     if (modelType.GetProperty(str).GetCustomAttributes(typeof(ModelPropertyLazyLoadExternalModel), false).Length > 0)
@@ -404,7 +404,11 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                             propType = propType.GetGenericArguments()[0];
                         }
                     }
-                    sb.AppendLine(string.Format((minimize ? "if(response.{0}!=undefined){{" : "         if (response.{0} != undefined){{"), str));
+                    sb.AppendLine(string.Format((minimize ? "if(response.{0}!=undefined){{if(response.{0}==null){{attrs.{0}=null;}}else{{" : @"         if (response.{0} != undefined){{
+            if (response.{0} == null) {{ 
+                attrs.{0} = null;
+            }} else {{
+"), str));
                     if (new List<Type>(propType.GetInterfaces()).Contains(typeof(IModel)))
                     {
                         bool isLazy = modelType.GetProperty(str).GetCustomAttributes(typeof(ModelPropertyLazyLoadExternalModel), false).Length > 0;
@@ -484,7 +488,8 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                         else
                             sb.AppendLine(string.Format((minimize ? "attrs.{0}=response.{0};" : "\t\tattrs.{0} = response.{0};"), str));
                     }
-                    sb.AppendLine((minimize ? "}" : "         }"));
+                    sb.AppendLine((minimize ? "}}" : @"             }
+            }"));
                 }
                 sb.AppendLine((minimize ? 
                     "}return attrs;},"
