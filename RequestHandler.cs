@@ -936,6 +936,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                 if (!isValid)
                                 {
                                     _SetSecurityError(out status, out message);
+                                    ret = null;
                                 }
                                 else
                                 {
@@ -1032,6 +1033,8 @@ namespace Org.Reddragonit.BackBoneDotNet
                 return Enum.Parse(expectedType, obj.ToString());
             if (expectedType.Equals(typeof(Version)))
                 return new Version(obj.ToString());
+            if (expectedType.Equals(typeof(Guid)))
+                return new Guid(obj.ToString());
             try
             {
                 object ret = Convert.ChangeType(obj, expectedType);
