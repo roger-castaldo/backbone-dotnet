@@ -12,6 +12,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //DateTime format yyyymmddHHMMss
 
         private static Regex _regListPars = new Regex("\\{(\\d+)\\}", RegexOptions.Compiled | RegexOptions.ECMAScript);
+        private static readonly Regex _regQueryString = new Regex("(([^=]+)=([^&]+)(&)?)", RegexOptions.Compiled | RegexOptions.ECMAScript);
         private static readonly DateTime _UTC = new DateTime(1970, 1, 1, 00, 00, 00,DateTimeKind.Utc);
 
         internal static string[] SplitUrl(string url)
@@ -28,30 +29,16 @@ namespace Org.Reddragonit.BackBoneDotNet
                 tret.RemoveAt(tret.Count - 1);
                 tret.Add("?");
                 tmp[1] = Uri.UnescapeDataString(tmp[1]);
-                foreach (string str in tmp[1].Split('&'))
+                foreach (Match m in _regQueryString.Matches(tmp[1]))
                 {
-                    if (str.Length > 0)
-                    {
-                        if (str.Contains("="))
-                        {
-                            foreach (string s in str.Split('='))
-                            {
-                                if (s != "")
-                                {
-                                    tret.Add(s);
-                                    tret.Add("=");
-                                }
-                            }
-                            if (tret[tret.Count - 1] == "=")
-                                tret.RemoveAt(tret.Count - 1);
-                        }
-                        else if (str.Length > 0)
-                            tret.Add(str);
+                    tret.AddRange(new string[] {
+                        m.Groups[2].Value,
+                        "=",
+                        m.Groups[3].Value
+                    });
+                    if (m.Groups[4].Value != "")
                         tret.Add("&");
-                    }
                 }
-                if (tret[tret.Count - 1] == "&")
-                    tret.RemoveAt(tret.Count - 1);
             }
             else
             {
@@ -255,7 +242,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                     else if (pars[x].ParameterType == typeof(DateTime))
                         sb.AppendFormat("{0}==undefined ? 'NULL' : ({0}==null ? 'NULL' : _.extractUTCDate({0})))+'",pars[x].Name);
                     else
-                        sb.AppendFormat("{0}==undefined ? 'NULL' : ({0} == null ? 'NULL' : {0}))+'",pars[x].Name);
+                        sb.AppendFormat("{0}==undefined ? 'NULL' : ({0} == null ? 'NULL' : encodeURI({0})))+'",pars[x].Name);
                     pNames[x] = sb.ToString();
                 }
                 return "var url='" + string.Format((mlm.Path.StartsWith("/") ? mlm.Path : "/" + mlm.Path).TrimEnd('/'), pNames) + "';";
