@@ -64,7 +64,7 @@ for(var x=0;x<{0}.length;x++){{
                     sb.AppendLine(string.Format((minimize ? "function_data.{0}={0};": "function_data.{0} = {0};"), par.Name));
             }
             sb.AppendLine(string.Format((minimize ?
-"var response = $.ajax({{type:'{4}',url:'{0}/{3}{1}',processData:false,data:escape(JSON.stringify(function_data)),content_type:'application/json; charset=utf-8',dataType:'json',async:false,cache:false}});if(response.status==200){{{2}}}else{{throw new Exception(response.responseText);}}"
+"var response = $.ajax({{type:'{4}',url:'{0}/{3}{1}',processData:false,data:escape(JSON.stringify(function_data)),content_type:'application/json; charset=utf-8',dataType:'json',async:false,cache:false}});if(response.status==200){{{2}}}else{{throw response.responseText;}}"
 :@"var response = $.ajax({{
             type:'{4}',
             url:'{0}/{3}{1}',
@@ -78,7 +78,7 @@ for(var x=0;x<{0}.length;x++){{
 if (response.status==200){{
         {2}
 }}else{{
-    throw new Exception(response.responseText);
+    throw response.responseText;
 }}
 "), new object[]{
             urlRoot,
