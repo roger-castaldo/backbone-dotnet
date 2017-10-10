@@ -51,14 +51,14 @@ namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
                     if (array)
                     {
                         sb.AppendLine(string.Format((minimize ? 
-                            "function_data.{0}=[];for(var x=0;x<{0}.length;x++){{function_data.{0}.push(({0}.at!=undefined?{0}.at(x).id:{0}[x].id));}}"
+                            "function_data.{0}=[];for(var x=0;x<{0}.length;x++){{function_data.{0}.push({{id:({0}.at!=undefined?{0}.at(x).id:{0}[x].id))}};}}"
                             :@"function_data.{0}=[];
 for(var x=0;x<{0}.length;x++){{
-    function_data.{0}.push(({0}.at!=undefined ? {0}.at(x).id : {0}[x].id));
+    function_data.{0}.push({{id:({0}.at!=undefined ? {0}.at(x).id : {0}[x].id)}});
 }}"), par.Name));
                     }
                     else
-                        sb.AppendLine(string.Format((minimize ?"function_data.{0}={0}.id;" :"function_data.{0} = {0}.id;"), par.Name));
+                        sb.AppendLine(string.Format((minimize ?"function_data.{0}={{id:{0}.id}};" :"function_data.{0} = {{ id: {0}.id }};"), par.Name));
                 }
                 else
                     sb.AppendLine(string.Format((minimize ? "function_data.{0}={0};": "function_data.{0} = {0};"), par.Name));
