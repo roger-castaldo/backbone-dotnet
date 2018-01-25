@@ -1021,6 +1021,8 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static object _ConvertObjectToType(object obj, Type expectedType)
         {
             Logger.Debug("Attempting to convert object of type " + (obj == null ? "NULL" : obj.GetType().FullName) + " to " + expectedType.FullName);
+            if (expectedType.Equals(typeof(object)))
+                return obj;
             if (expectedType.Equals(typeof(bool)) && (obj == null))
                 return false;
             if (obj == null)
