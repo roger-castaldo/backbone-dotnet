@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Org.Reddragonit.BackBoneDotNet.Interfaces;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
-using Org.Reddragonit.BackBoneDotNet.Properties;
+
 
 namespace Org.Reddragonit.BackBoneDotNet.JSGenerators
 {

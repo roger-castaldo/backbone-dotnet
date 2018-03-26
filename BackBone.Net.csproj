@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net452;net20</TargetFrameworks>
+    <RootNamespace>Org.Reddragonit.BackBoneDotNet</RootNamespace>
+    <PackageId>Org.Reddragonit.BackBoneDotNet</PackageId>
+    <Version>1.2.2</Version>
+    <Authors>Roger Castaldo</Authors>
+    <Description>A library designed to handle mvc by defining classes through IModel, adding appropriate attribues and methods and properties.  This will then generate js to interface with it based off of backbonejs and rest calls back which will be handled by the library.</Description>
+    <PackageProjectUrl>https://github.com/roger-castaldo/backbone-dotnet</PackageProjectUrl>
+    <PackageLicenseUrl>https://www.gnu.org/licenses/gpl-3.0.en.html</PackageLicenseUrl>
+    <PackageTags>backbone js mvc rest</PackageTags>
+    <Title>BackBoneDotNet</Title>
+  </PropertyGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="C:\jsmin.exe &lt; &quot;$(ProjectDir)\resources\extensions.js&quot; &gt; &quot;$(ProjectDir)\resources\extensions.min.js&quot;" />
+  </Target>
+
+  <ItemGroup>
+    <None Remove="resources\arrayInputFormCode.js" />
+    <None Remove="resources\backbone.min.js" />
+    <None Remove="resources\editFormAccept.js" />
+    <None Remove="resources\extensions.min.js" />
+    <None Remove="resources\jquery.min.js" />
+    <None Remove="resources\json2.min.js" />
+    <None Remove="resources\underscore.min.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="resources\arrayInputFormCode.js" />
+    <EmbeddedResource Include="resources\backbone.min.js" />
+    <EmbeddedResource Include="resources\editFormAccept.js" />
+    <EmbeddedResource Include="resources\extensions.min.js" />
+    <EmbeddedResource Include="resources\jquery.min.js" />
+    <EmbeddedResource Include="resources\json2.min.js" />
+    <EmbeddedResource Include="resources\underscore.min.js" />
+  </ItemGroup>
+
+</Project>

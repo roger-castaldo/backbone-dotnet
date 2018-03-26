@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Threading;
 using System.Collections;
 using Org.Reddragonit.BackBoneDotNet.JSGenerators;
-using Org.Reddragonit.BackBoneDotNet.Properties;
+
 
 namespace Org.Reddragonit.BackBoneDotNet
 {
@@ -192,10 +192,8 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static List<Type> _loadedTypes;
         private static StartTypes _startType;
 
-        private static bool? _compressAllJS=null;
-        internal static bool CompressAllJS { get { return (_compressAllJS.HasValue ? _compressAllJS.Value : Settings.Default.CompressAllJS); } }
-        private static bool? _useAppNamespacing=null;
-        internal static bool UseAppNamespacing { get { return (_useAppNamespacing.HasValue ? _useAppNamespacing.Value : Settings.Default.UseAppNamespacing); } }
+        internal static bool CompressAllJS { get { return Properties.CompressAllJS; } }
+        internal static bool UseAppNamespacing { get { return Properties.UseAppNamespacing; } }
 
         /*
          * This function will start the request handler, it does this by first validating 
@@ -207,8 +205,7 @@ namespace Org.Reddragonit.BackBoneDotNet
          */
         public static void Start(StartTypes startType, string jqueryURL, string jsonURL, string backboneURL,string underscoreURL, ILogWriter logWriter, bool compressAllJS, bool useAppNamespacing)
         {
-            _compressAllJS = compressAllJS;
-            _useAppNamespacing = useAppNamespacing;
+            Properties.Init(compressAllJS, useAppNamespacing);
             Start(startType, jqueryURL, jsonURL, backboneURL,underscoreURL, logWriter);
         }
 
