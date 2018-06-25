@@ -5,7 +5,6 @@ using Org.Reddragonit.BackBoneDotNet.Interfaces;
 using System.Text.RegularExpressions;
 using Org.Reddragonit.BackBoneDotNet.Attributes;
 using System.Reflection;
-using System.Threading;
 using System.Collections;
 using Org.Reddragonit.BackBoneDotNet.JSGenerators;
 
@@ -107,10 +106,20 @@ namespace Org.Reddragonit.BackBoneDotNet
             }
         }
 
-        //period interval between checks for cleaning up the cache (ms)
-        private const int _CACHE_TIMER_PERIOD = 60000;
-        //maximum time to cache a javascript file without being accessed (minutes)
-        private const int _CACHE_TIMEOUT_MINUTES = 60;
+        private struct sCachedJS
+        {
+            private string _content;
+            public string Content { get { return _content; } }
+
+            private DateTime _createDate;
+            public DateTime CreateDate { get { return _createDate; } }
+
+            public sCachedJS(string js)
+            {
+                _content = js;
+                _createDate = DateTime.Now;
+            }
+        }
 
         //how to startup the system as per their names, either disable invalid models or throw 
         //and exception about them
@@ -146,7 +155,7 @@ namespace Org.Reddragonit.BackBoneDotNet
         //houses all the model list calls
         private static List<sModelListCall> _ModelListCalls;
         //houses all the cached javascript, key is the url
-        private static Dictionary<string, CachedItemContainer> _CachedJScript;
+        private static Dictionary<string, sCachedJS> _CachedJScript;
         //houses a mapping from urls to model type definitions
         private static Dictionary<string, Type> _TypeMaps;
         //houses the url for jquery js file
@@ -159,34 +168,13 @@ namespace Org.Reddragonit.BackBoneDotNet
         private static string _underscoreURL;
         //houses the url for the extensions js file
         private static string _extensionsURL;
-        //houses the timer used to clean up cache
-        private static Timer _cacheTimer;
+        
 
         //houses a list of invalid models if StartTypes.DisableInvalidModels is passed for a startup parameter
         private static List<Type> _invalidModels;
         public static List<Type> InvalidModels
         {
             get { return _invalidModels; }
-        }
-
-        //called by the cache timer to clean up cached javascript
-        private static void _CleanJSCache(object obj)
-        {
-            Logger.Trace("Cleaning cached javascript");
-            lock (_CachedJScript)
-            {
-                DateTime now = DateTime.Now;
-                string[] keys = new string[_CachedJScript.Count];
-                _CachedJScript.Keys.CopyTo(keys, 0);
-                foreach (string str in keys)
-                {
-                    if (now.Subtract(_CachedJScript[str].LastAccess).TotalMinutes > _CACHE_TIMEOUT_MINUTES)
-                    {
-                        Logger.Trace("Removing cached javascript for path " + str);
-                        _CachedJScript.Remove(str);
-                    }
-                }
-            }
         }
 
         private static List<Type> _loadedTypes;
@@ -219,9 +207,8 @@ namespace Org.Reddragonit.BackBoneDotNet
             _Loads = new Dictionary<string, MethodInfo>();
             _ExposedMethods = new Dictionary<string, List<MethodInfo>>();
             _SelectLists = new Dictionary<string, List<sModelListCall>>();
-            _CachedJScript = new Dictionary<string, CachedItemContainer>();
+            _CachedJScript = new Dictionary<string, sCachedJS>();
             _TypeMaps = new Dictionary<string, Type>();
-            _cacheTimer = new Timer(new TimerCallback(_CleanJSCache), null, 0, _CACHE_TIMER_PERIOD);
             _ModelListCalls = new List<sModelListCall>();
             _DeleteMethods = new Dictionary<Type, MethodInfo>();
             _SaveMethods = new Dictionary<Type, MethodInfo>();
@@ -433,7 +420,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             _RPC_URL = null;
             _RPC_SELECT = null;
             _invalidModels = null;
-            _cacheTimer.Dispose();
+            _CachedJScript.Clear();
             _jsonURL = null;
             _jqueryURL = null;
             _backboneURL = null;
@@ -443,6 +430,7 @@ namespace Org.Reddragonit.BackBoneDotNet
             _SelectLists = null;
             _TypeMaps = null;
             _loadedTypes = null;
+            Utility.ClearCaches();
         }
 
         //uses the compiled regular expression to determin if this handler handles the given url and request method
@@ -478,58 +466,34 @@ namespace Org.Reddragonit.BackBoneDotNet
             {
                 if (request.IsJsURLAllowed(Uri.UnescapeDataString(request.URL.AbsolutePath), out status, out message))
                 {
-                    message = null;
-                    request.SetResponseContentType("text/javascript");
-                    if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_jqueryURL == null ? "" : _jqueryURL))
-                    {
-                        Logger.Trace("Sending jquery javascript response through backbone handler");
-                        request.SetResponseStatus(200);
-                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.jquery.min.js",false));
-                        request.SendResponse();
-                    }
-                    else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_jsonURL == null ? "" : _jsonURL))
-                    {
-                        Logger.Trace("Sending json javascript response through backbone handler");
-                        request.SetResponseStatus(200);
-                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.json2.min.js",false));
-                        request.SendResponse();
-                    }
-                    else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_backboneURL == null ? "" : _backboneURL))
-                    {
-                        Logger.Trace("Sending modified backbone javascript response through backbone handler");
-                        request.SetResponseStatus(200);
-                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone.min.js",false));
-                        request.SendResponse();
-                    }
-                    else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_underscoreURL == null ? "" : _underscoreURL))
-                    {
-                        Logger.Trace("Sending modified backbone javascript response through backbone handler");
-                        request.SetResponseStatus(200);
-                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.underscore.min.js",false));
-                        request.SendResponse();
-                    }
-                    else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_extensionsURL == null ? "" : _extensionsURL))
-                    {
-                        Logger.Trace("Sending modified backbone javascript response through backbone handler");
-                        request.SetResponseStatus(200);
-                        request.WriteContent(Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.extensions.min.js", false));
-                        request.SendResponse();
-                    }
-                    else
-                    {
-                        bool found = false;
-                        lock (_CachedJScript)
+                    if (!_CheckJSCache(request)) {
+                        message = null;
+                        if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_jqueryURL == null ? "" : _jqueryURL))
                         {
-                            if (_CachedJScript.ContainsKey(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath)))
-                            {
-                                Logger.Trace("Sending cached javascript response for path " + request.URL.Host + request.URL.AbsolutePath);
-                                found = true;
-                                request.SetResponseStatus(200);
-                                request.WriteContent((string)_CachedJScript[request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath)].Value);
-                                request.SendResponse();
-                            }
+                            Logger.Trace("Sending jquery javascript response through backbone handler");
+                            _JSCache(request, Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.jquery.min.js", false));
                         }
-                        if (!found)
+                        else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_jsonURL == null ? "" : _jsonURL))
+                        {
+                            Logger.Trace("Sending json javascript response through backbone handler");
+                            _JSCache(request, Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.json2.min.js", false));
+                        }
+                        else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_backboneURL == null ? "" : _backboneURL))
+                        {
+                            Logger.Trace("Sending modified backbone javascript response through backbone handler");
+                            _JSCache(request, Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.backbone.min.js", false));
+                        }
+                        else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_underscoreURL == null ? "" : _underscoreURL))
+                        {
+                            Logger.Trace("Sending modified backbone javascript response through backbone handler");
+                            _JSCache(request, Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.underscore.min.js", false));
+                        }
+                        else if (Uri.UnescapeDataString(request.URL.AbsolutePath) == (_extensionsURL == null ? "" : _extensionsURL))
+                        {
+                            Logger.Trace("Sending modified backbone javascript response through backbone handler");
+                            _JSCache(request, Utility.ReadEmbeddedResource("Org.Reddragonit.BackBoneDotNet.resources.extensions.min.js", false));
+                        }
+                        else
                         {
                             Logger.Trace("Buidling model javascript for path " + request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath));
                             StringBuilder sb = new StringBuilder();
@@ -545,14 +509,7 @@ namespace Org.Reddragonit.BackBoneDotNet
                                     }
                                 }
                             }
-                            request.SetResponseStatus(200);
-                            request.WriteContent(sb.ToString());
-                            lock (_CachedJScript)
-                            {
-                                if (!_CachedJScript.ContainsKey(request.URL.Host + request.URL.AbsolutePath))
-                                    _CachedJScript.Add(request.URL.Host + Uri.UnescapeDataString(request.URL.AbsolutePath), new CachedItemContainer(sb.ToString()));
-                            }
-                            request.SendResponse();
+                            _JSCache(request, sb.ToString());
                         }
                     }
                 }
@@ -980,6 +937,46 @@ namespace Org.Reddragonit.BackBoneDotNet
                     request.SendResponse();
                 }
             }
+        }
+
+        private static void _JSCache(IHttpRequest request, string content)
+        {
+            lock (_CachedJScript)
+            {
+                if (!_CachedJScript.ContainsKey(Uri.UnescapeDataString(request.URL.AbsolutePath).ToLower()))
+                    _CachedJScript.Add(Uri.UnescapeDataString(request.URL.AbsolutePath).ToLower(), new sCachedJS(content));
+            }
+            _CheckJSCache(request);
+        }
+
+        private static bool _CheckJSCache(IHttpRequest request)
+        {
+            bool ret = false;
+            lock (_CachedJScript)
+            {
+                if (_CachedJScript.ContainsKey(Uri.UnescapeDataString(request.URL.AbsolutePath).ToLower()))
+                {
+                    ret = true;
+                    bool send = true;
+                    if (request.GetHeaderValue("If-Modified-Since") != null)
+                    {
+                        if (!(DateTime.Parse(request.GetHeaderValue("If-Modified-Since")) < _CachedJScript[Uri.UnescapeDataString(request.URL.AbsolutePath).ToLower()].CreateDate))
+                        {
+                            send = false;
+                            request.SetResponseStatus(304);
+                        }
+                    }
+                    if (send)
+                    {
+                        request.SetHeaderValue("Cache-Control", "public, max-age=3153600");
+                        request.SetHeaderValue("Last-Modified", _CachedJScript[Uri.UnescapeDataString(request.URL.AbsolutePath).ToLower()].CreateDate.ToString("ddd, dd MMM yyyy HH:mm:ss zzz"));
+                        request.SetResponseStatus(200);
+                        request.WriteContent(_CachedJScript[Uri.UnescapeDataString(request.URL.AbsolutePath).ToLower()].Content);
+                    }
+                    request.SendResponse();
+                }
+            }
+            return ret;
         }
 
         private static void _SetSecurityError(out int status, out string message)

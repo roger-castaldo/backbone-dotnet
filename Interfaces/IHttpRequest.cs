@@ -31,6 +31,8 @@ namespace Org.Reddragonit.BackBoneDotNet.Interfaces
         string AcceptLanguageHeaderValue { get; }
         //Returns any additional Backbone variables for the request, if needed
         Hashtable AdditionalBackboneVariables { get; }
+        string GetHeaderValue(string name);
+        void SetHeaderValue(string name, string value);
         /*The functions below are used to test for security calls for each of the function type, a model 
          * is supplied for non-static calls as well as the submitted parameters and ids for static ones
         */
