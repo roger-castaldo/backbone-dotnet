@@ -86,23 +86,12 @@ namespace Org.Reddragonit.BackBoneDotNet
                 ret = new List<Type>();
                 foreach (Assembly ass in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    try
+                    if (ass.GetName().Name != "mscorlib" && !ass.GetName().Name.StartsWith("System.") && ass.GetName().Name != "System" && !ass.GetName().Name.StartsWith("Microsoft"))
                     {
-                        if (ass.GetName().Name != "mscorlib" && !ass.GetName().Name.StartsWith("System.") && ass.GetName().Name != "System" && !ass.GetName().Name.StartsWith("Microsoft"))
+                        foreach (Type t in _GetLoadableTypes(ass))
                         {
-                            foreach (Type t in ass.GetTypes())
-                            {
-                                if (t.IsSubclassOf(parent) || (parent.IsInterface && new List<Type>(t.GetInterfaces()).Contains(parent)))
-                                    ret.Add(t);
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        if (e.Message != "The invoked member is not supported in a dynamic assembly."
-                            &&e.Message!="Unable to load one or more of the requested types. Retrieve the LoaderExceptions property for more information.")
-                        {
-                            throw e;
+                            if (t.IsSubclassOf(parent) || (parent.IsInterface && new List<Type>(t.GetInterfaces()).Contains(parent)))
+                                ret.Add(t);
                         }
                     }
                 }
@@ -111,6 +100,28 @@ namespace Org.Reddragonit.BackBoneDotNet
                     if (!_INSTANCES_CACHE.ContainsKey(parent.FullName))
                         _INSTANCES_CACHE.Add(parent.FullName, ret);
                 }
+            }
+            return ret;
+        }
+
+        private static Type[] _GetLoadableTypes(Assembly ass)
+        {
+            Type[] ret;
+            try
+            {
+                ret = ass.GetTypes();
+            }
+            catch (ReflectionTypeLoadException rtle)
+            {
+                ret = rtle.Types;
+            }
+            catch (Exception e)
+            {
+                if (e.Message != "The invoked member is not supported in a dynamic assembly."
+                            && !e.Message.StartsWith("Unable to load one or more of the requested types."))
+                    throw e;
+                else
+                    ret = new Type[0];
             }
             return ret;
         }
